@@ -6,10 +6,10 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export type OrderUpdatePizzaChoice = typeof OrderUpdatePizzaChoice[keyof typeof OrderUpdatePizzaChoice];
+export type PizzaItemPizzaChoice = typeof PizzaItemPizzaChoice[keyof typeof PizzaItemPizzaChoice];
 
 
-export const OrderUpdatePizzaChoice = {
+export const PizzaItemPizzaChoice = {
   Margherita: 'Margherita',
   Pepperoni: 'Pepperoni',
   Special: 'Special',

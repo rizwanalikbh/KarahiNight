@@ -132,6 +132,8 @@ export const RegenerateCodeResponse = zod.object({
 /**
  * @summary List orders (admin sees all, user sees their own)
  */
+export const listOrdersResponseItemsItemQuantityMax = 3;
+
 export const listOrdersResponseQuantityMax = 3;
 
 
@@ -140,7 +142,10 @@ export const ListOrdersResponseItem = zod.object({
   "id": zod.number(),
   "userId": zod.number(),
   "userName": zod.string(),
+  "items": zod.array(zod.object({
   "pizzaChoice": zod.enum(['Margherita', 'Pepperoni', 'Special']),
+  "quantity": zod.number().min(1).max(listOrdersResponseItemsItemQuantityMax)
+})),
   "quantity": zod.number().min(1).max(listOrdersResponseQuantityMax),
   "pickupSlot": zod.string(),
   "notes": zod.string().nullish(),
@@ -153,13 +158,16 @@ export const ListOrdersResponse = zod.array(ListOrdersResponseItem)
 /**
  * @summary Place a new order
  */
-export const createOrderBodyQuantityMax = 3;
+export const createOrderBodyItemsItemQuantityMax = 3;
+
 
 
 
 export const CreateOrderBody = zod.object({
+  "items": zod.array(zod.object({
   "pizzaChoice": zod.enum(['Margherita', 'Pepperoni', 'Special']),
-  "quantity": zod.number().min(1).max(createOrderBodyQuantityMax),
+  "quantity": zod.number().min(1).max(createOrderBodyItemsItemQuantityMax)
+})).min(1),
   "pickupSlot": zod.string(),
   "notes": zod.string().optional()
 })
@@ -172,16 +180,22 @@ export const UpdateOrderParams = zod.object({
   "id": zod.coerce.number()
 })
 
+export const updateOrderBodyItemsItemQuantityMax = 3;
+
 
 
 
 export const UpdateOrderBody = zod.object({
   "status": zod.enum(['pending', 'confirmed', 'declined', 'completed']).optional(),
-  "pizzaChoice": zod.enum(['Margherita', 'Pepperoni', 'Special']).optional(),
-  "quantity": zod.number().min(1).optional(),
+  "items": zod.array(zod.object({
+  "pizzaChoice": zod.enum(['Margherita', 'Pepperoni', 'Special']),
+  "quantity": zod.number().min(1).max(updateOrderBodyItemsItemQuantityMax)
+})).min(1).optional(),
   "pickupSlot": zod.string().optional(),
   "notes": zod.string().optional()
 })
+
+export const updateOrderResponseItemsItemQuantityMax = 3;
 
 export const updateOrderResponseQuantityMax = 3;
 
@@ -191,7 +205,10 @@ export const UpdateOrderResponse = zod.object({
   "id": zod.number(),
   "userId": zod.number(),
   "userName": zod.string(),
+  "items": zod.array(zod.object({
   "pizzaChoice": zod.enum(['Margherita', 'Pepperoni', 'Special']),
+  "quantity": zod.number().min(1).max(updateOrderResponseItemsItemQuantityMax)
+})),
   "quantity": zod.number().min(1).max(updateOrderResponseQuantityMax),
   "pickupSlot": zod.string(),
   "notes": zod.string().nullish(),

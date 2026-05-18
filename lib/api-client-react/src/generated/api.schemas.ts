@@ -77,14 +77,23 @@ export interface UserUpdate {
   name?: string;
 }
 
-export type OrderPizzaChoice = typeof OrderPizzaChoice[keyof typeof OrderPizzaChoice];
+export type PizzaItemPizzaChoice = typeof PizzaItemPizzaChoice[keyof typeof PizzaItemPizzaChoice];
 
 
-export const OrderPizzaChoice = {
+export const PizzaItemPizzaChoice = {
   Margherita: 'Margherita',
   Pepperoni: 'Pepperoni',
   Special: 'Special',
 } as const;
+
+export interface PizzaItem {
+  pizzaChoice: PizzaItemPizzaChoice;
+  /**
+     * @minimum 1
+     * @maximum 3
+     */
+  quantity: number;
+}
 
 export type OrderStatus = typeof OrderStatus[keyof typeof OrderStatus];
 
@@ -100,7 +109,7 @@ export interface Order {
   id: number;
   userId: number;
   userName: string;
-  pizzaChoice: OrderPizzaChoice;
+  items: PizzaItem[];
   /**
      * @minimum 1
      * @maximum 3
@@ -113,22 +122,9 @@ export interface Order {
   createdAt: string;
 }
 
-export type OrderInputPizzaChoice = typeof OrderInputPizzaChoice[keyof typeof OrderInputPizzaChoice];
-
-
-export const OrderInputPizzaChoice = {
-  Margherita: 'Margherita',
-  Pepperoni: 'Pepperoni',
-  Special: 'Special',
-} as const;
-
 export interface OrderInput {
-  pizzaChoice: OrderInputPizzaChoice;
-  /**
-     * @minimum 1
-     * @maximum 3
-     */
-  quantity: number;
+  /** @minItems 1 */
+  items: PizzaItem[];
   pickupSlot: string;
   notes?: string;
 }
@@ -143,20 +139,10 @@ export const OrderUpdateStatus = {
   completed: 'completed',
 } as const;
 
-export type OrderUpdatePizzaChoice = typeof OrderUpdatePizzaChoice[keyof typeof OrderUpdatePizzaChoice];
-
-
-export const OrderUpdatePizzaChoice = {
-  Margherita: 'Margherita',
-  Pepperoni: 'Pepperoni',
-  Special: 'Special',
-} as const;
-
 export interface OrderUpdate {
   status?: OrderUpdateStatus;
-  pizzaChoice?: OrderUpdatePizzaChoice;
-  /** @minimum 1 */
-  quantity?: number;
+  /** @minItems 1 */
+  items?: PizzaItem[];
   pickupSlot?: string;
   notes?: string;
 }

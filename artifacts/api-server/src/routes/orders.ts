@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
-import { db, usersTable, ordersTable } from "@workspace/db";
-import { eq, sum } from "drizzle-orm";
+import { db, usersTable, ordersTable, type PizzaItem } from "@workspace/db";
+import { eq } from "drizzle-orm";
 import { CreateOrderBody, UpdateOrderParams, UpdateOrderBody, DeleteOrderParams } from "@workspace/api-zod";
 
 const TOTAL_CAPACITY = 10;
@@ -34,21 +34,13 @@ function requireAdmin(req: any, res: any, next: any): void {
 }
 
 async function enrichOrders(rawOrders: any[]) {
-  const userIds = [...new Set(rawOrders.map((o) => o.userId))];
-  const users = userIds.length
-    ? await db.select().from(usersTable).where(
-        userIds.length === 1
-          ? eq(usersTable.id, userIds[0])
-          : eq(usersTable.id, userIds[0]) // simplified — fetch all and map
-      )
-    : [];
-
   const allUsers = await db.select().from(usersTable);
   const userMap = new Map(allUsers.map((u) => [u.id, u.name]));
 
   return rawOrders.map((o) => ({
     ...o,
     userName: userMap.get(o.userId) ?? "Unknown",
+    items: Array.isArray(o.pizzaItems) ? o.pizzaItems : [],
     notes: o.notes ?? null,
     createdAt: o.createdAt.toISOString(),
   }));
@@ -82,12 +74,23 @@ router.post("/orders", requireAuth, async (req, res): Promise<void> => {
     return;
   }
 
-  const { pizzaChoice, quantity, pickupSlot, notes } = parsed.data;
+  const { items, pickupSlot, notes } = parsed.data;
 
   if (!VALID_SLOTS.includes(pickupSlot)) {
     res.status(400).json({ error: "Invalid pickup slot" });
     return;
   }
+
+  // Validate items
+  const validChoices = ["Margherita", "Pepperoni", "Special"];
+  const validItems = Array.isArray(items) && items.length > 0 &&
+    items.every((i: any) => validChoices.includes(i.pizzaChoice) && typeof i.quantity === "number" && i.quantity >= 1);
+  if (!validItems) {
+    res.status(400).json({ error: "Invalid pizza items" });
+    return;
+  }
+  const typedItems = items as PizzaItem[];
+  const totalQuantity = typedItems.reduce((sum: number, item: PizzaItem) => sum + item.quantity, 0);
 
   const userId = req.session.userId!;
 
@@ -112,14 +115,14 @@ router.post("/orders", requireAuth, async (req, res): Promise<void> => {
   const slotOrders = allOrders.filter((o) => o.pickupSlot === pickupSlot);
   const slotBooked = slotOrders.reduce((sum, o) => sum + o.quantity, 0);
 
-  if (slotBooked + quantity > SLOT_CAPACITY) {
+  if (slotBooked + totalQuantity > SLOT_CAPACITY) {
     res.status(400).json({
       error: `Slot capacity exceeded. Only ${SLOT_CAPACITY - slotBooked} pizza(s) remaining in that slot.`,
     });
     return;
   }
 
-  if (totalBooked + quantity > TOTAL_CAPACITY) {
+  if (totalBooked + totalQuantity > TOTAL_CAPACITY) {
     res.status(400).json({
       error: `Total event capacity exceeded. Only ${TOTAL_CAPACITY - totalBooked} pizza(s) remaining.`,
     });
@@ -130,8 +133,8 @@ router.post("/orders", requireAuth, async (req, res): Promise<void> => {
     .insert(ordersTable)
     .values({
       userId,
-      pizzaChoice,
-      quantity,
+      pizzaItems: typedItems,
+      quantity: totalQuantity,
       pickupSlot,
       notes: notes ?? null,
       status: "pending",
@@ -157,10 +160,20 @@ router.patch("/orders/:id", requireAdmin, async (req, res): Promise<void> => {
 
   const updateData: Record<string, unknown> = {};
   if (parsed.data.status !== undefined) updateData.status = parsed.data.status;
-  if (parsed.data.pizzaChoice !== undefined) updateData.pizzaChoice = parsed.data.pizzaChoice;
-  if (parsed.data.quantity !== undefined) updateData.quantity = parsed.data.quantity;
   if (parsed.data.pickupSlot !== undefined) updateData.pickupSlot = parsed.data.pickupSlot;
   if (parsed.data.notes !== undefined) updateData.notes = parsed.data.notes;
+  if (parsed.data.items !== undefined) {
+    const validChoices2 = ["Margherita", "Pepperoni", "Special"];
+    const validItems2 = Array.isArray(parsed.data.items) && parsed.data.items.length > 0 &&
+      parsed.data.items.every((i: any) => validChoices2.includes(i.pizzaChoice) && typeof i.quantity === "number" && i.quantity >= 1);
+    if (!validItems2) {
+      res.status(400).json({ error: "Invalid pizza items" });
+      return;
+    }
+    const typedItems2 = parsed.data.items as PizzaItem[];
+    updateData.pizzaItems = typedItems2;
+    updateData.quantity = typedItems2.reduce((sum: number, item: PizzaItem) => sum + item.quantity, 0);
+  }
 
   const [order] = await db
     .update(ordersTable)

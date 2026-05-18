@@ -14,15 +14,15 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Trash2, RefreshCw, Plus, UserPlus } from "lucide-react";
+import { Loader2, Trash2, RefreshCw, UserPlus } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
-import { OrderUpdateStatus } from "@workspace/api-client-react/src/generated/api.schemas";
+import { OrderUpdateStatus } from "@workspace/api-client-react";
 
 export function AdminDashboard() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  
+
   const { data: session, isLoading: sessionLoading } = useGetMe();
   const { data: summary } = useGetSummary();
   const { data: orders } = useListOrders();
@@ -96,7 +96,6 @@ export function AdminDashboard() {
   const handleAddUser = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newUserName.trim()) return;
-    
     createUser.mutate({ data: { name: newUserName } }, {
       onSuccess: () => {
         toast({ title: "User added" });
@@ -105,6 +104,13 @@ export function AdminDashboard() {
       }
     });
   };
+
+  function formatOrderItems(order: any): string {
+    const items = order.items ?? [];
+    if (items.length === 0) return `${order.quantity}x (legacy)`;
+    if (items.length === 1) return `${items[0].quantity}x ${items[0].pizzaChoice}`;
+    return items.map((i: any) => `${i.pizzaChoice}`).join(", ");
+  }
 
   return (
     <Layout>
@@ -119,7 +125,7 @@ export function AdminDashboard() {
             <TabsTrigger value="orders">Orders</TabsTrigger>
             <TabsTrigger value="users">Guests</TabsTrigger>
           </TabsList>
-          
+
           <TabsContent value="summary" className="space-y-4 pt-4">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <Card>
@@ -168,7 +174,7 @@ export function AdminDashboard() {
               </CardContent>
             </Card>
           </TabsContent>
-          
+
           <TabsContent value="orders" className="pt-4">
             <Card>
               <CardContent className="p-0">
@@ -176,7 +182,7 @@ export function AdminDashboard() {
                   <TableHeader>
                     <TableRow>
                       <TableHead>Guest</TableHead>
-                      <TableHead>Order</TableHead>
+                      <TableHead>Pizzas</TableHead>
                       <TableHead>Slot</TableHead>
                       <TableHead>Notes</TableHead>
                       <TableHead>Status</TableHead>
@@ -192,12 +198,28 @@ export function AdminDashboard() {
                     {orders?.map((order) => (
                       <TableRow key={order.id}>
                         <TableCell className="font-medium">{order.userName}</TableCell>
-                        <TableCell>{order.quantity}x {order.pizzaChoice}</TableCell>
-                        <TableCell>{order.pickupSlot}</TableCell>
-                        <TableCell className="max-w-[150px] truncate text-xs">{order.notes || "-"}</TableCell>
                         <TableCell>
-                          <Select 
-                            value={order.status} 
+                          <div className="space-y-0.5">
+                            {(order.items ?? []).length > 0 ? (
+                              (order.items ?? []).map((item: any, i: number) => (
+                                <div key={i} className="text-sm">
+                                  {item.pizzaChoice}
+                                  {(order.items ?? []).length === 1 && order.quantity > 1
+                                    ? ` ×${item.quantity}`
+                                    : ""}
+                                </div>
+                              ))
+                            ) : (
+                              <span className="text-sm">{order.quantity}x (legacy)</span>
+                            )}
+                            <div className="text-xs text-muted-foreground">{order.quantity * 70} DKK</div>
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-sm">{order.pickupSlot}</TableCell>
+                        <TableCell className="max-w-[130px] truncate text-xs">{order.notes || "-"}</TableCell>
+                        <TableCell>
+                          <Select
+                            value={order.status}
                             onValueChange={(val) => handleStatusChange(order.id, val as OrderUpdateStatus)}
                           >
                             <SelectTrigger className="h-8 w-[120px] text-xs">
@@ -231,8 +253,8 @@ export function AdminDashboard() {
               </CardHeader>
               <CardContent>
                 <form onSubmit={handleAddUser} className="flex gap-4">
-                  <Input 
-                    placeholder="Guest name..." 
+                  <Input
+                    placeholder="Guest name..."
                     value={newUserName}
                     onChange={(e) => setNewUserName(e.target.value)}
                     className="max-w-xs"
@@ -261,9 +283,9 @@ export function AdminDashboard() {
                         <TableCell className="font-medium">{user.name}</TableCell>
                         <TableCell className="font-mono tracking-widest">{user.code}</TableCell>
                         <TableCell>
-                          <Switch 
-                            checked={user.active} 
-                            onCheckedChange={(val) => handleToggleUser(user.id, val)} 
+                          <Switch
+                            checked={user.active}
+                            onCheckedChange={(val) => handleToggleUser(user.id, val)}
                           />
                         </TableCell>
                         <TableCell className="text-right space-x-2">

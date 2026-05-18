@@ -364,9 +364,21 @@ components:
         name:
           type: string
 
+    PizzaItem:
+      type: object
+      required: [pizzaChoice, quantity]
+      properties:
+        pizzaChoice:
+          type: string
+          enum: [Margherita, Pepperoni, Special]
+        quantity:
+          type: integer
+          minimum: 1
+          maximum: 3
+
     Order:
       type: object
-      required: [id, userId, userName, pizzaChoice, quantity, pickupSlot, status, createdAt]
+      required: [id, userId, userName, items, quantity, pickupSlot, status, createdAt]
       properties:
         id:
           type: integer
@@ -374,9 +386,10 @@ components:
           type: integer
         userName:
           type: string
-        pizzaChoice:
-          type: string
-          enum: [Margherita, Pepperoni, Special]
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/PizzaItem"
         quantity:
           type: integer
           minimum: 1
@@ -394,15 +407,13 @@ components:
 
     OrderInput:
       type: object
-      required: [pizzaChoice, quantity, pickupSlot]
+      required: [items, pickupSlot]
       properties:
-        pizzaChoice:
-          type: string
-          enum: [Margherita, Pepperoni, Special]
-        quantity:
-          type: integer
-          minimum: 1
-          maximum: 3
+        items:
+          type: array
+          minItems: 1
+          items:
+            $ref: "#/components/schemas/PizzaItem"
         pickupSlot:
           type: string
         notes:
@@ -414,12 +425,11 @@ components:
         status:
           type: string
           enum: [pending, confirmed, declined, completed]
-        pizzaChoice:
-          type: string
-          enum: [Margherita, Pepperoni, Special]
-        quantity:
-          type: integer
-          minimum: 1
+        items:
+          type: array
+          minItems: 1
+          items:
+            $ref: "#/components/schemas/PizzaItem"
         pickupSlot:
           type: string
         notes:
