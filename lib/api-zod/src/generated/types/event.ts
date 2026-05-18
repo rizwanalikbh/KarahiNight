@@ -13,6 +13,13 @@ export interface Event {
   date: string;
   totalCapacity: number;
   slotCapacity: number;
+  /** Price per pizza in DKK */
+  price: number;
+  /**
+     * Event description or fundraising note
+     * @nullable
+     */
+  description?: string | null;
   active: boolean;
   createdAt: Date;
 }

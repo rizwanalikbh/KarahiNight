@@ -479,7 +479,7 @@ components:
 
     Event:
       type: object
-      required: [id, name, date, totalCapacity, slotCapacity, active, createdAt]
+      required: [id, name, date, totalCapacity, slotCapacity, price, active, createdAt]
       properties:
         id:
           type: integer
@@ -492,6 +492,12 @@ components:
           type: integer
         slotCapacity:
           type: integer
+        price:
+          type: integer
+          description: Price per pizza in DKK
+        description:
+          type: ["string", "null"]
+          description: Event description or fundraising note
         active:
           type: boolean
         createdAt:
@@ -513,6 +519,11 @@ components:
         slotCapacity:
           type: integer
           default: 3
+        price:
+          type: integer
+          default: 70
+        description:
+          type: string
 
     EventUpdate:
       type: object
@@ -525,6 +536,10 @@ components:
           type: integer
         slotCapacity:
           type: integer
+        price:
+          type: integer
+        description:
+          type: string
         active:
           type: boolean
 
@@ -656,9 +671,18 @@ components:
         available:
           type: integer
 
+    EventGuest:
+      type: object
+      required: [id, name]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+
     EventSummary:
       type: object
-      required: [eventId, eventName, eventDate, totalCapacity, totalBooked, totalRemaining, orderingOpen, slots]
+      required: [eventId, eventName, eventDate, totalCapacity, totalBooked, totalRemaining, orderingOpen, price, slots, guests]
       properties:
         eventId:
           type: integer
@@ -674,7 +698,15 @@ components:
           type: integer
         orderingOpen:
           type: boolean
+        price:
+          type: integer
+        description:
+          type: ["string", "null"]
         slots:
           type: array
           items:
             $ref: "#/components/schemas/SlotSummary"
+        guests:
+          type: array
+          items:
+            $ref: "#/components/schemas/EventGuest"

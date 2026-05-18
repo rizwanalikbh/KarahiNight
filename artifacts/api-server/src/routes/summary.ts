@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
-import { db, ordersTable, eventsTable } from "@workspace/db";
-import { eq } from "drizzle-orm";
+import { db, ordersTable, eventsTable, eventUsersTable, usersTable } from "@workspace/db";
+import { eq, and } from "drizzle-orm";
 import { GetSummaryQueryParams } from "@workspace/api-zod";
 
 const VALID_SLOTS = [
@@ -56,6 +56,24 @@ router.get("/summary", async (req, res): Promise<void> => {
     return { slot, booked, capacity: event.slotCapacity, available };
   });
 
+  // Fetch guests assigned to this event (id + name only — no codes exposed)
+  const eventUserRows = await db
+    .select({ userId: eventUsersTable.userId })
+    .from(eventUsersTable)
+    .where(eq(eventUsersTable.eventId, event.id));
+
+  const userIds = eventUserRows.map((r) => r.userId);
+  let guests: { id: number; name: string }[] = [];
+  if (userIds.length > 0) {
+    const userRows = await db
+      .select({ id: usersTable.id, name: usersTable.name })
+      .from(usersTable)
+      .where(and(eq(usersTable.active, true)));
+    guests = userRows
+      .filter((u) => userIds.includes(u.id))
+      .sort((a, b) => a.name.localeCompare(b.name));
+  }
+
   res.json({
     eventId: event.id,
     eventName: event.name,
@@ -64,7 +82,10 @@ router.get("/summary", async (req, res): Promise<void> => {
     totalBooked,
     totalRemaining,
     orderingOpen,
+    price: event.price,
+    description: event.description ?? null,
     slots,
+    guests,
   });
 });
 

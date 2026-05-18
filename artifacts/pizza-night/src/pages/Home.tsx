@@ -1,9 +1,16 @@
-import { useGetSummary } from "@workspace/api-client-react";
+import { useState } from "react";
+import { useGetSummary, useLogin, getGetMeQueryKey } from "@workspace/api-client-react";
+import { useLocation } from "wouter";
 import { Layout } from "../components/Layout";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Link } from "wouter";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useToast } from "@/hooks/use-toast";
+import { Loader2 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useQueryClient } from "@tanstack/react-query";
 
 function formatEventDate(dateStr: string): string {
   try {
@@ -15,7 +22,35 @@ function formatEventDate(dateStr: string): string {
 }
 
 export function Home() {
+  const [, setLocation] = useLocation();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
   const { data: summary, isLoading } = useGetSummary({});
+  const login = useLogin();
+
+  const [selectedGuestId, setSelectedGuestId] = useState("");
+  const [code, setCode] = useState("");
+
+  const handleLogin = (e: React.FormEvent) => {
+    e.preventDefault();
+    const guest = summary?.guests.find((g) => String(g.id) === selectedGuestId);
+    if (!guest || !code) return;
+
+    login.mutate(
+      { data: { name: guest.name, code } },
+      {
+        onSuccess: () => {
+          queryClient.invalidateQueries({ queryKey: getGetMeQueryKey() });
+          setLocation("/order");
+        },
+        onError: () => {
+          toast({ title: "Wrong code", description: "That code doesn't match. Try again.", variant: "destructive" });
+          setCode("");
+        },
+      }
+    );
+  };
 
   return (
     <Layout>
@@ -43,10 +78,14 @@ export function Home() {
             alt="Handmade pizza"
             className="w-full h-full object-cover"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex flex-col justify-end p-6 text-left">
-            <div className="text-white font-medium text-lg">70 DKK per pizza</div>
-            <div className="text-white/80 text-sm">Collected money will go toward funding a future BBQ gathering.</div>
-          </div>
+          {!isLoading && summary && (
+            <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex flex-col justify-end p-6 text-left">
+              <div className="text-white font-medium text-lg">{summary.price} DKK per pizza</div>
+              {summary.description && (
+                <div className="text-white/80 text-sm">{summary.description}</div>
+              )}
+            </div>
+          )}
         </div>
 
         {isLoading ? (
@@ -54,30 +93,57 @@ export function Home() {
         ) : summary ? (
           <Card className="w-full bg-card border-card-border shadow-sm">
             <CardHeader>
-              <CardTitle className="font-serif text-2xl">Event Status</CardTitle>
-              <CardDescription>
-                {summary.totalRemaining > 0
-                  ? `${summary.totalRemaining} pizza${summary.totalRemaining !== 1 ? "s" : ""} remaining out of ${summary.totalCapacity}`
-                  : "We are completely sold out!"}
-              </CardDescription>
+              <CardTitle className="font-serif text-2xl">
+                {summary.orderingOpen ? "Reserve Your Spot" : "Ordering Closed"}
+              </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-2 gap-4 mb-8">
-                <div className="bg-secondary/50 rounded-xl p-4 flex flex-col items-center justify-center">
-                  <span className="text-3xl font-serif font-bold text-primary">{summary.totalBooked}</span>
-                  <span className="text-sm text-muted-foreground">Ordered</span>
-                </div>
-                <div className="bg-secondary/50 rounded-xl p-4 flex flex-col items-center justify-center">
-                  <span className="text-3xl font-serif font-bold text-accent">{summary.totalRemaining}</span>
-                  <span className="text-sm text-muted-foreground">Available</span>
-                </div>
-              </div>
+              {summary.orderingOpen ? (
+                <form onSubmit={handleLogin} className="space-y-5">
+                  <div className="space-y-2 text-left">
+                    <Label className="text-sm font-semibold">Your Name</Label>
+                    <Select value={selectedGuestId} onValueChange={setSelectedGuestId}>
+                      <SelectTrigger className="h-12">
+                        <SelectValue placeholder="Select your name..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {summary.guests.map((guest) => (
+                          <SelectItem key={guest.id} value={String(guest.id)}>
+                            {guest.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
 
-              <Link href="/login" className="block w-full">
-                <Button size="lg" className="w-full text-lg h-14" disabled={!summary.orderingOpen}>
-                  {summary.orderingOpen ? "Login to Order" : "Ordering Closed"}
-                </Button>
-              </Link>
+                  <div className="space-y-2 text-left">
+                    <Label htmlFor="code" className="text-sm font-semibold">4-Digit Code</Label>
+                    <Input
+                      id="code"
+                      type="text"
+                      inputMode="numeric"
+                      maxLength={4}
+                      placeholder="••••"
+                      value={code}
+                      onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 4))}
+                      className="h-12 text-center text-2xl tracking-[0.5em] font-mono"
+                    />
+                  </div>
+
+                  <Button
+                    type="submit"
+                    size="lg"
+                    className="w-full h-14 text-lg"
+                    disabled={!selectedGuestId || code.length !== 4 || login.isPending}
+                  >
+                    {login.isPending ? <Loader2 className="w-5 h-5 animate-spin" /> : "Order My Pizza"}
+                  </Button>
+                </form>
+              ) : (
+                <p className="text-muted-foreground text-center py-4">
+                  All spots have been taken. See you there!
+                </p>
+              )}
             </CardContent>
           </Card>
         ) : null}

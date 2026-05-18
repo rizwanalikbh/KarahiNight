@@ -8,6 +8,8 @@ export const eventsTable = pgTable("events", {
   date: date("date").notNull(),
   totalCapacity: integer("total_capacity").notNull().default(10),
   slotCapacity: integer("slot_capacity").notNull().default(3),
+  price: integer("price").notNull().default(70),
+  description: text("description"),
   active: boolean("active").notNull().default(true),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });

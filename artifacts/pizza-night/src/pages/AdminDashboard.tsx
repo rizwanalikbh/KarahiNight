@@ -16,6 +16,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
@@ -32,14 +33,15 @@ function formatEventDate(dateStr: string): string {
   }
 }
 
-// Sub-component: manage users within a single event
 function EventUserManager({ eventId, allUsers }: { eventId: number; allUsers: any[] }) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [addUserId, setAddUserId] = useState("");
   const [expanded, setExpanded] = useState(false);
 
-  const { data: eventUsers } = useListEventUsers(eventId, { query: { enabled: expanded, queryKey: getListEventUsersQueryKey(eventId) } });
+  const { data: eventUsers } = useListEventUsers(eventId, {
+    query: { enabled: expanded, queryKey: getListEventUsersQueryKey(eventId) },
+  });
   const addUser = useAddUserToEvent();
   const removeUser = useRemoveUserFromEvent();
 
@@ -50,7 +52,7 @@ function EventUserManager({ eventId, allUsers }: { eventId: number; allUsers: an
     if (!addUserId) return;
     addUser.mutate({ id: eventId, data: { userId: parseInt(addUserId, 10) } }, {
       onSuccess: () => {
-        toast({ title: "User added to event" });
+        toast({ title: "Guest added to event" });
         setAddUserId("");
         queryClient.invalidateQueries({ queryKey: getListEventUsersQueryKey(eventId) });
       },
@@ -60,7 +62,7 @@ function EventUserManager({ eventId, allUsers }: { eventId: number; allUsers: an
   const handleRemove = (userId: number) => {
     removeUser.mutate({ id: eventId, userId }, {
       onSuccess: () => {
-        toast({ title: "User removed from event" });
+        toast({ title: "Guest removed from event" });
         queryClient.invalidateQueries({ queryKey: getListEventUsersQueryKey(eventId) });
       },
     });
@@ -80,7 +82,6 @@ function EventUserManager({ eventId, allUsers }: { eventId: number; allUsers: an
 
       {expanded && (
         <div className="mt-3 border rounded-xl p-4 space-y-3 bg-secondary/20">
-          {/* Current users */}
           {(eventUsers ?? []).length === 0 ? (
             <p className="text-sm text-muted-foreground">No guests assigned yet.</p>
           ) : (
@@ -101,7 +102,6 @@ function EventUserManager({ eventId, allUsers }: { eventId: number; allUsers: an
             </div>
           )}
 
-          {/* Add user */}
           {usersNotInEvent.length > 0 && (
             <div className="flex gap-2 items-center">
               <Select value={addUserId} onValueChange={setAddUserId}>
@@ -135,7 +135,6 @@ export function AdminDashboard() {
   const { data: orders } = useListOrders({});
   const { data: users } = useListUsers();
 
-  // Summary state: pick first event by default
   const [summaryEventId, setSummaryEventId] = useState<number | undefined>(undefined);
   const activeEventId = summaryEventId ?? events?.[0]?.id;
   const { data: summary } = useGetSummary(
@@ -158,6 +157,8 @@ export function AdminDashboard() {
   const [newEventDate, setNewEventDate] = useState("2026-05-24");
   const [newEventCapacity, setNewEventCapacity] = useState("10");
   const [newEventSlot, setNewEventSlot] = useState("3");
+  const [newEventPrice, setNewEventPrice] = useState("70");
+  const [newEventDescription, setNewEventDescription] = useState("");
   const [filterEventId, setFilterEventId] = useState<string>("all");
 
   if (sessionLoading) return <Layout><div className="flex justify-center p-12"><Loader2 className="animate-spin text-primary" /></div></Layout>;
@@ -206,7 +207,7 @@ export function AdminDashboard() {
     if (!confirm("Delete this user?")) return;
     deleteUser.mutate({ id }, {
       onSuccess: () => {
-        toast({ title: "User deleted" });
+        toast({ title: "Guest deleted" });
         queryClient.invalidateQueries({ queryKey: getListUsersQueryKey() });
       },
     });
@@ -234,12 +235,15 @@ export function AdminDashboard() {
           date: newEventDate,
           totalCapacity: parseInt(newEventCapacity, 10) || 10,
           slotCapacity: parseInt(newEventSlot, 10) || 3,
+          price: parseInt(newEventPrice, 10) || 70,
+          description: newEventDescription || undefined,
         },
       },
       {
         onSuccess: () => {
           toast({ title: "Event created" });
           setNewEventName("");
+          setNewEventDescription("");
           queryClient.invalidateQueries({ queryKey: getListEventsQueryKey() });
         },
       }
@@ -285,7 +289,6 @@ export function AdminDashboard() {
 
           {/* SUMMARY TAB */}
           <TabsContent value="summary" className="space-y-4 pt-4">
-            {/* Event picker for summary */}
             {events && events.length > 1 && (
               <div className="flex items-center gap-3">
                 <Label className="shrink-0 text-sm font-medium">Event</Label>
@@ -320,7 +323,7 @@ export function AdminDashboard() {
                   <CardTitle className="text-sm font-medium text-muted-foreground">Revenue (Est)</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-3xl font-bold font-serif">{(summary?.totalBooked || 0) * 70} DKK</div>
+                  <div className="text-3xl font-bold font-serif">{(summary?.totalBooked || 0) * (summary?.price ?? 70)} DKK</div>
                 </CardContent>
               </Card>
               <Card>
@@ -402,7 +405,7 @@ export function AdminDashboard() {
                             {(order.items ?? []).map((item: any, i: number) => (
                               <div key={i} className="text-sm">{item.pizzaChoice}</div>
                             ))}
-                            <div className="text-xs text-muted-foreground">{order.quantity * 70} DKK</div>
+                            <div className="text-xs text-muted-foreground">{order.quantity * (events?.find(e => e.id === order.eventId)?.price ?? 70)} DKK</div>
                           </div>
                         </TableCell>
                         <TableCell className="text-sm">{order.pickupSlot}</TableCell>
@@ -438,7 +441,6 @@ export function AdminDashboard() {
 
           {/* EVENTS TAB */}
           <TabsContent value="events" className="pt-4 space-y-4">
-            {/* Create event form */}
             <Card>
               <CardHeader className="pb-3">
                 <CardTitle className="text-lg flex items-center gap-2"><CalendarDays className="w-5 h-5" /> Create Event</CardTitle>
@@ -480,6 +482,25 @@ export function AdminDashboard() {
                         onChange={(e) => setNewEventSlot(e.target.value)}
                       />
                     </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-sm">Price per Pizza (DKK)</Label>
+                      <Input
+                        type="number"
+                        min={1}
+                        value={newEventPrice}
+                        onChange={(e) => setNewEventPrice(e.target.value)}
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-sm">Description (shown on home &amp; order pages)</Label>
+                    <Textarea
+                      placeholder="e.g. Collected money will go toward funding a future BBQ gathering."
+                      value={newEventDescription}
+                      onChange={(e) => setNewEventDescription(e.target.value)}
+                      className="resize-none"
+                      rows={2}
+                    />
                   </div>
                   <Button type="submit" disabled={createEvent.isPending || !newEventName.trim() || !newEventDate}>
                     <Plus className="w-4 h-4 mr-2" /> Create Event
@@ -488,7 +509,6 @@ export function AdminDashboard() {
               </CardContent>
             </Card>
 
-            {/* Events list */}
             <Card>
               <CardContent className="p-0">
                 <Table>
@@ -497,6 +517,7 @@ export function AdminDashboard() {
                       <TableHead>Name</TableHead>
                       <TableHead>Date</TableHead>
                       <TableHead>Capacity</TableHead>
+                      <TableHead>Price</TableHead>
                       <TableHead>Active</TableHead>
                       <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
@@ -504,15 +525,21 @@ export function AdminDashboard() {
                   <TableBody>
                     {(!events || events.length === 0) && (
                       <TableRow>
-                        <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">No events yet.</TableCell>
+                        <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">No events yet.</TableCell>
                       </TableRow>
                     )}
                     {events?.map((event) => (
                       <>
                         <TableRow key={event.id} className={!event.active ? "opacity-60" : ""}>
-                          <TableCell className="font-medium">{event.name}</TableCell>
+                          <TableCell>
+                            <div className="font-medium">{event.name}</div>
+                            {event.description && (
+                              <div className="text-xs text-muted-foreground mt-0.5 max-w-[200px] truncate">{event.description}</div>
+                            )}
+                          </TableCell>
                           <TableCell className="text-sm">{formatEventDate(event.date)}</TableCell>
-                          <TableCell className="text-sm">{event.totalCapacity} total / {event.slotCapacity} per slot</TableCell>
+                          <TableCell className="text-sm">{event.totalCapacity} / {event.slotCapacity} per slot</TableCell>
+                          <TableCell className="text-sm font-medium">{event.price} DKK</TableCell>
                           <TableCell>
                             <Switch
                               checked={event.active}
@@ -531,7 +558,7 @@ export function AdminDashboard() {
                           </TableCell>
                         </TableRow>
                         <TableRow key={`${event.id}-users`} className={!event.active ? "opacity-60" : ""}>
-                          <TableCell colSpan={5} className="pt-0 pb-4 px-4">
+                          <TableCell colSpan={6} className="pt-0 pb-4 px-4">
                             <EventUserManager eventId={event.id} allUsers={users ?? []} />
                           </TableCell>
                         </TableRow>
@@ -543,7 +570,7 @@ export function AdminDashboard() {
             </Card>
           </TabsContent>
 
-          {/* GUESTS (USERS) TAB */}
+          {/* GUESTS TAB */}
           <TabsContent value="users" className="pt-4 space-y-4">
             <Card>
               <CardHeader className="pb-4">

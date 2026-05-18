@@ -5,6 +5,7 @@
  * Private Pizza Night preorder API
  * OpenAPI spec version: 0.1.0
  */
+import type { EventGuest } from './eventGuest';
 import type { SlotSummary } from './slotSummary';
 
 export interface EventSummary {
@@ -15,5 +16,9 @@ export interface EventSummary {
   totalBooked: number;
   totalRemaining: number;
   orderingOpen: boolean;
+  price: number;
+  /** @nullable */
+  description?: string | null;
   slots: SlotSummary[];
+  guests: EventGuest[];
 }

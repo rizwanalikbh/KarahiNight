@@ -8,6 +8,7 @@
 
 export * from './adminLoginInput';
 export * from './event';
+export * from './eventGuest';
 export * from './eventInput';
 export * from './eventSummary';
 export * from './eventUpdate';

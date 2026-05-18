@@ -38,7 +38,6 @@ router.get("/events", requireAuth, async (req, res): Promise<void> => {
     return;
   }
 
-  // User: only events they're assigned to
   const userId = req.session.userId!;
   const eventUsers = await db
     .select({ eventId: eventUsersTable.eventId })
@@ -70,6 +69,8 @@ router.post("/events", requireAdmin, async (req, res): Promise<void> => {
       date: parsed.data.date,
       totalCapacity: parsed.data.totalCapacity ?? 10,
       slotCapacity: parsed.data.slotCapacity ?? 3,
+      price: parsed.data.price ?? 70,
+      description: parsed.data.description ?? null,
       active: true,
     })
     .returning();
@@ -96,6 +97,8 @@ router.patch("/events/:id", requireAdmin, async (req, res): Promise<void> => {
   if (parsed.data.date !== undefined) updateData.date = parsed.data.date;
   if (parsed.data.totalCapacity !== undefined) updateData.totalCapacity = parsed.data.totalCapacity;
   if (parsed.data.slotCapacity !== undefined) updateData.slotCapacity = parsed.data.slotCapacity;
+  if (parsed.data.price !== undefined) updateData.price = parsed.data.price;
+  if (parsed.data.description !== undefined) updateData.description = parsed.data.description;
   if (parsed.data.active !== undefined) updateData.active = parsed.data.active;
 
   const [event] = await db
@@ -161,7 +164,6 @@ router.post("/events/:id/users", requireAdmin, async (req, res): Promise<void> =
     return;
   }
 
-  // Check user exists
   const [user] = await db
     .select()
     .from(usersTable)
@@ -172,7 +174,6 @@ router.post("/events/:id/users", requireAdmin, async (req, res): Promise<void> =
     return;
   }
 
-  // Upsert to avoid duplicate error
   await db
     .insert(eventUsersTable)
     .values({ eventId: params.data.id, userId: parsed.data.userId })

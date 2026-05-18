@@ -67,6 +67,13 @@ export interface Event {
   date: string;
   totalCapacity: number;
   slotCapacity: number;
+  /** Price per pizza in DKK */
+  price: number;
+  /**
+     * Event description or fundraising note
+     * @nullable
+     */
+  description?: string | null;
   active: boolean;
   createdAt: string;
 }
@@ -77,6 +84,8 @@ export interface EventInput {
   date: string;
   totalCapacity?: number;
   slotCapacity?: number;
+  price?: number;
+  description?: string;
 }
 
 export interface EventUpdate {
@@ -84,6 +93,8 @@ export interface EventUpdate {
   date?: string;
   totalCapacity?: number;
   slotCapacity?: number;
+  price?: number;
+  description?: string;
   active?: boolean;
 }
 
@@ -188,6 +199,11 @@ export interface SlotSummary {
   available: number;
 }
 
+export interface EventGuest {
+  id: number;
+  name: string;
+}
+
 export interface EventSummary {
   eventId: number;
   eventName: string;
@@ -196,7 +212,11 @@ export interface EventSummary {
   totalBooked: number;
   totalRemaining: number;
   orderingOpen: boolean;
+  price: number;
+  /** @nullable */
+  description?: string | null;
   slots: SlotSummary[];
+  guests: EventGuest[];
 }
 
 export type ListOrdersParams = {

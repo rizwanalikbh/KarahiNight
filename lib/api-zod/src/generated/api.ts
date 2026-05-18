@@ -72,6 +72,8 @@ export const ListEventsResponseItem = zod.object({
   "date": zod.string().describe('ISO date string (YYYY-MM-DD)'),
   "totalCapacity": zod.number(),
   "slotCapacity": zod.number(),
+  "price": zod.number().describe('Price per pizza in DKK'),
+  "description": zod.string().nullish().describe('Event description or fundraising note'),
   "active": zod.boolean(),
   "createdAt": zod.coerce.date()
 })
@@ -83,12 +85,15 @@ export const ListEventsResponse = zod.array(ListEventsResponseItem)
  */
 export const createEventBodyTotalCapacityDefault = 10;
 export const createEventBodySlotCapacityDefault = 3;
+export const createEventBodyPriceDefault = 70;
 
 export const CreateEventBody = zod.object({
   "name": zod.string(),
   "date": zod.string().describe('ISO date string (YYYY-MM-DD)'),
   "totalCapacity": zod.number().default(createEventBodyTotalCapacityDefault),
-  "slotCapacity": zod.number().default(createEventBodySlotCapacityDefault)
+  "slotCapacity": zod.number().default(createEventBodySlotCapacityDefault),
+  "price": zod.number().default(createEventBodyPriceDefault),
+  "description": zod.string().optional()
 })
 
 
@@ -104,6 +109,8 @@ export const UpdateEventBody = zod.object({
   "date": zod.string().optional(),
   "totalCapacity": zod.number().optional(),
   "slotCapacity": zod.number().optional(),
+  "price": zod.number().optional(),
+  "description": zod.string().optional(),
   "active": zod.boolean().optional()
 })
 
@@ -113,6 +120,8 @@ export const UpdateEventResponse = zod.object({
   "date": zod.string().describe('ISO date string (YYYY-MM-DD)'),
   "totalCapacity": zod.number(),
   "slotCapacity": zod.number(),
+  "price": zod.number().describe('Price per pizza in DKK'),
+  "description": zod.string().nullish().describe('Event description or fundraising note'),
   "active": zod.boolean(),
   "createdAt": zod.coerce.date()
 })
@@ -350,11 +359,17 @@ export const GetSummaryResponse = zod.object({
   "totalBooked": zod.number(),
   "totalRemaining": zod.number(),
   "orderingOpen": zod.boolean(),
+  "price": zod.number(),
+  "description": zod.string().nullish(),
   "slots": zod.array(zod.object({
   "slot": zod.string(),
   "booked": zod.number(),
   "capacity": zod.number(),
   "available": zod.number()
+})),
+  "guests": zod.array(zod.object({
+  "id": zod.number(),
+  "name": zod.string()
 }))
 })
 

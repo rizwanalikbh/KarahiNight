@@ -48,7 +48,6 @@ export function Order() {
   const [totalQty, setTotalQty] = useState(1);
   const [pizzaItems, setPizzaItems] = useState<PizzaItem[]>([{ pizzaChoice: "Margherita", quantity: 1 }]);
 
-  // Auto-select event if only one
   useEffect(() => {
     if (events && events.length === 1 && !selectedEventId) {
       setSelectedEventId(events[0].id);
@@ -59,6 +58,8 @@ export function Order() {
     { eventId: selectedEventId ?? undefined },
     { query: { enabled: !!selectedEventId, queryKey: getGetSummaryQueryKey() } }
   );
+
+  const pricePerPizza = summary?.price ?? events?.find((e) => e.id === selectedEventId)?.price ?? 70;
 
   const selectedSlotData = summary?.slots.find((s) => s.slot === pickupSlot);
   const slotAvailable = selectedSlotData?.available ?? 0;
@@ -97,7 +98,7 @@ export function Order() {
   }
 
   if (!session?.authenticated || session.role !== "user") {
-    setLocation("/login");
+    setLocation("/");
     return null;
   }
 
@@ -160,7 +161,7 @@ export function Order() {
                 </div>
                 <div className="flex justify-between border-b pb-4">
                   <span className="text-muted-foreground">Total</span>
-                  <span className="font-medium text-foreground">{total * 70} DKK</span>
+                  <span className="font-medium text-foreground">{total * pricePerPizza} DKK</span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-muted-foreground">Status</span>
@@ -233,7 +234,7 @@ export function Order() {
           <CardHeader>
             <CardTitle className="font-serif text-2xl">Place Your Order</CardTitle>
             <CardDescription>
-              70 DKK per pizza. Collected money will go toward funding a future BBQ gathering.
+              {pricePerPizza} DKK per pizza.{summary?.description ? ` ${summary.description}` : ""}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -273,7 +274,7 @@ export function Order() {
                 </div>
               )}
 
-              {/* Pickup slot — only show once event is selected */}
+              {/* Pickup slot */}
               {selectedEventId && (
                 <div className="space-y-3">
                   <Label className="text-base font-semibold">Select Pickup Slot</Label>
@@ -307,7 +308,7 @@ export function Order() {
                     <SelectContent>
                       {Array.from({ length: maxAllowed }).map((_, i) => (
                         <SelectItem key={i + 1} value={String(i + 1)}>
-                          {i + 1} pizza{i > 0 ? "s" : ""} — {70 * (i + 1)} DKK
+                          {i + 1} pizza{i > 0 ? "s" : ""} — {pricePerPizza * (i + 1)} DKK
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -367,7 +368,7 @@ export function Order() {
               {/* Price total */}
               <div className="bg-secondary/50 p-4 rounded-xl border border-border flex justify-between items-center">
                 <span className="font-medium text-foreground">Total Price:</span>
-                <span className="font-serif font-bold text-xl text-primary">{totalQty * 70} DKK</span>
+                <span className="font-serif font-bold text-xl text-primary">{totalQty * pricePerPizza} DKK</span>
               </div>
 
               <Button
