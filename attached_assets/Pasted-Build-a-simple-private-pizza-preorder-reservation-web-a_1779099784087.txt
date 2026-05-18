@@ -1,0 +1,207 @@
+Build a simple private pizza preorder reservation web app.
+
+Tech requirements:
+
+Use React frontend.
+Use a lightweight backend and database storage.
+Keep code simple, editable, and deployable on Replit.
+Mobile-friendly design.
+Clean UI with pizza theme.
+Suitable for a small private gathering, not a commercial restaurant.
+
+Purpose:
+This app is only for a private pizza test night with invited users. No public signup allowed.
+
+INVITED USERS:
+Create predefined users:
+
+Ata Ur-Rehman
+Adeel Khurram
+Aftab Ahmed
+Arfan Hussain
+Javed Shaikh
+Junaid
+Muhammad Ahmed
+Shamraiz
+Wasif Parvez
+
+USER LOGIN:
+
+Generate a unique random 4-digit code for each invited user on first setup.
+Login screen should ask:
+Select user name from dropdown
+Enter 4-digit code
+Only matching name + code should allow login.
+Users cannot see other users or codes.
+Show friendly login screen.
+
+ADMIN LOGIN:
+Create separate admin login.
+
+Admin password:
+
+IamAdmin
+
+Admin dashboard should show:
+
+Users:
+
+View all invited users
+View each user's 4-digit code
+Regenerate codes
+Activate/deactivate users
+Add/delete users later
+
+Orders:
+
+View all orders
+Edit orders
+Delete orders
+Confirm orders
+Decline orders
+Mark completed
+View total pizzas ordered
+View pizzas ordered by pickup slot
+View remaining capacity
+
+PIZZA MENU:
+Pizza choices:
+
+Margherita
+Pepperoni
+Special
+
+Price:
+
+Show clearly:
+"70 DKK per pizza (test price)"
+Mention:
+"Collected money will go toward funding a future BBQ gathering."
+
+PICKUP SLOTS:
+Pickup starts at 16:00.
+
+Create slots:
+
+16:00–16:30
+16:30–17:00
+17:00–17:30
+17:30–18:00
+18:00–18:30
+18:30–19:00
+
+Slot rules:
+
+Maximum capacity:
+3 pizzas per slot
+
+Total event capacity:
+10 pizzas maximum
+
+ORDER RULES:
+
+Important constraints:
+
+
+
+
+Each invited user can place ONLY ONE order.
+
+
+
+
+A user can choose ONLY ONE pickup slot.
+
+
+
+
+Users cannot split pizzas across multiple slots.
+
+
+
+
+Quantity selection must depend on remaining slot capacity.
+
+Example:
+
+If slot capacity = 3
+Already booked = 2
+
+User may only choose:
+1 pizza
+
+
+
+
+Maximum quantity allowed must equal:
+
+MIN(
+remaining pizzas in selected slot,
+remaining pizzas in total event capacity
+)
+
+
+
+
+If total event capacity (10 pizzas) is reached:
+Disable ordering completely.
+
+
+
+
+If slot capacity is reached:
+Disable that slot.
+
+
+
+
+If user already submitted an order:
+Show existing order instead of allowing another order.
+
+ORDER FORM:
+After login allow:
+
+Pizza choice
+Quantity
+Pickup slot
+Notes
+
+After submission show:
+
+"Thanks! Your order request has been received. I will confirm it by private message."
+
+Default status:
+
+Pending
+
+Admin may change:
+
+Pending
+Confirmed
+Declined
+Completed
+
+USER EXPERIENCE:
+
+Homepage should explain:
+
+Private pizza night
+Limited to invited users
+Maximum 10 pizzas total
+Pickup only
+Test concept
+Price: 70 DKK
+
+Design should feel friendly and homemade rather than professional restaurant software.
+
+Important:
+
+No payment integration
+No public registration
+No email verification
+No social login
+Only invited users can access
+Keep architecture simple and easy to modify later
+
+At startup:
+Seed database with invited users and automatically generate unique 4-digit codes.

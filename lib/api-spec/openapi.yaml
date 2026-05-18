@@ -3,20 +3,28 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: Private Pizza Night preorder API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: auth
+    description: Authentication
+  - name: users
+    description: User management
+  - name: orders
+    description: Order management
+  - name: summary
+    description: Event summary and capacity info
+
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,6 +32,251 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /auth/login:
+    post:
+      operationId: login
+      tags: [auth]
+      summary: Login with name and 4-digit code
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginInput"
+      responses:
+        "200":
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LoginResult"
+        "401":
+          description: Invalid credentials
+
+  /auth/admin-login:
+    post:
+      operationId: adminLogin
+      tags: [auth]
+      summary: Admin login with password
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminLoginInput"
+      responses:
+        "200":
+          description: Admin login successful
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LoginResult"
+        "401":
+          description: Invalid admin password
+
+  /auth/logout:
+    post:
+      operationId: logout
+      tags: [auth]
+      summary: Logout current session
+      responses:
+        "200":
+          description: Logged out
+
+  /auth/me:
+    get:
+      operationId: getMe
+      tags: [auth]
+      summary: Get current session info
+      responses:
+        "200":
+          description: Current session
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SessionInfo"
+        "401":
+          description: Not authenticated
+
+  /users:
+    get:
+      operationId: listUsers
+      tags: [users]
+      summary: List all invited users (admin only)
+      responses:
+        "200":
+          description: List of users
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/User"
+
+    post:
+      operationId: createUser
+      tags: [users]
+      summary: Add a new invited user (admin only)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserInput"
+      responses:
+        "201":
+          description: User created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+
+  /users/{id}:
+    patch:
+      operationId: updateUser
+      tags: [users]
+      summary: Update a user (admin only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserUpdate"
+      responses:
+        "200":
+          description: User updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+
+    delete:
+      operationId: deleteUser
+      tags: [users]
+      summary: Delete a user (admin only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /users/{id}/regenerate-code:
+    post:
+      operationId: regenerateCode
+      tags: [users]
+      summary: Regenerate 4-digit code for a user (admin only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: New code generated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+
+  /orders:
+    get:
+      operationId: listOrders
+      tags: [orders]
+      summary: List orders (admin sees all, user sees their own)
+      responses:
+        "200":
+          description: List of orders
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Order"
+
+    post:
+      operationId: createOrder
+      tags: [orders]
+      summary: Place a new order
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OrderInput"
+      responses:
+        "201":
+          description: Order placed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Order"
+        "400":
+          description: Order validation failed (slot full, event full, or already ordered)
+
+  /orders/{id}:
+    patch:
+      operationId: updateOrder
+      tags: [orders]
+      summary: Update order status or details (admin only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OrderUpdate"
+      responses:
+        "200":
+          description: Order updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Order"
+
+    delete:
+      operationId: deleteOrder
+      tags: [orders]
+      summary: Delete an order (admin only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /summary:
+    get:
+      operationId: getSummary
+      tags: [summary]
+      summary: Get event summary, slot capacities, and total counts
+      responses:
+        "200":
+          description: Event summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EventSummary"
+
 components:
   schemas:
     HealthStatus:
@@ -34,3 +287,170 @@ components:
       required:
         - status
 
+    LoginInput:
+      type: object
+      required: [name, code]
+      properties:
+        name:
+          type: string
+        code:
+          type: string
+          minLength: 4
+          maxLength: 4
+
+    AdminLoginInput:
+      type: object
+      required: [password]
+      properties:
+        password:
+          type: string
+
+    LoginResult:
+      type: object
+      required: [success, role]
+      properties:
+        success:
+          type: boolean
+        role:
+          type: string
+          enum: [user, admin]
+        userId:
+          type: ["integer", "null"]
+        userName:
+          type: ["string", "null"]
+
+    SessionInfo:
+      type: object
+      required: [authenticated, role]
+      properties:
+        authenticated:
+          type: boolean
+        role:
+          type: ["string", "null"]
+          enum: [user, admin, null]
+        userId:
+          type: ["integer", "null"]
+        userName:
+          type: ["string", "null"]
+
+    User:
+      type: object
+      required: [id, name, code, active, createdAt]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        code:
+          type: string
+        active:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+
+    UserInput:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+
+    UserUpdate:
+      type: object
+      properties:
+        active:
+          type: boolean
+        name:
+          type: string
+
+    Order:
+      type: object
+      required: [id, userId, userName, pizzaChoice, quantity, pickupSlot, status, createdAt]
+      properties:
+        id:
+          type: integer
+        userId:
+          type: integer
+        userName:
+          type: string
+        pizzaChoice:
+          type: string
+          enum: [Margherita, Pepperoni, Special]
+        quantity:
+          type: integer
+          minimum: 1
+          maximum: 3
+        pickupSlot:
+          type: string
+        notes:
+          type: ["string", "null"]
+        status:
+          type: string
+          enum: [pending, confirmed, declined, completed]
+        createdAt:
+          type: string
+          format: date-time
+
+    OrderInput:
+      type: object
+      required: [pizzaChoice, quantity, pickupSlot]
+      properties:
+        pizzaChoice:
+          type: string
+          enum: [Margherita, Pepperoni, Special]
+        quantity:
+          type: integer
+          minimum: 1
+          maximum: 3
+        pickupSlot:
+          type: string
+        notes:
+          type: string
+
+    OrderUpdate:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [pending, confirmed, declined, completed]
+        pizzaChoice:
+          type: string
+          enum: [Margherita, Pepperoni, Special]
+        quantity:
+          type: integer
+          minimum: 1
+        pickupSlot:
+          type: string
+        notes:
+          type: string
+
+    SlotSummary:
+      type: object
+      required: [slot, booked, capacity, available]
+      properties:
+        slot:
+          type: string
+        booked:
+          type: integer
+        capacity:
+          type: integer
+        available:
+          type: integer
+
+    EventSummary:
+      type: object
+      required: [totalCapacity, totalBooked, totalRemaining, orderingOpen, slots]
+      properties:
+        totalCapacity:
+          type: integer
+        totalBooked:
+          type: integer
+        totalRemaining:
+          type: integer
+        orderingOpen:
+          type: boolean
+        slots:
+          type: array
+          items:
+            $ref: "#/components/schemas/SlotSummary"

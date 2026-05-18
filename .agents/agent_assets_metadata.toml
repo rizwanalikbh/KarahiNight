@@ -1,0 +1,14 @@
+uploads = []
+outputs = []
+
+[[generated]]
+id = "sLyF6jDmYK4zgZCfGgQuB"
+uri = "file://artifacts/pizza-night/public/pizza-hero.png"
+type = "image"
+title = "Handmade pizza on rustic table"
+
+[[generated]]
+id = "5kcVNfmMf31DQiFcT1LUM"
+uri = "file://artifacts/pizza-night/public/pizza-icon.png"
+type = "image"
+title = "Pizza slice icon"

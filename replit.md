@@ -1,20 +1,22 @@
-# [Project name]
+# Pizza Night
 
-_Replace the heading above with the project's name, and this line with one sentence describing what this app does for users._
+A private pizza preorder reservation app for a small invited gathering. Guests select their pizza, quantity, and pickup slot — admin manages orders and users.
 
 ## Run & Operate
 
-- `pnpm --filter @workspace/api-server run dev` — run the API server (port 5000)
+- `pnpm --filter @workspace/api-server run dev` — run the API server (port 8080)
+- `pnpm --filter @workspace/pizza-night run dev` — run the frontend (port 21667)
 - `pnpm run typecheck` — full typecheck across all packages
 - `pnpm run build` — typecheck + build all packages
 - `pnpm --filter @workspace/api-spec run codegen` — regenerate API hooks and Zod schemas from the OpenAPI spec
 - `pnpm --filter @workspace/db run push` — push DB schema changes (dev only)
-- Required env: `DATABASE_URL` — Postgres connection string
+- Required env: `DATABASE_URL` — Postgres connection string, `SESSION_SECRET` — session signing secret
 
 ## Stack
 
 - pnpm workspaces, Node.js 24, TypeScript 5.9
-- API: Express 5
+- Frontend: React + Vite, Tailwind CSS, React Query, Wouter
+- API: Express 5 + express-session (cookie-based sessions)
 - DB: PostgreSQL + Drizzle ORM
 - Validation: Zod (`zod/v4`), `drizzle-zod`
 - API codegen: Orval (from OpenAPI spec)
@@ -22,23 +24,40 @@ _Replace the heading above with the project's name, and this line with one sente
 
 ## Where things live
 
-_Populate as you build — short repo map plus pointers to the source-of-truth file for DB schema, API contracts, theme files, etc._
+- `lib/api-spec/openapi.yaml` — API contract (source of truth)
+- `lib/db/src/schema/users.ts` — users table (name, 4-digit code, active flag)
+- `lib/db/src/schema/orders.ts` — orders table (pizza choice, quantity, slot, status)
+- `artifacts/api-server/src/routes/auth.ts` — login/logout/session routes
+- `artifacts/api-server/src/routes/users.ts` — admin user management
+- `artifacts/api-server/src/routes/orders.ts` — order placement and management
+- `artifacts/api-server/src/routes/summary.ts` — event capacity summary
+- `artifacts/pizza-night/src/` — React frontend
 
 ## Architecture decisions
 
-_Populate as you build — non-obvious choices a reader couldn't infer from the code (3-5 bullets)._
+- Cookie-based sessions (express-session) — no JWT, simple server-side state
+- Session stores role ("user" | "admin") — admin has no userId, users have no password only 4-digit codes
+- Capacity enforced on the server: 3 pizzas per slot, 10 total. Frontend reads EventSummary to constrain the form.
+- One order per user — enforced on POST /orders
+- Admin password hardcoded as "IamAdmin" (private gathering, no auth needed)
 
 ## Product
 
-_Describe the high-level user-facing capabilities of this app once they exist._
+- Invited guests log in via name dropdown + 4-digit code
+- Order one pizza (Margherita/Pepperoni/Special), pick a pickup slot (16:00–19:00)
+- Admin logs in with password "IamAdmin" and manages orders, users, and capacity
 
 ## User preferences
 
-_Populate as you build — explicit user instructions worth remembering across sessions._
+- Friendly, homemade feel — not a commercial restaurant app
+- No payment integration, no public registration, no email verification
+- Price: 70 DKK per pizza
 
 ## Gotchas
 
-_Populate as you build — sharp edges, "always run X before Y" rules._
+- Run `pnpm run typecheck:libs` after changing DB schema before running API server typecheck
+- Users are seeded once at first startup (9 invited users with random 4-digit codes)
+- Check admin dashboard to view each user's code
 
 ## Pointers
 
