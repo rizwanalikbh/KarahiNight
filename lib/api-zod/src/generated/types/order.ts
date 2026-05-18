@@ -12,6 +12,8 @@ export interface Order {
   id: number;
   userId: number;
   userName: string;
+  eventId: number;
+  eventName: string;
   items: PizzaItem[];
   /**
      * @minimum 1

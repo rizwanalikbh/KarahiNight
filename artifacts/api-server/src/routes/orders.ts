@@ -1,10 +1,7 @@
 import { Router, type IRouter } from "express";
-import { db, usersTable, ordersTable, type PizzaItem } from "@workspace/db";
-import { eq } from "drizzle-orm";
-import { CreateOrderBody, UpdateOrderParams, UpdateOrderBody, DeleteOrderParams } from "@workspace/api-zod";
-
-const TOTAL_CAPACITY = 10;
-const SLOT_CAPACITY = 3;
+import { db, usersTable, ordersTable, eventsTable, eventUsersTable, type PizzaItem } from "@workspace/db";
+import { eq, and } from "drizzle-orm";
+import { CreateOrderBody, UpdateOrderParams, UpdateOrderBody, DeleteOrderParams, ListOrdersQueryParams } from "@workspace/api-zod";
 
 const VALID_SLOTS = [
   "16:00-16:30",
@@ -37,9 +34,13 @@ async function enrichOrders(rawOrders: any[]) {
   const allUsers = await db.select().from(usersTable);
   const userMap = new Map(allUsers.map((u) => [u.id, u.name]));
 
+  const allEvents = await db.select().from(eventsTable);
+  const eventMap = new Map(allEvents.map((e) => [e.id, e.name]));
+
   return rawOrders.map((o) => ({
     ...o,
     userName: userMap.get(o.userId) ?? "Unknown",
+    eventName: o.eventId ? (eventMap.get(o.eventId) ?? "Unknown") : "Unknown",
     items: Array.isArray(o.pizzaItems) ? o.pizzaItems : [],
     notes: o.notes ?? null,
     createdAt: o.createdAt.toISOString(),
@@ -47,15 +48,20 @@ async function enrichOrders(rawOrders: any[]) {
 }
 
 router.get("/orders", requireAuth, async (req, res): Promise<void> => {
-  let rawOrders;
+  const queryParsed = ListOrdersQueryParams.safeParse(req.query);
+  const eventId = queryParsed.success ? queryParsed.data.eventId : undefined;
 
+  let rawOrders;
   if (req.session.role === "admin") {
-    rawOrders = await db.select().from(ordersTable).orderBy(ordersTable.createdAt);
+    if (eventId) {
+      rawOrders = await db.select().from(ordersTable).where(eq(ordersTable.eventId, eventId)).orderBy(ordersTable.createdAt);
+    } else {
+      rawOrders = await db.select().from(ordersTable).orderBy(ordersTable.createdAt);
+    }
   } else {
-    rawOrders = await db
-      .select()
-      .from(ordersTable)
-      .where(eq(ordersTable.userId, req.session.userId!));
+    const filters = [eq(ordersTable.userId, req.session.userId!)];
+    if (eventId) filters.push(eq(ordersTable.eventId, eventId));
+    rawOrders = await db.select().from(ordersTable).where(and(...filters));
   }
 
   const orders = await enrichOrders(rawOrders);
@@ -74,17 +80,43 @@ router.post("/orders", requireAuth, async (req, res): Promise<void> => {
     return;
   }
 
-  const { items, pickupSlot, notes } = parsed.data;
+  const { eventId, items, pickupSlot, notes } = parsed.data;
 
   if (!VALID_SLOTS.includes(pickupSlot)) {
     res.status(400).json({ error: "Invalid pickup slot" });
     return;
   }
 
+  // Validate event exists and user is assigned to it
+  const [event] = await db.select().from(eventsTable).where(eq(eventsTable.id, eventId));
+  if (!event || !event.active) {
+    res.status(400).json({ error: "Event not found or not active" });
+    return;
+  }
+
+  const userId = req.session.userId!;
+
+  const [eventUser] = await db
+    .select()
+    .from(eventUsersTable)
+    .where(and(eq(eventUsersTable.eventId, eventId), eq(eventUsersTable.userId, userId)));
+
+  if (!eventUser) {
+    res.status(403).json({ error: "You are not invited to this event" });
+    return;
+  }
+
   // Validate items
   const validChoices = ["Margherita", "Pepperoni", "Special"];
-  const validItems = Array.isArray(items) && items.length > 0 &&
-    items.every((i: any) => validChoices.includes(i.pizzaChoice) && typeof i.quantity === "number" && i.quantity >= 1);
+  const validItems =
+    Array.isArray(items) &&
+    items.length > 0 &&
+    items.every(
+      (i: any) =>
+        validChoices.includes(i.pizzaChoice) &&
+        typeof i.quantity === "number" &&
+        i.quantity >= 1
+    );
   if (!validItems) {
     res.status(400).json({ error: "Invalid pizza items" });
     return;
@@ -92,39 +124,43 @@ router.post("/orders", requireAuth, async (req, res): Promise<void> => {
   const typedItems = items as PizzaItem[];
   const totalQuantity = typedItems.reduce((sum: number, item: PizzaItem) => sum + item.quantity, 0);
 
-  const userId = req.session.userId!;
-
+  // Check one order per user per event
   const existingOrders = await db
     .select()
     .from(ordersTable)
-    .where(eq(ordersTable.userId, userId));
+    .where(and(eq(ordersTable.userId, userId), eq(ordersTable.eventId, eventId)));
 
   if (existingOrders.length > 0) {
-    res.status(400).json({ error: "You have already placed an order" });
+    res.status(400).json({ error: "You have already placed an order for this event" });
     return;
   }
 
-  const allOrders = await db.select().from(ordersTable);
-  const totalBooked = allOrders.reduce((sum, o) => sum + o.quantity, 0);
+  // Check event capacity
+  const allEventOrders = await db
+    .select()
+    .from(ordersTable)
+    .where(eq(ordersTable.eventId, eventId));
 
-  if (totalBooked >= TOTAL_CAPACITY) {
-    res.status(400).json({ error: "Event is fully booked (10 pizza maximum reached)" });
+  const totalBooked = allEventOrders.reduce((sum, o) => sum + o.quantity, 0);
+
+  if (totalBooked >= event.totalCapacity) {
+    res.status(400).json({ error: "Event is fully booked" });
     return;
   }
 
-  const slotOrders = allOrders.filter((o) => o.pickupSlot === pickupSlot);
+  const slotOrders = allEventOrders.filter((o) => o.pickupSlot === pickupSlot);
   const slotBooked = slotOrders.reduce((sum, o) => sum + o.quantity, 0);
 
-  if (slotBooked + totalQuantity > SLOT_CAPACITY) {
+  if (slotBooked + totalQuantity > event.slotCapacity) {
     res.status(400).json({
-      error: `Slot capacity exceeded. Only ${SLOT_CAPACITY - slotBooked} pizza(s) remaining in that slot.`,
+      error: `Slot capacity exceeded. Only ${event.slotCapacity - slotBooked} pizza(s) remaining in that slot.`,
     });
     return;
   }
 
-  if (totalBooked + totalQuantity > TOTAL_CAPACITY) {
+  if (totalBooked + totalQuantity > event.totalCapacity) {
     res.status(400).json({
-      error: `Total event capacity exceeded. Only ${TOTAL_CAPACITY - totalBooked} pizza(s) remaining.`,
+      error: `Total event capacity exceeded. Only ${event.totalCapacity - totalBooked} pizza(s) remaining.`,
     });
     return;
   }
@@ -133,6 +169,7 @@ router.post("/orders", requireAuth, async (req, res): Promise<void> => {
     .insert(ordersTable)
     .values({
       userId,
+      eventId,
       pizzaItems: typedItems,
       quantity: totalQuantity,
       pickupSlot,
@@ -164,8 +201,15 @@ router.patch("/orders/:id", requireAdmin, async (req, res): Promise<void> => {
   if (parsed.data.notes !== undefined) updateData.notes = parsed.data.notes;
   if (parsed.data.items !== undefined) {
     const validChoices2 = ["Margherita", "Pepperoni", "Special"];
-    const validItems2 = Array.isArray(parsed.data.items) && parsed.data.items.length > 0 &&
-      parsed.data.items.every((i: any) => validChoices2.includes(i.pizzaChoice) && typeof i.quantity === "number" && i.quantity >= 1);
+    const validItems2 =
+      Array.isArray(parsed.data.items) &&
+      parsed.data.items.length > 0 &&
+      parsed.data.items.every(
+        (i: any) =>
+          validChoices2.includes(i.pizzaChoice) &&
+          typeof i.quantity === "number" &&
+          i.quantity >= 1
+      );
     if (!validItems2) {
       res.status(400).json({ error: "Invalid pizza items" });
       return;

@@ -5,8 +5,17 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Link } from "wouter";
 import { Skeleton } from "@/components/ui/skeleton";
 
+function formatEventDate(dateStr: string): string {
+  try {
+    const d = new Date(dateStr + "T12:00:00");
+    return d.toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
+  } catch {
+    return dateStr;
+  }
+}
+
 export function Home() {
-  const { data: summary, isLoading } = useGetSummary();
+  const { data: summary, isLoading } = useGetSummary({});
 
   return (
     <Layout>
@@ -18,15 +27,20 @@ export function Home() {
           <h1 className="text-4xl sm:text-5xl font-serif font-bold text-foreground">
             Private Pizza Night
           </h1>
+          {!isLoading && summary && (
+            <p className="text-base font-medium text-primary">
+              {formatEventDate(summary.eventDate)} — {summary.eventName}
+            </p>
+          )}
           <p className="text-lg text-muted-foreground max-w-lg mx-auto">
-            You are invited to a cozy evening of handmade sourdough pizza. Limited spots available, pre-order only.
+            You are invited to a private evening of handmade Neapolitan pizza. Limited spots available, pre-order only.
           </p>
         </div>
 
         <div className="w-full aspect-video md:aspect-[21/9] rounded-2xl overflow-hidden shadow-lg border relative">
-          <img 
-            src="/pizza-hero.png" 
-            alt="Handmade pizza" 
+          <img
+            src="/pizza-hero.png"
+            alt="Handmade pizza"
             className="w-full h-full object-cover"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex flex-col justify-end p-6 text-left">
@@ -42,8 +56,8 @@ export function Home() {
             <CardHeader>
               <CardTitle className="font-serif text-2xl">Event Status</CardTitle>
               <CardDescription>
-                {summary.totalRemaining > 0 
-                  ? `${summary.totalRemaining} pizzas remaining out of ${summary.totalCapacity}`
+                {summary.totalRemaining > 0
+                  ? `${summary.totalRemaining} pizza${summary.totalRemaining !== 1 ? "s" : ""} remaining out of ${summary.totalCapacity}`
                   : "We are completely sold out!"}
               </CardDescription>
             </CardHeader>
@@ -58,7 +72,7 @@ export function Home() {
                   <span className="text-sm text-muted-foreground">Available</span>
                 </div>
               </div>
-              
+
               <Link href="/login" className="block w-full">
                 <Button size="lg" className="w-full text-lg h-14" disabled={!summary.orderingOpen}>
                   {summary.orderingOpen ? "Login to Order" : "Ordering Closed"}

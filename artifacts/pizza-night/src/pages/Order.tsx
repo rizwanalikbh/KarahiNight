@@ -1,5 +1,8 @@
 import { useState, useEffect } from "react";
-import { useGetMe, useGetSummary, useListOrders, useCreateOrder, getListOrdersQueryKey, getGetSummaryQueryKey } from "@workspace/api-client-react";
+import {
+  useGetMe, useGetSummary, useListOrders, useCreateOrder, useListEvents,
+  getListOrdersQueryKey, getGetSummaryQueryKey
+} from "@workspace/api-client-react";
 import { useLocation } from "wouter";
 import { Layout } from "../components/Layout";
 import { Button } from "@/components/ui/button";
@@ -8,7 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, CheckCircle2, AlertCircle } from "lucide-react";
+import { Loader2, CheckCircle2, AlertCircle, CalendarDays } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useQueryClient } from "@tanstack/react-query";
 
@@ -20,41 +23,57 @@ interface PizzaItem {
   quantity: number;
 }
 
+function formatEventDate(dateStr: string): string {
+  try {
+    const d = new Date(dateStr + "T12:00:00");
+    return d.toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
+  } catch {
+    return dateStr;
+  }
+}
+
 export function Order() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
   const { data: session, isLoading: sessionLoading } = useGetMe();
-  const { data: summary, isLoading: summaryLoading } = useGetSummary();
-  const { data: orders, isLoading: ordersLoading } = useListOrders();
+  const { data: events, isLoading: eventsLoading } = useListEvents();
+  const { data: orders, isLoading: ordersLoading } = useListOrders({});
   const createOrder = useCreateOrder();
 
+  const [selectedEventId, setSelectedEventId] = useState<number | null>(null);
   const [pickupSlot, setPickupSlot] = useState("");
   const [notes, setNotes] = useState("");
   const [totalQty, setTotalQty] = useState(1);
   const [pizzaItems, setPizzaItems] = useState<PizzaItem[]>([{ pizzaChoice: "Margherita", quantity: 1 }]);
 
+  // Auto-select event if only one
+  useEffect(() => {
+    if (events && events.length === 1 && !selectedEventId) {
+      setSelectedEventId(events[0].id);
+    }
+  }, [events, selectedEventId]);
+
+  const { data: summary, isLoading: summaryLoading } = useGetSummary(
+    { eventId: selectedEventId ?? undefined },
+    { query: { enabled: !!selectedEventId, queryKey: getGetSummaryQueryKey() } }
+  );
+
   const selectedSlotData = summary?.slots.find((s) => s.slot === pickupSlot);
   const slotAvailable = selectedSlotData?.available ?? 0;
   const maxAllowed = Math.min(summary?.totalRemaining ?? 0, slotAvailable, 3);
 
-  // When total quantity changes, rebuild the per-pizza items list
   useEffect(() => {
     setPizzaItems((prev) => {
-      if (totalQty === 1) {
-        return [{ pizzaChoice: prev[0]?.pizzaChoice ?? "Margherita", quantity: 1 }];
-      }
-      // Build one row per pizza
-      const expanded: PizzaItem[] = [];
-      for (let i = 0; i < totalQty; i++) {
-        expanded.push({ pizzaChoice: prev[i]?.pizzaChoice ?? "Margherita", quantity: 1 });
-      }
-      return expanded;
+      if (totalQty === 1) return [{ pizzaChoice: prev[0]?.pizzaChoice ?? "Margherita", quantity: 1 }];
+      return Array.from({ length: totalQty }, (_, i) => ({
+        pizzaChoice: prev[i]?.pizzaChoice ?? "Margherita",
+        quantity: 1,
+      }));
     });
   }, [totalQty]);
 
-  // Reset quantity when slot changes
   const handleSlotChange = (val: string) => {
     setPickupSlot(val);
     setTotalQty(1);
@@ -64,7 +83,9 @@ export function Order() {
     setPizzaItems((prev) => prev.map((item, i) => (i === index ? { ...item, pizzaChoice: choice } : item)));
   };
 
-  if (sessionLoading || summaryLoading || ordersLoading) {
+  const isLoading = sessionLoading || eventsLoading || ordersLoading;
+
+  if (isLoading) {
     return (
       <Layout>
         <div className="space-y-4">
@@ -80,7 +101,24 @@ export function Order() {
     return null;
   }
 
-  const myOrder = orders?.find((o) => o.userId === session.userId);
+  if (!events || events.length === 0) {
+    return (
+      <Layout>
+        <div className="max-w-xl mx-auto w-full pt-8">
+          <Card className="border-card-border shadow-md text-center bg-secondary/20">
+            <CardContent className="pt-10 pb-10 flex flex-col items-center">
+              <CalendarDays className="w-16 h-16 text-muted-foreground mb-4" />
+              <h2 className="text-2xl font-serif font-bold text-foreground mb-2">No Events Yet</h2>
+              <p className="text-muted-foreground">You have not been added to any events. Check back later.</p>
+            </CardContent>
+          </Card>
+        </div>
+      </Layout>
+    );
+  }
+
+  const activeEventId = selectedEventId ?? events[0]?.id;
+  const myOrder = orders?.find((o) => o.userId === session.userId && o.eventId === activeEventId);
 
   if (myOrder) {
     const orderItems = myOrder.items ?? [];
@@ -97,20 +135,24 @@ export function Order() {
               </p>
 
               <div className="w-full bg-secondary/30 rounded-xl p-6 text-left space-y-4 border border-border">
+                <div className="flex justify-between border-b pb-4">
+                  <span className="text-muted-foreground">Event</span>
+                  <span className="font-medium text-foreground">{myOrder.eventName}</span>
+                </div>
                 <div className="border-b pb-4">
                   <span className="text-muted-foreground block mb-2">Pizzas</span>
-                  {orderItems.length > 0 ? (
-                    <div className="space-y-1">
-                      {orderItems.map((item, i) => (
+                  <div className="space-y-1">
+                    {orderItems.length > 0 ? (
+                      orderItems.map((item, i) => (
                         <div key={i} className="flex justify-between">
                           <span className="font-medium text-foreground">{item.pizzaChoice}</span>
                           <span className="text-muted-foreground">{item.quantity}x</span>
                         </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <span className="font-medium text-foreground">{(myOrder as any).pizzaChoice}</span>
-                  )}
+                      ))
+                    ) : (
+                      <span className="text-sm text-muted-foreground">—</span>
+                    )}
+                  </div>
                 </div>
                 <div className="flex justify-between border-b pb-4">
                   <span className="text-muted-foreground">Pickup Slot</span>
@@ -118,12 +160,11 @@ export function Order() {
                 </div>
                 <div className="flex justify-between border-b pb-4">
                   <span className="text-muted-foreground">Total</span>
-                  <span className="font-medium text-foreground">{(orderItems.length > 0 ? total : myOrder.quantity) * 70} DKK</span>
+                  <span className="font-medium text-foreground">{total * 70} DKK</span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-muted-foreground">Status</span>
-                  <span
-                    className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium capitalize
+                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium capitalize
                     ${myOrder.status === "confirmed" ? "bg-accent/10 text-accent" :
                       myOrder.status === "completed" ? "bg-gray-100 text-gray-800" :
                       myOrder.status === "declined" ? "bg-destructive/10 text-destructive" :
@@ -149,7 +190,7 @@ export function Order() {
               <AlertCircle className="w-16 h-16 text-muted-foreground mb-4" />
               <h2 className="text-2xl font-serif font-bold text-foreground mb-2">Fully Booked</h2>
               <p className="text-muted-foreground">
-                Sorry, the event is fully booked! All pizza slots have been claimed.
+                Sorry, the event is fully booked! All pizza spots have been claimed.
               </p>
             </CardContent>
           </Card>
@@ -160,19 +201,17 @@ export function Order() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!selectedEventId) {
+      toast({ title: "No event selected", description: "Please select an event.", variant: "destructive" });
+      return;
+    }
     if (!pickupSlot) {
       toast({ title: "Incomplete", description: "Please select a pickup slot.", variant: "destructive" });
       return;
     }
 
     createOrder.mutate(
-      {
-        data: {
-          items: pizzaItems,
-          pickupSlot,
-          notes: notes || undefined,
-        },
-      },
+      { data: { eventId: selectedEventId, items: pizzaItems, pickupSlot, notes: notes || undefined } },
       {
         onSuccess: () => {
           queryClient.invalidateQueries({ queryKey: getListOrdersQueryKey() });
@@ -200,31 +239,68 @@ export function Order() {
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-8">
 
-              {/* Pickup slot */}
-              <div className="space-y-3">
-                <Label className="text-base font-semibold">Select Pickup Slot</Label>
-                <Select value={pickupSlot} onValueChange={handleSlotChange}>
-                  <SelectTrigger className="h-12">
-                    <SelectValue placeholder="Choose a time..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {summary?.slots.map((slot) => (
-                      <SelectItem key={slot.slot} value={slot.slot} disabled={slot.available === 0}>
-                        {slot.slot} {slot.available === 0 ? "(Full)" : `(${slot.available} spot${slot.available !== 1 ? "s" : ""} left)`}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+              {/* Event selection */}
+              {events.length > 1 ? (
+                <div className="space-y-3">
+                  <Label className="text-base font-semibold">Select Event</Label>
+                  <Select
+                    value={selectedEventId ? String(selectedEventId) : ""}
+                    onValueChange={(v) => {
+                      setSelectedEventId(parseInt(v, 10));
+                      setPickupSlot("");
+                      setTotalQty(1);
+                    }}
+                  >
+                    <SelectTrigger className="h-12">
+                      <SelectValue placeholder="Choose an event..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {events.map((event) => (
+                        <SelectItem key={event.id} value={String(event.id)}>
+                          {event.name} — {formatEventDate(event.date)}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              ) : (
+                <div className="bg-secondary/40 rounded-xl p-4 flex items-center gap-3">
+                  <CalendarDays className="w-5 h-5 text-primary shrink-0" />
+                  <div>
+                    <p className="font-semibold text-foreground">{events[0].name}</p>
+                    <p className="text-sm text-muted-foreground">{formatEventDate(events[0].date)}</p>
+                  </div>
+                </div>
+              )}
+
+              {/* Pickup slot — only show once event is selected */}
+              {selectedEventId && (
+                <div className="space-y-3">
+                  <Label className="text-base font-semibold">Select Pickup Slot</Label>
+                  {summaryLoading ? (
+                    <Skeleton className="h-12 w-full rounded-lg" />
+                  ) : (
+                    <Select value={pickupSlot} onValueChange={handleSlotChange}>
+                      <SelectTrigger className="h-12">
+                        <SelectValue placeholder="Choose a time..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {summary?.slots.map((slot) => (
+                          <SelectItem key={slot.slot} value={slot.slot} disabled={slot.available === 0}>
+                            {slot.slot} {slot.available === 0 ? "(Full)" : `(${slot.available} spot${slot.available !== 1 ? "s" : ""} left)`}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                </div>
+              )}
 
               {/* How many pizzas */}
               {pickupSlot && (
                 <div className="space-y-3 animate-in fade-in slide-in-from-top-2">
                   <Label className="text-base font-semibold">How Many Pizzas?</Label>
-                  <Select
-                    value={String(totalQty)}
-                    onValueChange={(v) => setTotalQty(parseInt(v, 10))}
-                  >
+                  <Select value={String(totalQty)} onValueChange={(v) => setTotalQty(parseInt(v, 10))}>
                     <SelectTrigger className="h-12">
                       <SelectValue />
                     </SelectTrigger>
@@ -237,9 +313,7 @@ export function Order() {
                     </SelectContent>
                   </Select>
                   {maxAllowed < 3 && (
-                    <p className="text-xs text-muted-foreground">
-                      Quantity limited by remaining slot capacity.
-                    </p>
+                    <p className="text-xs text-muted-foreground">Quantity limited by remaining slot capacity.</p>
                   )}
                 </div>
               )}
@@ -254,9 +328,7 @@ export function Order() {
                     {pizzaItems.map((item, index) => (
                       <div key={index} className="flex items-center gap-3">
                         {pizzaItems.length > 1 && (
-                          <span className="text-sm text-muted-foreground w-16 shrink-0">
-                            Pizza {index + 1}
-                          </span>
+                          <span className="text-sm text-muted-foreground w-16 shrink-0">Pizza {index + 1}</span>
                         )}
                         <div className="flex-1 grid grid-cols-3 gap-2">
                           {PIZZA_CHOICES.map((choice) => (
@@ -292,7 +364,7 @@ export function Order() {
                 />
               </div>
 
-              {/* Price summary */}
+              {/* Price total */}
               <div className="bg-secondary/50 p-4 rounded-xl border border-border flex justify-between items-center">
                 <span className="font-medium text-foreground">Total Price:</span>
                 <span className="font-serif font-bold text-xl text-primary">{totalQty * 70} DKK</span>
@@ -302,7 +374,7 @@ export function Order() {
                 type="submit"
                 size="lg"
                 className="w-full h-14 text-lg"
-                disabled={createOrder.isPending || !pickupSlot}
+                disabled={createOrder.isPending || !pickupSlot || !selectedEventId}
               >
                 {createOrder.isPending ? <Loader2 className="w-5 h-5 animate-spin" /> : "Place Order"}
               </Button>

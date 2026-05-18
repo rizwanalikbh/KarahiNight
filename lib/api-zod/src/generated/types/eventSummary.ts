@@ -8,6 +8,9 @@
 import type { SlotSummary } from './slotSummary';
 
 export interface EventSummary {
+  eventId: number;
+  eventName: string;
+  eventDate: string;
   totalCapacity: number;
   totalBooked: number;
   totalRemaining: number;

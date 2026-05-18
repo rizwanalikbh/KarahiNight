@@ -2,6 +2,7 @@ import { pgTable, text, serial, integer, timestamp, jsonb } from "drizzle-orm/pg
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 import { usersTable } from "./users";
+import { eventsTable } from "./events";
 
 export const PizzaItemSchema = z.object({
   pizzaChoice: z.enum(["Margherita", "Pepperoni", "Special"]),
@@ -12,6 +13,7 @@ export type PizzaItem = z.infer<typeof PizzaItemSchema>;
 export const ordersTable = pgTable("orders", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").notNull().references(() => usersTable.id, { onDelete: "cascade" }),
+  eventId: integer("event_id").notNull().references(() => eventsTable.id, { onDelete: "cascade" }),
   pizzaItems: jsonb("pizza_items").notNull().$type<PizzaItem[]>(),
   quantity: integer("quantity").notNull(),
   pickupSlot: text("pickup_slot").notNull(),

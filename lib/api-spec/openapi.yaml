@@ -9,15 +9,11 @@ servers:
     description: Base API path
 tags:
   - name: health
-    description: Health operations
   - name: auth
-    description: Authentication
+  - name: events
   - name: users
-    description: User management
   - name: orders
-    description: Order management
   - name: summary
-    description: Event summary and capacity info
 
 paths:
   /healthz:
@@ -99,11 +95,148 @@ paths:
         "401":
           description: Not authenticated
 
+  /events:
+    get:
+      operationId: listEvents
+      tags: [events]
+      summary: List events (admin sees all, user sees their own)
+      responses:
+        "200":
+          description: List of events
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Event"
+
+    post:
+      operationId: createEvent
+      tags: [events]
+      summary: Create a new event (admin only)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EventInput"
+      responses:
+        "201":
+          description: Event created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Event"
+
+  /events/{id}:
+    patch:
+      operationId: updateEvent
+      tags: [events]
+      summary: Update an event (admin only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EventUpdate"
+      responses:
+        "200":
+          description: Event updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Event"
+
+    delete:
+      operationId: deleteEvent
+      tags: [events]
+      summary: Delete an event (admin only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /events/{id}/users:
+    get:
+      operationId: listEventUsers
+      tags: [events]
+      summary: List users assigned to an event (admin only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Users in this event
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/User"
+
+    post:
+      operationId: addUserToEvent
+      tags: [events]
+      summary: Add a user to an event (admin only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EventUserInput"
+      responses:
+        "201":
+          description: User added
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+
+  /events/{id}/users/{userId}:
+    delete:
+      operationId: removeUserFromEvent
+      tags: [events]
+      summary: Remove a user from an event (admin only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Removed
+
   /users:
     get:
       operationId: listUsers
       tags: [users]
-      summary: List all invited users (admin only)
+      summary: List all users (admin only)
       responses:
         "200":
           description: List of users
@@ -117,7 +250,7 @@ paths:
     post:
       operationId: createUser
       tags: [users]
-      summary: Add a new invited user (admin only)
+      summary: Add a new user (admin only)
       requestBody:
         required: true
         content:
@@ -195,6 +328,12 @@ paths:
       operationId: listOrders
       tags: [orders]
       summary: List orders (admin sees all, user sees their own)
+      parameters:
+        - name: eventId
+          in: query
+          required: false
+          schema:
+            type: integer
       responses:
         "200":
           description: List of orders
@@ -223,7 +362,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/Order"
         "400":
-          description: Order validation failed (slot full, event full, or already ordered)
+          description: Validation failed
 
   /orders/{id}:
     patch:
@@ -268,7 +407,13 @@ paths:
     get:
       operationId: getSummary
       tags: [summary]
-      summary: Get event summary, slot capacities, and total counts
+      summary: Get event summary and slot capacities
+      parameters:
+        - name: eventId
+          in: query
+          required: false
+          schema:
+            type: integer
       responses:
         "200":
           description: Event summary
@@ -284,8 +429,7 @@ components:
       properties:
         status:
           type: string
-      required:
-        - status
+      required: [status]
 
     LoginInput:
       type: object
@@ -333,6 +477,64 @@ components:
         userName:
           type: ["string", "null"]
 
+    Event:
+      type: object
+      required: [id, name, date, totalCapacity, slotCapacity, active, createdAt]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        date:
+          type: string
+          description: ISO date string (YYYY-MM-DD)
+        totalCapacity:
+          type: integer
+        slotCapacity:
+          type: integer
+        active:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+
+    EventInput:
+      type: object
+      required: [name, date]
+      properties:
+        name:
+          type: string
+        date:
+          type: string
+          description: ISO date string (YYYY-MM-DD)
+        totalCapacity:
+          type: integer
+          default: 10
+        slotCapacity:
+          type: integer
+          default: 3
+
+    EventUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+        date:
+          type: string
+        totalCapacity:
+          type: integer
+        slotCapacity:
+          type: integer
+        active:
+          type: boolean
+
+    EventUserInput:
+      type: object
+      required: [userId]
+      properties:
+        userId:
+          type: integer
+
     User:
       type: object
       required: [id, name, code, active, createdAt]
@@ -378,13 +580,17 @@ components:
 
     Order:
       type: object
-      required: [id, userId, userName, items, quantity, pickupSlot, status, createdAt]
+      required: [id, userId, userName, eventId, eventName, items, quantity, pickupSlot, status, createdAt]
       properties:
         id:
           type: integer
         userId:
           type: integer
         userName:
+          type: string
+        eventId:
+          type: integer
+        eventName:
           type: string
         items:
           type: array
@@ -407,8 +613,10 @@ components:
 
     OrderInput:
       type: object
-      required: [items, pickupSlot]
+      required: [eventId, items, pickupSlot]
       properties:
+        eventId:
+          type: integer
         items:
           type: array
           minItems: 1
@@ -450,8 +658,14 @@ components:
 
     EventSummary:
       type: object
-      required: [totalCapacity, totalBooked, totalRemaining, orderingOpen, slots]
+      required: [eventId, eventName, eventDate, totalCapacity, totalBooked, totalRemaining, orderingOpen, slots]
       properties:
+        eventId:
+          type: integer
+        eventName:
+          type: string
+        eventDate:
+          type: string
         totalCapacity:
           type: integer
         totalBooked:

@@ -64,7 +64,108 @@ export const GetMeResponse = zod.object({
 
 
 /**
- * @summary List all invited users (admin only)
+ * @summary List events (admin sees all, user sees their own)
+ */
+export const ListEventsResponseItem = zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "date": zod.string().describe('ISO date string (YYYY-MM-DD)'),
+  "totalCapacity": zod.number(),
+  "slotCapacity": zod.number(),
+  "active": zod.boolean(),
+  "createdAt": zod.coerce.date()
+})
+export const ListEventsResponse = zod.array(ListEventsResponseItem)
+
+
+/**
+ * @summary Create a new event (admin only)
+ */
+export const createEventBodyTotalCapacityDefault = 10;
+export const createEventBodySlotCapacityDefault = 3;
+
+export const CreateEventBody = zod.object({
+  "name": zod.string(),
+  "date": zod.string().describe('ISO date string (YYYY-MM-DD)'),
+  "totalCapacity": zod.number().default(createEventBodyTotalCapacityDefault),
+  "slotCapacity": zod.number().default(createEventBodySlotCapacityDefault)
+})
+
+
+/**
+ * @summary Update an event (admin only)
+ */
+export const UpdateEventParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const UpdateEventBody = zod.object({
+  "name": zod.string().optional(),
+  "date": zod.string().optional(),
+  "totalCapacity": zod.number().optional(),
+  "slotCapacity": zod.number().optional(),
+  "active": zod.boolean().optional()
+})
+
+export const UpdateEventResponse = zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "date": zod.string().describe('ISO date string (YYYY-MM-DD)'),
+  "totalCapacity": zod.number(),
+  "slotCapacity": zod.number(),
+  "active": zod.boolean(),
+  "createdAt": zod.coerce.date()
+})
+
+
+/**
+ * @summary Delete an event (admin only)
+ */
+export const DeleteEventParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+
+/**
+ * @summary List users assigned to an event (admin only)
+ */
+export const ListEventUsersParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const ListEventUsersResponseItem = zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "code": zod.string(),
+  "active": zod.boolean(),
+  "createdAt": zod.coerce.date()
+})
+export const ListEventUsersResponse = zod.array(ListEventUsersResponseItem)
+
+
+/**
+ * @summary Add a user to an event (admin only)
+ */
+export const AddUserToEventParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const AddUserToEventBody = zod.object({
+  "userId": zod.number()
+})
+
+
+/**
+ * @summary Remove a user from an event (admin only)
+ */
+export const RemoveUserFromEventParams = zod.object({
+  "id": zod.coerce.number(),
+  "userId": zod.coerce.number()
+})
+
+
+/**
+ * @summary List all users (admin only)
  */
 export const ListUsersResponseItem = zod.object({
   "id": zod.number(),
@@ -77,7 +178,7 @@ export const ListUsersResponse = zod.array(ListUsersResponseItem)
 
 
 /**
- * @summary Add a new invited user (admin only)
+ * @summary Add a new user (admin only)
  */
 export const CreateUserBody = zod.object({
   "name": zod.string()
@@ -132,6 +233,10 @@ export const RegenerateCodeResponse = zod.object({
 /**
  * @summary List orders (admin sees all, user sees their own)
  */
+export const ListOrdersQueryParams = zod.object({
+  "eventId": zod.coerce.number().optional()
+})
+
 export const listOrdersResponseItemsItemQuantityMax = 3;
 
 export const listOrdersResponseQuantityMax = 3;
@@ -142,6 +247,8 @@ export const ListOrdersResponseItem = zod.object({
   "id": zod.number(),
   "userId": zod.number(),
   "userName": zod.string(),
+  "eventId": zod.number(),
+  "eventName": zod.string(),
   "items": zod.array(zod.object({
   "pizzaChoice": zod.enum(['Margherita', 'Pepperoni', 'Special']),
   "quantity": zod.number().min(1).max(listOrdersResponseItemsItemQuantityMax)
@@ -164,6 +271,7 @@ export const createOrderBodyItemsItemQuantityMax = 3;
 
 
 export const CreateOrderBody = zod.object({
+  "eventId": zod.number(),
   "items": zod.array(zod.object({
   "pizzaChoice": zod.enum(['Margherita', 'Pepperoni', 'Special']),
   "quantity": zod.number().min(1).max(createOrderBodyItemsItemQuantityMax)
@@ -205,6 +313,8 @@ export const UpdateOrderResponse = zod.object({
   "id": zod.number(),
   "userId": zod.number(),
   "userName": zod.string(),
+  "eventId": zod.number(),
+  "eventName": zod.string(),
   "items": zod.array(zod.object({
   "pizzaChoice": zod.enum(['Margherita', 'Pepperoni', 'Special']),
   "quantity": zod.number().min(1).max(updateOrderResponseItemsItemQuantityMax)
@@ -226,9 +336,16 @@ export const DeleteOrderParams = zod.object({
 
 
 /**
- * @summary Get event summary, slot capacities, and total counts
+ * @summary Get event summary and slot capacities
  */
+export const GetSummaryQueryParams = zod.object({
+  "eventId": zod.coerce.number().optional()
+})
+
 export const GetSummaryResponse = zod.object({
+  "eventId": zod.number(),
+  "eventName": zod.string(),
+  "eventDate": zod.string(),
   "totalCapacity": zod.number(),
   "totalBooked": zod.number(),
   "totalRemaining": zod.number(),

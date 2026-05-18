@@ -60,6 +60,37 @@ export interface SessionInfo {
   userName?: string | null;
 }
 
+export interface Event {
+  id: number;
+  name: string;
+  /** ISO date string (YYYY-MM-DD) */
+  date: string;
+  totalCapacity: number;
+  slotCapacity: number;
+  active: boolean;
+  createdAt: string;
+}
+
+export interface EventInput {
+  name: string;
+  /** ISO date string (YYYY-MM-DD) */
+  date: string;
+  totalCapacity?: number;
+  slotCapacity?: number;
+}
+
+export interface EventUpdate {
+  name?: string;
+  date?: string;
+  totalCapacity?: number;
+  slotCapacity?: number;
+  active?: boolean;
+}
+
+export interface EventUserInput {
+  userId: number;
+}
+
 export interface User {
   id: number;
   name: string;
@@ -109,6 +140,8 @@ export interface Order {
   id: number;
   userId: number;
   userName: string;
+  eventId: number;
+  eventName: string;
   items: PizzaItem[];
   /**
      * @minimum 1
@@ -123,6 +156,7 @@ export interface Order {
 }
 
 export interface OrderInput {
+  eventId: number;
   /** @minItems 1 */
   items: PizzaItem[];
   pickupSlot: string;
@@ -155,10 +189,21 @@ export interface SlotSummary {
 }
 
 export interface EventSummary {
+  eventId: number;
+  eventName: string;
+  eventDate: string;
   totalCapacity: number;
   totalBooked: number;
   totalRemaining: number;
   orderingOpen: boolean;
   slots: SlotSummary[];
 }
+
+export type ListOrdersParams = {
+eventId?: number;
+};
+
+export type GetSummaryParams = {
+eventId?: number;
+};
 

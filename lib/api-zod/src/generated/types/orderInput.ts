@@ -8,6 +8,7 @@
 import type { PizzaItem } from './pizzaItem';
 
 export interface OrderInput {
+  eventId: number;
   /** @minItems 1 */
   items: PizzaItem[];
   pickupSlot: string;
