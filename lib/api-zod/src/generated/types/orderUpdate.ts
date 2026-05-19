@@ -14,4 +14,5 @@ export interface OrderUpdate {
   items?: PizzaItem[];
   pickupSlot?: string;
   notes?: string;
+  paid?: boolean;
 }

@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, timestamp, jsonb } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, timestamp, jsonb, boolean } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 import { usersTable } from "./users";
@@ -19,6 +19,7 @@ export const ordersTable = pgTable("orders", {
   pickupSlot: text("pickup_slot").notNull(),
   notes: text("notes"),
   status: text("status").notNull().default("pending"),
+  paid: boolean("paid").notNull().default(false),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 

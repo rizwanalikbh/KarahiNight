@@ -269,19 +269,34 @@ function OrderEditPanel({
   order: any;
   event: any | undefined;
   onClose: () => void;
-  onSave: (id: number, data: { items?: any[]; pickupSlot?: string; notes?: string }) => void;
+  onSave: (id: number, data: { items?: any[]; pickupSlot?: string; notes?: string; paid?: boolean }) => void;
 }) {
   const slots: string[] = event?.slots ?? [];
-  const pizzaTypes: string[] = event?.pizzaTypes ?? [];
+  const pizzaTypes: string[] = event?.pizzaTypes ?? ["Margherita", "Pepperoni", "Special"];
+  const maxPizzas: number = event?.slotCapacity ?? 3;
 
   const [items, setItems] = useState<{ pizzaChoice: string; quantity: number }[]>(
-    () => (order.items ?? []).map((i: any) => ({ pizzaChoice: i.pizzaChoice, quantity: i.quantity }))
+    () => {
+      const raw = order.items ?? [];
+      return raw.length > 0 ? raw.map((i: any) => ({ pizzaChoice: i.pizzaChoice, quantity: i.quantity })) : [{ pizzaChoice: pizzaTypes[0] ?? "", quantity: 1 }];
+    }
   );
   const [pickupSlot, setPickupSlot] = useState<string>(order.pickupSlot ?? "");
   const [notes, setNotes] = useState<string>(order.notes ?? "");
+  const [paid, setPaid] = useState<boolean>(order.paid ?? false);
 
   const updateChoice = (index: number, choice: string) =>
     setItems((prev) => prev.map((it, i) => (i === index ? { ...it, pizzaChoice: choice } : it)));
+
+  const addPizza = () => {
+    if (items.length >= maxPizzas) return;
+    setItems((prev) => [...prev, { pizzaChoice: pizzaTypes[0] ?? "", quantity: 1 }]);
+  };
+
+  const removePizza = (index: number) => {
+    if (items.length <= 1) return;
+    setItems((prev) => prev.filter((_, i) => i !== index));
+  };
 
   return (
     <div className="border-t bg-secondary/10 px-4 py-4 space-y-4">
@@ -305,32 +320,66 @@ function OrderEditPanel({
           />
         </div>
       </div>
+
       <div className="space-y-2">
-        <Label className="text-xs font-medium text-muted-foreground">Pizzas</Label>
-        {items.map((item, index) => (
-          <div key={index} className="flex items-center gap-2">
-            {items.length > 1 && <span className="text-xs text-muted-foreground w-12 shrink-0">#{index + 1}</span>}
-            <div className="flex flex-wrap gap-1.5 flex-1">
-              {pizzaTypes.map((choice) => (
-                <button
-                  key={choice}
-                  type="button"
-                  onClick={() => updateChoice(index, choice)}
-                  className={`px-2.5 py-1 rounded-lg border text-xs font-medium transition-colors cursor-pointer
-                    ${item.pizzaChoice === choice
-                      ? "border-primary bg-primary/5 text-primary"
-                      : "border-border hover:bg-secondary/50 text-foreground"
-                    }`}
-                >
-                  {choice}
-                </button>
-              ))}
+        <div className="flex items-center justify-between">
+          <Label className="text-xs font-medium text-muted-foreground">
+            Pizzas ({items.length}/{maxPizzas} max)
+          </Label>
+          <Button
+            type="button" size="sm" variant="outline"
+            className="h-6 px-2 text-xs gap-1"
+            onClick={addPizza}
+            disabled={items.length >= maxPizzas}
+          >
+            <Plus className="w-3 h-3" /> Add pizza
+          </Button>
+        </div>
+        <div className="space-y-2">
+          {items.map((item, index) => (
+            <div key={index} className="flex items-center gap-2">
+              {items.length > 1 && (
+                <span className="text-xs text-muted-foreground w-5 shrink-0">#{index + 1}</span>
+              )}
+              <div className="flex flex-wrap gap-1.5 flex-1">
+                {pizzaTypes.map((choice) => (
+                  <button
+                    key={choice}
+                    type="button"
+                    onClick={() => updateChoice(index, choice)}
+                    className={`px-2.5 py-1 rounded-lg border text-xs font-medium transition-colors cursor-pointer
+                      ${item.pizzaChoice === choice
+                        ? "border-primary bg-primary/5 text-primary"
+                        : "border-border hover:bg-secondary/50 text-foreground"
+                      }`}
+                  >
+                    {choice}
+                  </button>
+                ))}
+              </div>
+              <Button
+                type="button" size="icon" variant="ghost"
+                className="h-6 w-6 shrink-0 text-muted-foreground hover:text-destructive"
+                onClick={() => removePizza(index)}
+                disabled={items.length <= 1}
+                title="Remove this pizza"
+              >
+                <X className="w-3 h-3" />
+              </Button>
             </div>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
+
+      <div className="flex items-center gap-3 pt-1 border-t">
+        <Switch id={`paid-${order.id}`} checked={paid} onCheckedChange={setPaid} />
+        <Label htmlFor={`paid-${order.id}`} className="text-sm cursor-pointer select-none">
+          {paid ? "Payment received" : "Payment pending"}
+        </Label>
+      </div>
+
       <div className="flex gap-2">
-        <Button size="sm" onClick={() => onSave(order.id, { items, pickupSlot, notes })}>
+        <Button size="sm" onClick={() => onSave(order.id, { items, pickupSlot, notes, paid })}>
           <Check className="w-3.5 h-3.5 mr-1.5" />Save
         </Button>
         <Button size="sm" variant="ghost" onClick={onClose}>
@@ -403,8 +452,16 @@ export function AdminDashboard() {
     });
   };
 
-  const handleSaveOrderEdit = (id: number, data: { items?: any[]; pickupSlot?: string; notes?: string }) => {
-    updateOrder.mutate({ id, data: { items: data.items, pickupSlot: data.pickupSlot, notes: data.notes } }, {
+  const handleTogglePaid = (id: number, paid: boolean) => {
+    updateOrder.mutate({ id, data: { paid } }, {
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: getListOrdersQueryKey() });
+      },
+    });
+  };
+
+  const handleSaveOrderEdit = (id: number, data: { items?: any[]; pickupSlot?: string; notes?: string; paid?: boolean }) => {
+    updateOrder.mutate({ id, data: { items: data.items, pickupSlot: data.pickupSlot, notes: data.notes, paid: data.paid } }, {
       onSuccess: () => {
         toast({ title: "Order updated" });
         setEditingOrderId(null);
@@ -594,6 +651,7 @@ export function AdminDashboard() {
                       <TableHead>Slot</TableHead>
                       <TableHead>Notes</TableHead>
                       <TableHead>Status</TableHead>
+                      <TableHead>Paid</TableHead>
                       <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -639,6 +697,13 @@ export function AdminDashboard() {
                                 </SelectContent>
                               </Select>
                             </TableCell>
+                            <TableCell>
+                              <Switch
+                                checked={order.paid}
+                                onCheckedChange={(v) => handleTogglePaid(order.id, v)}
+                                title={order.paid ? "Mark as unpaid" : "Mark as paid"}
+                              />
+                            </TableCell>
                             <TableCell className="text-right">
                               <div className="flex justify-end gap-1">
                                 {order.status === "confirmed" && (
@@ -669,7 +734,7 @@ export function AdminDashboard() {
                           </TableRow>
                           {isEditing && (
                             <TableRow key={`${order.id}-edit`}>
-                              <TableCell colSpan={events && events.length > 1 ? 7 : 6} className="p-0">
+                              <TableCell colSpan={events && events.length > 1 ? 8 : 7} className="p-0">
                                 <OrderEditPanel
                                   order={order}
                                   event={orderEvent}

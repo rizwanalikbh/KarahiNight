@@ -169,6 +169,7 @@ export interface Order {
   /** @nullable */
   notes?: string | null;
   status: OrderStatus;
+  paid: boolean;
   createdAt: string;
 }
 
@@ -196,6 +197,7 @@ export interface OrderUpdate {
   items?: PizzaItem[];
   pickupSlot?: string;
   notes?: string;
+  paid?: boolean;
 }
 
 export interface SlotSummary {

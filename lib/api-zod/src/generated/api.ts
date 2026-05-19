@@ -274,6 +274,7 @@ export const ListOrdersResponseItem = zod.object({
   "pickupSlot": zod.string(),
   "notes": zod.string().nullish(),
   "status": zod.enum(['pending', 'confirmed', 'declined', 'completed']),
+  "paid": zod.boolean(),
   "createdAt": zod.coerce.date()
 })
 export const ListOrdersResponse = zod.array(ListOrdersResponseItem)
@@ -317,7 +318,8 @@ export const UpdateOrderBody = zod.object({
   "quantity": zod.number().min(1).max(updateOrderBodyItemsItemQuantityMax)
 })).min(1).optional(),
   "pickupSlot": zod.string().optional(),
-  "notes": zod.string().optional()
+  "notes": zod.string().optional(),
+  "paid": zod.boolean().optional()
 })
 
 export const updateOrderResponseItemsItemQuantityMax = 3;
@@ -340,6 +342,7 @@ export const UpdateOrderResponse = zod.object({
   "pickupSlot": zod.string(),
   "notes": zod.string().nullish(),
   "status": zod.enum(['pending', 'confirmed', 'declined', 'completed']),
+  "paid": zod.boolean(),
   "createdAt": zod.coerce.date()
 })
 

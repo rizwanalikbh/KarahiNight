@@ -184,6 +184,7 @@ router.patch("/orders/:id", requireAdmin, async (req, res): Promise<void> => {
   if (parsed.data.status !== undefined) updateData.status = parsed.data.status;
   if (parsed.data.pickupSlot !== undefined) updateData.pickupSlot = parsed.data.pickupSlot;
   if (parsed.data.notes !== undefined) updateData.notes = parsed.data.notes;
+  if (parsed.data.paid !== undefined) updateData.paid = parsed.data.paid;
   if (parsed.data.items !== undefined) {
     const typedItems = parsed.data.items as PizzaItem[];
     updateData.pizzaItems = typedItems;

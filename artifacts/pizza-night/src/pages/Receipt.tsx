@@ -123,11 +123,20 @@ export function Receipt() {
             <span className="text-2xl font-bold">{totalPrice} DKK</span>
           </div>
 
-          {/* Status badge */}
-          <div className="text-center mb-10">
+          {/* Status + paid badges */}
+          <div className="text-center mb-10 flex justify-center gap-3 flex-wrap">
             <span className="inline-block px-4 py-1.5 rounded-full text-sm font-semibold bg-green-100 text-green-800 uppercase tracking-wide">
               ✓ Confirmed
             </span>
+            {order.paid ? (
+              <span className="inline-block px-4 py-1.5 rounded-full text-sm font-semibold bg-blue-100 text-blue-800 uppercase tracking-wide">
+                ✓ Paid
+              </span>
+            ) : (
+              <span className="inline-block px-4 py-1.5 rounded-full text-sm font-semibold bg-yellow-100 text-yellow-800 uppercase tracking-wide">
+                Payment Pending
+              </span>
+            )}
           </div>
 
           {/* Footer */}

@@ -24,5 +24,6 @@ export interface Order {
   /** @nullable */
   notes?: string | null;
   status: OrderStatus;
+  paid: boolean;
   createdAt: Date;
 }
