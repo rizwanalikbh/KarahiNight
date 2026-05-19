@@ -318,17 +318,17 @@ export function Order() {
                   </Label>
                   <div className="space-y-3">
                     {pizzaItems.map((item, index) => (
-                      <div key={index} className="flex items-center gap-3">
+                      <div key={index} className="space-y-1.5">
                         {pizzaItems.length > 1 && (
-                          <span className="text-sm text-muted-foreground w-16 shrink-0">Pizza {index + 1}</span>
+                          <span className="text-sm text-muted-foreground">Pizza {index + 1}</span>
                         )}
-                        <div className="flex-1 grid gap-2" style={{ gridTemplateColumns: `repeat(${Math.min(pizzaTypes.length, 3)}, 1fr)` }}>
+                        <div className="grid gap-2" style={{ gridTemplateColumns: `repeat(${Math.min(pizzaTypes.length, 3)}, minmax(0, 1fr))` }}>
                           {pizzaTypes.map((choice) => (
                             <button
                               key={choice}
                               type="button"
                               onClick={() => updateItemChoice(index, choice)}
-                              className={`p-3 rounded-xl border text-sm font-medium transition-colors cursor-pointer
+                              className={`p-3 rounded-xl border text-sm font-medium transition-colors cursor-pointer truncate
                                 ${item.pizzaChoice === choice
                                   ? "border-primary bg-primary/5 text-primary"
                                   : "border-border hover:bg-secondary/50 text-foreground"

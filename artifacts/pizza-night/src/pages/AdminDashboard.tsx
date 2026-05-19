@@ -262,6 +262,85 @@ function EventUserManager({ eventId, allUsers }: { eventId: number; allUsers: an
   );
 }
 
+// ── Inline order editor ─────────────────────────────────────────────────────
+function OrderEditPanel({
+  order, event, onClose, onSave,
+}: {
+  order: any;
+  event: any | undefined;
+  onClose: () => void;
+  onSave: (id: number, data: { items?: any[]; pickupSlot?: string; notes?: string }) => void;
+}) {
+  const slots: string[] = event?.slots ?? [];
+  const pizzaTypes: string[] = event?.pizzaTypes ?? [];
+
+  const [items, setItems] = useState<{ pizzaChoice: string; quantity: number }[]>(
+    () => (order.items ?? []).map((i: any) => ({ pizzaChoice: i.pizzaChoice, quantity: i.quantity }))
+  );
+  const [pickupSlot, setPickupSlot] = useState<string>(order.pickupSlot ?? "");
+  const [notes, setNotes] = useState<string>(order.notes ?? "");
+
+  const updateChoice = (index: number, choice: string) =>
+    setItems((prev) => prev.map((it, i) => (i === index ? { ...it, pizzaChoice: choice } : it)));
+
+  return (
+    <div className="border-t bg-secondary/10 px-4 py-4 space-y-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="space-y-1.5">
+          <Label className="text-xs font-medium text-muted-foreground">Pickup Slot</Label>
+          <Select value={pickupSlot} onValueChange={setPickupSlot}>
+            <SelectTrigger className="h-8 text-sm"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              {slots.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="space-y-1.5">
+          <Label className="text-xs font-medium text-muted-foreground">Notes</Label>
+          <Input
+            className="h-8 text-sm"
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            placeholder="Allergies, preferences..."
+          />
+        </div>
+      </div>
+      <div className="space-y-2">
+        <Label className="text-xs font-medium text-muted-foreground">Pizzas</Label>
+        {items.map((item, index) => (
+          <div key={index} className="flex items-center gap-2">
+            {items.length > 1 && <span className="text-xs text-muted-foreground w-12 shrink-0">#{index + 1}</span>}
+            <div className="flex flex-wrap gap-1.5 flex-1">
+              {pizzaTypes.map((choice) => (
+                <button
+                  key={choice}
+                  type="button"
+                  onClick={() => updateChoice(index, choice)}
+                  className={`px-2.5 py-1 rounded-lg border text-xs font-medium transition-colors cursor-pointer
+                    ${item.pizzaChoice === choice
+                      ? "border-primary bg-primary/5 text-primary"
+                      : "border-border hover:bg-secondary/50 text-foreground"
+                    }`}
+                >
+                  {choice}
+                </button>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+      <div className="flex gap-2">
+        <Button size="sm" onClick={() => onSave(order.id, { items, pickupSlot, notes })}>
+          <Check className="w-3.5 h-3.5 mr-1.5" />Save
+        </Button>
+        <Button size="sm" variant="ghost" onClick={onClose}>
+          <X className="w-3.5 h-3.5 mr-1.5" />Cancel
+        </Button>
+      </div>
+    </div>
+  );
+}
+
 // ── Main dashboard ───────────────────────────────────────────────────────────
 export function AdminDashboard() {
   const [, setLocation] = useLocation();
@@ -303,6 +382,9 @@ export function AdminDashboard() {
   // Event editing state
   const [editingEventId, setEditingEventId] = useState<number | null>(null);
 
+  // Order editing state
+  const [editingOrderId, setEditingOrderId] = useState<number | null>(null);
+
   const [newUserName, setNewUserName] = useState("");
   const [filterEventId, setFilterEventId] = useState<string>("all");
 
@@ -318,6 +400,18 @@ export function AdminDashboard() {
         toast({ title: "Status updated" });
         queryClient.invalidateQueries({ queryKey: getListOrdersQueryKey() });
       },
+    });
+  };
+
+  const handleSaveOrderEdit = (id: number, data: { items?: any[]; pickupSlot?: string; notes?: string }) => {
+    updateOrder.mutate({ id, data: { items: data.items, pickupSlot: data.pickupSlot, notes: data.notes } }, {
+      onSuccess: () => {
+        toast({ title: "Order updated" });
+        setEditingOrderId(null);
+        queryClient.invalidateQueries({ queryKey: getListOrdersQueryKey() });
+        queryClient.invalidateQueries({ queryKey: getGetSummaryQueryKey() });
+      },
+      onError: () => toast({ title: "Failed to update order", variant: "destructive" }),
     });
   };
 
@@ -509,45 +603,73 @@ export function AdminDashboard() {
                         <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">No orders yet.</TableCell>
                       </TableRow>
                     )}
-                    {filteredOrders.map((order) => (
-                      <TableRow key={order.id}>
-                        <TableCell className="font-medium">{order.userName}</TableCell>
-                        {events && events.length > 1 && (
-                          <TableCell className="text-xs text-muted-foreground">{order.eventName}</TableCell>
-                        )}
-                        <TableCell>
-                          <div className="space-y-0.5">
-                            {(order.items ?? []).map((item: any, i: number) => (
-                              <div key={i} className="text-sm">{item.pizzaChoice}</div>
-                            ))}
-                            <div className="text-xs text-muted-foreground">
-                              {order.quantity * (events?.find(e => e.id === order.eventId)?.price ?? 70)} DKK
-                            </div>
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-sm">{order.pickupSlot}</TableCell>
-                        <TableCell className="max-w-[120px] truncate text-xs">{order.notes || "—"}</TableCell>
-                        <TableCell>
-                          <Select
-                            value={order.status}
-                            onValueChange={(val) => handleStatusChange(order.id, val as OrderUpdateStatus)}
-                          >
-                            <SelectTrigger className="h-8 w-[120px] text-xs"><SelectValue /></SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="pending">Pending</SelectItem>
-                              <SelectItem value="confirmed">Confirmed</SelectItem>
-                              <SelectItem value="declined">Declined</SelectItem>
-                              <SelectItem value="completed">Completed</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <Button variant="ghost" size="icon" onClick={() => handleDeleteOrder(order.id)} className="h-8 w-8 text-destructive hover:bg-destructive/10">
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))}
+                    {filteredOrders.map((order) => {
+                      const orderEvent = events?.find((e) => e.id === order.eventId);
+                      const isEditing = editingOrderId === order.id;
+                      return (
+                        <>
+                          <TableRow key={order.id} className={isEditing ? "bg-secondary/20" : undefined}>
+                            <TableCell className="font-medium">{order.userName}</TableCell>
+                            {events && events.length > 1 && (
+                              <TableCell className="text-xs text-muted-foreground">{order.eventName}</TableCell>
+                            )}
+                            <TableCell>
+                              <div className="space-y-0.5">
+                                {(order.items ?? []).map((item: any, i: number) => (
+                                  <div key={i} className="text-sm">{item.pizzaChoice}</div>
+                                ))}
+                                <div className="text-xs text-muted-foreground">
+                                  {order.quantity * (orderEvent?.price ?? 70)} DKK
+                                </div>
+                              </div>
+                            </TableCell>
+                            <TableCell className="text-sm">{order.pickupSlot}</TableCell>
+                            <TableCell className="max-w-[120px] truncate text-xs">{order.notes || "—"}</TableCell>
+                            <TableCell>
+                              <Select
+                                value={order.status}
+                                onValueChange={(val) => handleStatusChange(order.id, val as OrderUpdateStatus)}
+                              >
+                                <SelectTrigger className="h-8 w-[120px] text-xs"><SelectValue /></SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="pending">Pending</SelectItem>
+                                  <SelectItem value="confirmed">Confirmed</SelectItem>
+                                  <SelectItem value="declined">Declined</SelectItem>
+                                  <SelectItem value="completed">Completed</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <div className="flex justify-end gap-1">
+                                <Button
+                                  variant="ghost" size="icon"
+                                  className={`h-8 w-8 ${isEditing ? "text-primary bg-primary/10" : ""}`}
+                                  onClick={() => setEditingOrderId(isEditing ? null : order.id)}
+                                  title="Edit order"
+                                >
+                                  <Pencil className="h-4 w-4" />
+                                </Button>
+                                <Button variant="ghost" size="icon" onClick={() => handleDeleteOrder(order.id)} className="h-8 w-8 text-destructive hover:bg-destructive/10">
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                          {isEditing && (
+                            <TableRow key={`${order.id}-edit`}>
+                              <TableCell colSpan={events && events.length > 1 ? 7 : 6} className="p-0">
+                                <OrderEditPanel
+                                  order={order}
+                                  event={orderEvent}
+                                  onClose={() => setEditingOrderId(null)}
+                                  onSave={handleSaveOrderEdit}
+                                />
+                              </TableCell>
+                            </TableRow>
+                          )}
+                        </>
+                      );
+                    })}
                   </TableBody>
                 </Table>
               </CardContent>
