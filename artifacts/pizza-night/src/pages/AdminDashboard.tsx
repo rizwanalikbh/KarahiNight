@@ -23,7 +23,7 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import {
   Loader2, Trash2, RefreshCw, UserPlus, Plus, CalendarDays,
-  Users, ChevronDown, ChevronUp, Pencil, X, Check,
+  Users, ChevronDown, ChevronUp, Pencil, X, Check, FileText,
 } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { OrderUpdateStatus } from "@workspace/api-client-react";
@@ -641,6 +641,18 @@ export function AdminDashboard() {
                             </TableCell>
                             <TableCell className="text-right">
                               <div className="flex justify-end gap-1">
+                                {order.status === "confirmed" && (
+                                  <a
+                                    href={`/receipt/${order.id}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    title="Open receipt (save as PDF)"
+                                  >
+                                    <Button variant="ghost" size="icon" className="h-8 w-8 text-green-700 hover:bg-green-50">
+                                      <FileText className="h-4 w-4" />
+                                    </Button>
+                                  </a>
+                                )}
                                 <Button
                                   variant="ghost" size="icon"
                                   className={`h-8 w-8 ${isEditing ? "text-primary bg-primary/10" : ""}`}
