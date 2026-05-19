@@ -74,6 +74,8 @@ export const ListEventsResponseItem = zod.object({
   "slotCapacity": zod.number(),
   "price": zod.number().describe('Price per pizza in DKK'),
   "description": zod.string().nullish().describe('Event description or fundraising note'),
+  "slots": zod.array(zod.string()),
+  "pizzaTypes": zod.array(zod.string()),
   "active": zod.boolean(),
   "createdAt": zod.coerce.date()
 })
@@ -93,7 +95,9 @@ export const CreateEventBody = zod.object({
   "totalCapacity": zod.number().default(createEventBodyTotalCapacityDefault),
   "slotCapacity": zod.number().default(createEventBodySlotCapacityDefault),
   "price": zod.number().default(createEventBodyPriceDefault),
-  "description": zod.string().optional()
+  "description": zod.string().optional(),
+  "slots": zod.array(zod.string()).optional(),
+  "pizzaTypes": zod.array(zod.string()).optional()
 })
 
 
@@ -111,6 +115,8 @@ export const UpdateEventBody = zod.object({
   "slotCapacity": zod.number().optional(),
   "price": zod.number().optional(),
   "description": zod.string().optional(),
+  "slots": zod.array(zod.string()).optional(),
+  "pizzaTypes": zod.array(zod.string()).optional(),
   "active": zod.boolean().optional()
 })
 
@@ -122,6 +128,8 @@ export const UpdateEventResponse = zod.object({
   "slotCapacity": zod.number(),
   "price": zod.number().describe('Price per pizza in DKK'),
   "description": zod.string().nullish().describe('Event description or fundraising note'),
+  "slots": zod.array(zod.string()),
+  "pizzaTypes": zod.array(zod.string()),
   "active": zod.boolean(),
   "createdAt": zod.coerce.date()
 })
@@ -361,6 +369,7 @@ export const GetSummaryResponse = zod.object({
   "orderingOpen": zod.boolean(),
   "price": zod.number(),
   "description": zod.string().nullish(),
+  "pizzaTypes": zod.array(zod.string()),
   "slots": zod.array(zod.object({
   "slot": zod.string(),
   "booked": zod.number(),

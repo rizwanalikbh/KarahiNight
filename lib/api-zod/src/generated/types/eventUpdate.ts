@@ -13,5 +13,7 @@ export interface EventUpdate {
   slotCapacity?: number;
   price?: number;
   description?: string;
+  slots?: string[];
+  pizzaTypes?: string[];
   active?: boolean;
 }

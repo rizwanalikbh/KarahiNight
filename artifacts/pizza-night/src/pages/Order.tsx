@@ -12,14 +12,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, CheckCircle2, AlertCircle, CalendarDays } from "lucide-react";
+import type { PizzaItem as APIPizzaItem } from "@workspace/api-client-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useQueryClient } from "@tanstack/react-query";
 
-type PizzaChoice = "Margherita" | "Pepperoni" | "Special";
-const PIZZA_CHOICES: PizzaChoice[] = ["Margherita", "Pepperoni", "Special"];
-
 interface PizzaItem {
-  pizzaChoice: PizzaChoice;
+  pizzaChoice: string;
   quantity: number;
 }
 
@@ -46,7 +44,7 @@ export function Order() {
   const [pickupSlot, setPickupSlot] = useState("");
   const [notes, setNotes] = useState("");
   const [totalQty, setTotalQty] = useState(1);
-  const [pizzaItems, setPizzaItems] = useState<PizzaItem[]>([{ pizzaChoice: "Margherita", quantity: 1 }]);
+  const [pizzaItems, setPizzaItems] = useState<PizzaItem[]>([{ pizzaChoice: "", quantity: 1 }]);
 
   useEffect(() => {
     if (events && events.length === 1 && !selectedEventId) {
@@ -59,28 +57,33 @@ export function Order() {
     { query: { enabled: !!selectedEventId, queryKey: getGetSummaryQueryKey() } }
   );
 
-  const pricePerPizza = summary?.price ?? events?.find((e) => e.id === selectedEventId)?.price ?? 70;
+  const pizzaTypes: string[] = summary?.pizzaTypes ?? [];
+  const pricePerPizza = summary?.price ?? 70;
+
+  // Reset pizza items when pizza types load or event changes
+  useEffect(() => {
+    if (pizzaTypes.length > 0) {
+      setPizzaItems((prev) =>
+        Array.from({ length: totalQty }, (_, i) => ({
+          pizzaChoice: prev[i]?.pizzaChoice && pizzaTypes.includes(prev[i].pizzaChoice)
+            ? prev[i].pizzaChoice
+            : pizzaTypes[0],
+          quantity: 1,
+        }))
+      );
+    }
+  }, [pizzaTypes.join(","), totalQty]);
 
   const selectedSlotData = summary?.slots.find((s) => s.slot === pickupSlot);
   const slotAvailable = selectedSlotData?.available ?? 0;
   const maxAllowed = Math.min(summary?.totalRemaining ?? 0, slotAvailable, 3);
-
-  useEffect(() => {
-    setPizzaItems((prev) => {
-      if (totalQty === 1) return [{ pizzaChoice: prev[0]?.pizzaChoice ?? "Margherita", quantity: 1 }];
-      return Array.from({ length: totalQty }, (_, i) => ({
-        pizzaChoice: prev[i]?.pizzaChoice ?? "Margherita",
-        quantity: 1,
-      }));
-    });
-  }, [totalQty]);
 
   const handleSlotChange = (val: string) => {
     setPickupSlot(val);
     setTotalQty(1);
   };
 
-  const updateItemChoice = (index: number, choice: PizzaChoice) => {
+  const updateItemChoice = (index: number, choice: string) => {
     setPizzaItems((prev) => prev.map((item, i) => (i === index ? { ...item, pizzaChoice: choice } : item)));
   };
 
@@ -134,7 +137,6 @@ export function Order() {
               <p className="text-muted-foreground mb-8">
                 Thanks! Your order request has been received. I will confirm it by private message.
               </p>
-
               <div className="w-full bg-secondary/30 rounded-xl p-6 text-left space-y-4 border border-border">
                 <div className="flex justify-between border-b pb-4">
                   <span className="text-muted-foreground">Event</span>
@@ -190,9 +192,7 @@ export function Order() {
             <CardContent className="pt-10 pb-10 flex flex-col items-center">
               <AlertCircle className="w-16 h-16 text-muted-foreground mb-4" />
               <h2 className="text-2xl font-serif font-bold text-foreground mb-2">Fully Booked</h2>
-              <p className="text-muted-foreground">
-                Sorry, the event is fully booked! All pizza spots have been claimed.
-              </p>
+              <p className="text-muted-foreground">Sorry, the event is fully booked!</p>
             </CardContent>
           </Card>
         </div>
@@ -202,17 +202,12 @@ export function Order() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedEventId) {
-      toast({ title: "No event selected", description: "Please select an event.", variant: "destructive" });
+    if (!selectedEventId || !pickupSlot) {
+      toast({ title: "Incomplete", description: "Please select a slot.", variant: "destructive" });
       return;
     }
-    if (!pickupSlot) {
-      toast({ title: "Incomplete", description: "Please select a pickup slot.", variant: "destructive" });
-      return;
-    }
-
     createOrder.mutate(
-      { data: { eventId: selectedEventId, items: pizzaItems, pickupSlot, notes: notes || undefined } },
+      { data: { eventId: selectedEventId, items: pizzaItems as APIPizzaItem[], pickupSlot, notes: notes || undefined } },
       {
         onSuccess: () => {
           queryClient.invalidateQueries({ queryKey: getListOrdersQueryKey() });
@@ -240,7 +235,6 @@ export function Order() {
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-8">
 
-              {/* Event selection */}
               {events.length > 1 ? (
                 <div className="space-y-3">
                   <Label className="text-base font-semibold">Select Event</Label>
@@ -274,7 +268,6 @@ export function Order() {
                 </div>
               )}
 
-              {/* Pickup slot */}
               {selectedEventId && (
                 <div className="space-y-3">
                   <Label className="text-base font-semibold">Select Pickup Slot</Label>
@@ -297,7 +290,6 @@ export function Order() {
                 </div>
               )}
 
-              {/* How many pizzas */}
               {pickupSlot && (
                 <div className="space-y-3 animate-in fade-in slide-in-from-top-2">
                   <Label className="text-base font-semibold">How Many Pizzas?</Label>
@@ -319,8 +311,7 @@ export function Order() {
                 </div>
               )}
 
-              {/* Per-pizza type selector */}
-              {pickupSlot && pizzaItems.length > 0 && (
+              {pickupSlot && pizzaItems.length > 0 && pizzaTypes.length > 0 && (
                 <div className="space-y-3 animate-in fade-in slide-in-from-top-2">
                   <Label className="text-base font-semibold">
                     {pizzaItems.length === 1 ? "Choose Your Pizza" : "Choose Each Pizza"}
@@ -331,8 +322,8 @@ export function Order() {
                         {pizzaItems.length > 1 && (
                           <span className="text-sm text-muted-foreground w-16 shrink-0">Pizza {index + 1}</span>
                         )}
-                        <div className="flex-1 grid grid-cols-3 gap-2">
-                          {PIZZA_CHOICES.map((choice) => (
+                        <div className="flex-1 grid gap-2" style={{ gridTemplateColumns: `repeat(${Math.min(pizzaTypes.length, 3)}, 1fr)` }}>
+                          {pizzaTypes.map((choice) => (
                             <button
                               key={choice}
                               type="button"
@@ -353,7 +344,6 @@ export function Order() {
                 </div>
               )}
 
-              {/* Notes */}
               <div className="space-y-2">
                 <Label htmlFor="notes" className="text-base font-semibold">Notes (Optional)</Label>
                 <Textarea
@@ -365,7 +355,6 @@ export function Order() {
                 />
               </div>
 
-              {/* Price total */}
               <div className="bg-secondary/50 p-4 rounded-xl border border-border flex justify-between items-center">
                 <span className="font-medium text-foreground">Total Price:</span>
                 <span className="font-serif font-bold text-xl text-primary">{totalQty * pricePerPizza} DKK</span>
@@ -375,7 +364,7 @@ export function Order() {
                 type="submit"
                 size="lg"
                 className="w-full h-14 text-lg"
-                disabled={createOrder.isPending || !pickupSlot || !selectedEventId}
+                disabled={createOrder.isPending || !pickupSlot || !selectedEventId || pizzaItems.some(i => !i.pizzaChoice)}
               >
                 {createOrder.isPending ? <Loader2 className="w-5 h-5 animate-spin" /> : "Place Order"}
               </Button>

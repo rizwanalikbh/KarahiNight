@@ -12,6 +12,9 @@ import {
   RemoveUserFromEventParams,
 } from "@workspace/api-zod";
 
+const DEFAULT_SLOTS = ["16:00-16:30","16:30-17:00","17:00-17:30","17:30-18:00","18:00-18:30","18:30-19:00"];
+const DEFAULT_PIZZA_TYPES = ["Margherita","Pepperoni","Special"];
+
 const router: IRouter = Router();
 
 function requireAdmin(req: any, res: any, next: any): void {
@@ -30,7 +33,6 @@ function requireAuth(req: any, res: any, next: any): void {
   next();
 }
 
-// GET /events — admin sees all, user sees their events
 router.get("/events", requireAuth, async (req, res): Promise<void> => {
   if (req.session.role === "admin") {
     const events = await db.select().from(eventsTable).orderBy(eventsTable.date);
@@ -44,23 +46,16 @@ router.get("/events", requireAuth, async (req, res): Promise<void> => {
     .from(eventUsersTable)
     .where(eq(eventUsersTable.userId, userId));
 
-  if (eventUsers.length === 0) {
-    res.json([]);
-    return;
-  }
+  if (eventUsers.length === 0) { res.json([]); return; }
 
   const eventIds = eventUsers.map((eu) => eu.eventId);
   const events = await db.select().from(eventsTable).orderBy(eventsTable.date);
   res.json(events.filter((e) => eventIds.includes(e.id) && e.active));
 });
 
-// POST /events — admin creates event
 router.post("/events", requireAdmin, async (req, res): Promise<void> => {
   const parsed = CreateEventBody.safeParse(req.body);
-  if (!parsed.success) {
-    res.status(400).json({ error: parsed.error.message });
-    return;
-  }
+  if (!parsed.success) { res.status(400).json({ error: parsed.error.message }); return; }
 
   const [event] = await db
     .insert(eventsTable)
@@ -71,6 +66,8 @@ router.post("/events", requireAdmin, async (req, res): Promise<void> => {
       slotCapacity: parsed.data.slotCapacity ?? 3,
       price: parsed.data.price ?? 70,
       description: parsed.data.description ?? null,
+      slots: parsed.data.slots?.length ? parsed.data.slots : DEFAULT_SLOTS,
+      pizzaTypes: parsed.data.pizzaTypes?.length ? parsed.data.pizzaTypes : DEFAULT_PIZZA_TYPES,
       active: true,
     })
     .returning();
@@ -78,19 +75,12 @@ router.post("/events", requireAdmin, async (req, res): Promise<void> => {
   res.status(201).json(event);
 });
 
-// PATCH /events/:id — admin updates event
 router.patch("/events/:id", requireAdmin, async (req, res): Promise<void> => {
   const params = UpdateEventParams.safeParse(req.params);
-  if (!params.success) {
-    res.status(400).json({ error: params.error.message });
-    return;
-  }
+  if (!params.success) { res.status(400).json({ error: params.error.message }); return; }
 
   const parsed = UpdateEventBody.safeParse(req.body);
-  if (!parsed.success) {
-    res.status(400).json({ error: parsed.error.message });
-    return;
-  }
+  if (!parsed.success) { res.status(400).json({ error: parsed.error.message }); return; }
 
   const updateData: Record<string, unknown> = {};
   if (parsed.data.name !== undefined) updateData.name = parsed.data.name;
@@ -99,6 +89,8 @@ router.patch("/events/:id", requireAdmin, async (req, res): Promise<void> => {
   if (parsed.data.slotCapacity !== undefined) updateData.slotCapacity = parsed.data.slotCapacity;
   if (parsed.data.price !== undefined) updateData.price = parsed.data.price;
   if (parsed.data.description !== undefined) updateData.description = parsed.data.description;
+  if (parsed.data.slots !== undefined) updateData.slots = parsed.data.slots;
+  if (parsed.data.pizzaTypes !== undefined) updateData.pizzaTypes = parsed.data.pizzaTypes;
   if (parsed.data.active !== undefined) updateData.active = parsed.data.active;
 
   const [event] = await db
@@ -107,97 +99,54 @@ router.patch("/events/:id", requireAdmin, async (req, res): Promise<void> => {
     .where(eq(eventsTable.id, params.data.id))
     .returning();
 
-  if (!event) {
-    res.status(404).json({ error: "Event not found" });
-    return;
-  }
-
+  if (!event) { res.status(404).json({ error: "Event not found" }); return; }
   res.json(event);
 });
 
-// DELETE /events/:id — admin deletes event
 router.delete("/events/:id", requireAdmin, async (req, res): Promise<void> => {
   const params = DeleteEventParams.safeParse(req.params);
-  if (!params.success) {
-    res.status(400).json({ error: params.error.message });
-    return;
-  }
-
+  if (!params.success) { res.status(400).json({ error: params.error.message }); return; }
   await db.delete(eventsTable).where(eq(eventsTable.id, params.data.id));
   res.sendStatus(204);
 });
 
-// GET /events/:id/users — admin lists users in event
 router.get("/events/:id/users", requireAdmin, async (req, res): Promise<void> => {
   const params = ListEventUsersParams.safeParse(req.params);
-  if (!params.success) {
-    res.status(400).json({ error: params.error.message });
-    return;
-  }
+  if (!params.success) { res.status(400).json({ error: params.error.message }); return; }
 
   const eventUsers = await db
     .select({ userId: eventUsersTable.userId })
     .from(eventUsersTable)
     .where(eq(eventUsersTable.eventId, params.data.id));
 
-  if (eventUsers.length === 0) {
-    res.json([]);
-    return;
-  }
+  if (eventUsers.length === 0) { res.json([]); return; }
 
   const userIds = eventUsers.map((eu) => eu.userId);
   const users = await db.select().from(usersTable).orderBy(usersTable.name);
   res.json(users.filter((u) => userIds.includes(u.id)));
 });
 
-// POST /events/:id/users — admin adds user to event
 router.post("/events/:id/users", requireAdmin, async (req, res): Promise<void> => {
   const params = AddUserToEventParams.safeParse(req.params);
-  if (!params.success) {
-    res.status(400).json({ error: params.error.message });
-    return;
-  }
+  if (!params.success) { res.status(400).json({ error: params.error.message }); return; }
 
   const parsed = AddUserToEventBody.safeParse(req.body);
-  if (!parsed.success) {
-    res.status(400).json({ error: parsed.error.message });
-    return;
-  }
+  if (!parsed.success) { res.status(400).json({ error: parsed.error.message }); return; }
 
-  const [user] = await db
-    .select()
-    .from(usersTable)
-    .where(eq(usersTable.id, parsed.data.userId));
+  const [user] = await db.select().from(usersTable).where(eq(usersTable.id, parsed.data.userId));
+  if (!user) { res.status(404).json({ error: "User not found" }); return; }
 
-  if (!user) {
-    res.status(404).json({ error: "User not found" });
-    return;
-  }
-
-  await db
-    .insert(eventUsersTable)
-    .values({ eventId: params.data.id, userId: parsed.data.userId })
-    .onConflictDoNothing();
-
+  await db.insert(eventUsersTable).values({ eventId: params.data.id, userId: parsed.data.userId }).onConflictDoNothing();
   res.status(201).json(user);
 });
 
-// DELETE /events/:id/users/:userId — admin removes user from event
 router.delete("/events/:id/users/:userId", requireAdmin, async (req, res): Promise<void> => {
   const params = RemoveUserFromEventParams.safeParse(req.params);
-  if (!params.success) {
-    res.status(400).json({ error: params.error.message });
-    return;
-  }
+  if (!params.success) { res.status(400).json({ error: params.error.message }); return; }
 
   await db
     .delete(eventUsersTable)
-    .where(
-      and(
-        eq(eventUsersTable.eventId, params.data.id),
-        eq(eventUsersTable.userId, params.data.userId)
-      )
-    );
+    .where(and(eq(eventUsersTable.eventId, params.data.id), eq(eventUsersTable.userId, params.data.userId)));
 
   res.sendStatus(204);
 });

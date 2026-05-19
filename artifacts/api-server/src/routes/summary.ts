@@ -3,15 +3,6 @@ import { db, ordersTable, eventsTable, eventUsersTable, usersTable } from "@work
 import { eq, and } from "drizzle-orm";
 import { GetSummaryQueryParams } from "@workspace/api-zod";
 
-const VALID_SLOTS = [
-  "16:00-16:30",
-  "16:30-17:00",
-  "17:00-17:30",
-  "17:30-18:00",
-  "18:00-18:30",
-  "18:30-19:00",
-];
-
 const router: IRouter = Router();
 
 router.get("/summary", async (req, res): Promise<void> => {
@@ -40,6 +31,9 @@ router.get("/summary", async (req, res): Promise<void> => {
     return;
   }
 
+  const eventSlots = Array.isArray(event.slots) ? event.slots : [];
+  const eventPizzaTypes = Array.isArray(event.pizzaTypes) ? event.pizzaTypes : [];
+
   const allOrders = await db
     .select()
     .from(ordersTable)
@@ -49,14 +43,14 @@ router.get("/summary", async (req, res): Promise<void> => {
   const totalRemaining = Math.max(0, event.totalCapacity - totalBooked);
   const orderingOpen = totalRemaining > 0 && event.active;
 
-  const slots = VALID_SLOTS.map((slot) => {
+  const slots = eventSlots.map((slot) => {
     const slotOrders = allOrders.filter((o) => o.pickupSlot === slot);
     const booked = slotOrders.reduce((sum, o) => sum + o.quantity, 0);
     const available = Math.max(0, event.slotCapacity - booked);
     return { slot, booked, capacity: event.slotCapacity, available };
   });
 
-  // Fetch guests assigned to this event (id + name only — no codes exposed)
+  // Guests assigned to this event (id + name only — no codes)
   const eventUserRows = await db
     .select({ userId: eventUsersTable.userId })
     .from(eventUsersTable)
@@ -84,6 +78,7 @@ router.get("/summary", async (req, res): Promise<void> => {
     orderingOpen,
     price: event.price,
     description: event.description ?? null,
+    pizzaTypes: eventPizzaTypes,
     slots,
     guests,
   });

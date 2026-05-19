@@ -7,6 +7,7 @@ import {
   getListOrdersQueryKey, getListUsersQueryKey, getGetSummaryQueryKey,
   getListEventsQueryKey, getListEventUsersQueryKey,
 } from "@workspace/api-client-react";
+import type { Event } from "@workspace/api-client-react";
 import { useLocation } from "wouter";
 import { Layout } from "../components/Layout";
 import { Button } from "@/components/ui/button";
@@ -20,19 +21,165 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Trash2, RefreshCw, UserPlus, Plus, CalendarDays, Users, ChevronDown, ChevronUp } from "lucide-react";
+import {
+  Loader2, Trash2, RefreshCw, UserPlus, Plus, CalendarDays,
+  Users, ChevronDown, ChevronUp, Pencil, X, Check,
+} from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { OrderUpdateStatus } from "@workspace/api-client-react";
+
+const DEFAULT_SLOTS = ["16:00-16:30","16:30-17:00","17:00-17:30","17:30-18:00","18:00-18:30","18:30-19:00"];
+const DEFAULT_PIZZA_TYPES = ["Margherita","Pepperoni","Special"];
 
 function formatEventDate(dateStr: string): string {
   try {
     const d = new Date(dateStr + "T12:00:00");
     return d.toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short", year: "numeric" });
-  } catch {
-    return dateStr;
-  }
+  } catch { return dateStr; }
 }
 
+// ── Tag editor for slots / pizza types ──────────────────────────────────────
+function TagEditor({
+  label, tags, onChange, placeholder,
+}: { label: string; tags: string[]; onChange: (tags: string[]) => void; placeholder: string }) {
+  const [input, setInput] = useState("");
+
+  const add = () => {
+    const v = input.trim();
+    if (v && !tags.includes(v)) { onChange([...tags, v]); }
+    setInput("");
+  };
+
+  return (
+    <div className="space-y-2">
+      <Label className="text-sm">{label}</Label>
+      <div className="flex flex-wrap gap-1.5 min-h-[2rem]">
+        {tags.map((t) => (
+          <Badge key={t} variant="secondary" className="gap-1 pr-1 text-xs">
+            {t}
+            <button type="button" onClick={() => onChange(tags.filter((x) => x !== t))} className="hover:text-destructive ml-1">×</button>
+          </Badge>
+        ))}
+      </div>
+      <div className="flex gap-2">
+        <Input
+          className="h-8 text-sm"
+          placeholder={placeholder}
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); add(); } }}
+        />
+        <Button type="button" size="sm" className="h-8 px-3" onClick={add} disabled={!input.trim()}>
+          <Plus className="w-3 h-3" />
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+// ── Inline event editor ──────────────────────────────────────────────────────
+function EventEditPanel({ event, onClose }: { event: Event; onClose: () => void }) {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const updateEvent = useUpdateEvent();
+
+  const [name, setName] = useState(event.name);
+  const [date, setDate] = useState(event.date);
+  const [totalCap, setTotalCap] = useState(String(event.totalCapacity));
+  const [slotCap, setSlotCap] = useState(String(event.slotCapacity));
+  const [price, setPrice] = useState(String(event.price));
+  const [description, setDescription] = useState(event.description ?? "");
+  const [slots, setSlots] = useState<string[]>(event.slots ?? DEFAULT_SLOTS);
+  const [pizzaTypes, setPizzaTypes] = useState<string[]>(event.pizzaTypes ?? DEFAULT_PIZZA_TYPES);
+
+  const handleSave = (e: React.FormEvent) => {
+    e.preventDefault();
+    updateEvent.mutate(
+      {
+        id: event.id,
+        data: {
+          name, date,
+          totalCapacity: parseInt(totalCap, 10) || 10,
+          slotCapacity: parseInt(slotCap, 10) || 3,
+          price: parseInt(price, 10) || 70,
+          description: description || undefined,
+          slots,
+          pizzaTypes,
+        },
+      },
+      {
+        onSuccess: () => {
+          toast({ title: "Event updated" });
+          queryClient.invalidateQueries({ queryKey: getListEventsQueryKey() });
+          queryClient.invalidateQueries({ queryKey: getGetSummaryQueryKey() });
+          onClose();
+        },
+        onError: () => toast({ title: "Failed to update event", variant: "destructive" }),
+      }
+    );
+  };
+
+  return (
+    <form onSubmit={handleSave} className="border rounded-xl p-5 bg-secondary/10 space-y-4 mt-2">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="space-y-1.5">
+          <Label className="text-sm">Event Name</Label>
+          <Input value={name} onChange={(e) => setName(e.target.value)} />
+        </div>
+        <div className="space-y-1.5">
+          <Label className="text-sm">Date</Label>
+          <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+        </div>
+        <div className="space-y-1.5">
+          <Label className="text-sm">Total Capacity</Label>
+          <Input type="number" min={1} value={totalCap} onChange={(e) => setTotalCap(e.target.value)} />
+        </div>
+        <div className="space-y-1.5">
+          <Label className="text-sm">Pizzas per Slot</Label>
+          <Input type="number" min={1} value={slotCap} onChange={(e) => setSlotCap(e.target.value)} />
+        </div>
+        <div className="space-y-1.5">
+          <Label className="text-sm">Price per Pizza (DKK)</Label>
+          <Input type="number" min={1} value={price} onChange={(e) => setPrice(e.target.value)} />
+        </div>
+      </div>
+      <div className="space-y-1.5">
+        <Label className="text-sm">Description</Label>
+        <Textarea
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          className="resize-none"
+          rows={2}
+          placeholder="Shown on home &amp; order pages..."
+        />
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <TagEditor
+          label="Pickup Slots"
+          tags={slots}
+          onChange={setSlots}
+          placeholder="e.g. 17:00-17:30"
+        />
+        <TagEditor
+          label="Pizza Types"
+          tags={pizzaTypes}
+          onChange={setPizzaTypes}
+          placeholder="e.g. Quattro Stagioni"
+        />
+      </div>
+      <div className="flex gap-2 pt-1">
+        <Button type="submit" size="sm" disabled={updateEvent.isPending}>
+          {updateEvent.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Check className="w-4 h-4 mr-1.5" />Save Changes</>}
+        </Button>
+        <Button type="button" size="sm" variant="ghost" onClick={onClose}>
+          <X className="w-4 h-4 mr-1.5" />Cancel
+        </Button>
+      </div>
+    </form>
+  );
+}
+
+// ── Guest manager per event ──────────────────────────────────────────────────
 function EventUserManager({ eventId, allUsers }: { eventId: number; allUsers: any[] }) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -52,17 +199,8 @@ function EventUserManager({ eventId, allUsers }: { eventId: number; allUsers: an
     if (!addUserId) return;
     addUser.mutate({ id: eventId, data: { userId: parseInt(addUserId, 10) } }, {
       onSuccess: () => {
-        toast({ title: "Guest added to event" });
+        toast({ title: "Guest added" });
         setAddUserId("");
-        queryClient.invalidateQueries({ queryKey: getListEventUsersQueryKey(eventId) });
-      },
-    });
-  };
-
-  const handleRemove = (userId: number) => {
-    removeUser.mutate({ id: eventId, userId }, {
-      onSuccess: () => {
-        toast({ title: "Guest removed from event" });
         queryClient.invalidateQueries({ queryKey: getListEventUsersQueryKey(eventId) });
       },
     });
@@ -91,23 +229,22 @@ function EventUserManager({ eventId, allUsers }: { eventId: number; allUsers: an
                   {u.name}
                   <button
                     type="button"
-                    onClick={() => handleRemove(u.id)}
+                    onClick={() => removeUser.mutate({ id: eventId, userId: u.id }, {
+                      onSuccess: () => {
+                        toast({ title: "Guest removed" });
+                        queryClient.invalidateQueries({ queryKey: getListEventUsersQueryKey(eventId) });
+                      },
+                    })}
                     className="hover:text-destructive transition-colors ml-1"
-                    title="Remove"
-                  >
-                    ×
-                  </button>
+                  >×</button>
                 </Badge>
               ))}
             </div>
           )}
-
           {usersNotInEvent.length > 0 && (
             <div className="flex gap-2 items-center">
               <Select value={addUserId} onValueChange={setAddUserId}>
-                <SelectTrigger className="h-8 text-xs flex-1">
-                  <SelectValue placeholder="Add a guest..." />
-                </SelectTrigger>
+                <SelectTrigger className="h-8 text-xs flex-1"><SelectValue placeholder="Add a guest..." /></SelectTrigger>
                 <SelectContent>
                   {usersNotInEvent.map((u) => (
                     <SelectItem key={u.id} value={String(u.id)}>{u.name}</SelectItem>
@@ -125,6 +262,7 @@ function EventUserManager({ eventId, allUsers }: { eventId: number; allUsers: an
   );
 }
 
+// ── Main dashboard ───────────────────────────────────────────────────────────
 export function AdminDashboard() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
@@ -149,20 +287,26 @@ export function AdminDashboard() {
   const regenerateCode = useRegenerateCode();
   const createUser = useCreateUser();
   const createEvent = useCreateEvent();
-  const updateEvent = useUpdateEvent();
   const deleteEvent = useDeleteEvent();
+  const updateEvent = useUpdateEvent();
 
-  const [newUserName, setNewUserName] = useState("");
+  // Event creation form state
   const [newEventName, setNewEventName] = useState("");
   const [newEventDate, setNewEventDate] = useState("2026-05-24");
   const [newEventCapacity, setNewEventCapacity] = useState("10");
   const [newEventSlot, setNewEventSlot] = useState("3");
   const [newEventPrice, setNewEventPrice] = useState("70");
   const [newEventDescription, setNewEventDescription] = useState("");
+  const [newEventSlots, setNewEventSlots] = useState<string[]>(DEFAULT_SLOTS);
+  const [newEventPizzaTypes, setNewEventPizzaTypes] = useState<string[]>(DEFAULT_PIZZA_TYPES);
+
+  // Event editing state
+  const [editingEventId, setEditingEventId] = useState<number | null>(null);
+
+  const [newUserName, setNewUserName] = useState("");
   const [filterEventId, setFilterEventId] = useState<string>("all");
 
   if (sessionLoading) return <Layout><div className="flex justify-center p-12"><Loader2 className="animate-spin text-primary" /></div></Layout>;
-
   if (!session?.authenticated || session.role !== "admin") {
     setLocation("/admin");
     return null;
@@ -194,25 +338,6 @@ export function AdminDashboard() {
     });
   };
 
-  const handleRegenerateCode = (id: number) => {
-    regenerateCode.mutate({ id }, {
-      onSuccess: () => {
-        toast({ title: "Code regenerated" });
-        queryClient.invalidateQueries({ queryKey: getListUsersQueryKey() });
-      },
-    });
-  };
-
-  const handleDeleteUser = (id: number) => {
-    if (!confirm("Delete this user?")) return;
-    deleteUser.mutate({ id }, {
-      onSuccess: () => {
-        toast({ title: "Guest deleted" });
-        queryClient.invalidateQueries({ queryKey: getListUsersQueryKey() });
-      },
-    });
-  };
-
   const handleAddUser = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newUserName.trim()) return;
@@ -237,6 +362,8 @@ export function AdminDashboard() {
           slotCapacity: parseInt(newEventSlot, 10) || 3,
           price: parseInt(newEventPrice, 10) || 70,
           description: newEventDescription || undefined,
+          slots: newEventSlots,
+          pizzaTypes: newEventPizzaTypes,
         },
       },
       {
@@ -244,6 +371,8 @@ export function AdminDashboard() {
           toast({ title: "Event created" });
           setNewEventName("");
           setNewEventDescription("");
+          setNewEventSlots(DEFAULT_SLOTS);
+          setNewEventPizzaTypes(DEFAULT_PIZZA_TYPES);
           queryClient.invalidateQueries({ queryKey: getListEventsQueryKey() });
         },
       }
@@ -287,7 +416,7 @@ export function AdminDashboard() {
             <TabsTrigger value="users">Guests</TabsTrigger>
           </TabsList>
 
-          {/* SUMMARY TAB */}
+          {/* SUMMARY */}
           <TabsContent value="summary" className="space-y-4 pt-4">
             {events && events.length > 1 && (
               <div className="flex items-center gap-3">
@@ -296,9 +425,7 @@ export function AdminDashboard() {
                   value={summaryEventId ? String(summaryEventId) : String(events[0]?.id ?? "")}
                   onValueChange={(v) => setSummaryEventId(parseInt(v, 10))}
                 >
-                  <SelectTrigger className="w-64 h-8 text-sm">
-                    <SelectValue />
-                  </SelectTrigger>
+                  <SelectTrigger className="w-64 h-8 text-sm"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     {events.map((e) => (
                       <SelectItem key={e.id} value={String(e.id)}>{e.name}</SelectItem>
@@ -307,39 +434,29 @@ export function AdminDashboard() {
                 </Select>
               </div>
             )}
-
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-medium text-muted-foreground">Total Booked</CardTitle>
-                </CardHeader>
+                <CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-muted-foreground">Total Booked</CardTitle></CardHeader>
                 <CardContent>
                   <div className="text-3xl font-bold font-serif text-primary">{summary?.totalBooked || 0}</div>
                   <p className="text-xs text-muted-foreground mt-1">out of {summary?.totalCapacity ?? "—"}</p>
                 </CardContent>
               </Card>
               <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-medium text-muted-foreground">Revenue (Est)</CardTitle>
-                </CardHeader>
+                <CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-muted-foreground">Revenue (Est)</CardTitle></CardHeader>
                 <CardContent>
                   <div className="text-3xl font-bold font-serif">{(summary?.totalBooked || 0) * (summary?.price ?? 70)} DKK</div>
                 </CardContent>
               </Card>
               <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-medium text-muted-foreground">Remaining Dough</CardTitle>
-                </CardHeader>
+                <CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-muted-foreground">Remaining</CardTitle></CardHeader>
                 <CardContent>
                   <div className="text-3xl font-bold font-serif text-accent">{summary?.totalRemaining ?? "—"}</div>
                 </CardContent>
               </Card>
             </div>
-
             <Card>
-              <CardHeader>
-                <CardTitle>Slot Breakdown{summary ? ` — ${summary.eventName}` : ""}</CardTitle>
-              </CardHeader>
+              <CardHeader><CardTitle>Slot Breakdown{summary ? ` — ${summary.eventName}` : ""}</CardTitle></CardHeader>
               <CardContent>
                 <div className="space-y-4">
                   {summary?.slots.map((slot) => (
@@ -356,15 +473,13 @@ export function AdminDashboard() {
             </Card>
           </TabsContent>
 
-          {/* ORDERS TAB */}
+          {/* ORDERS */}
           <TabsContent value="orders" className="pt-4 space-y-3">
             {events && events.length > 1 && (
               <div className="flex items-center gap-3">
                 <Label className="shrink-0 text-sm font-medium">Filter by event</Label>
                 <Select value={filterEventId} onValueChange={setFilterEventId}>
-                  <SelectTrigger className="w-52 h-8 text-sm">
-                    <SelectValue />
-                  </SelectTrigger>
+                  <SelectTrigger className="w-52 h-8 text-sm"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All events</SelectItem>
                     {events.map((e) => (
@@ -405,7 +520,9 @@ export function AdminDashboard() {
                             {(order.items ?? []).map((item: any, i: number) => (
                               <div key={i} className="text-sm">{item.pizzaChoice}</div>
                             ))}
-                            <div className="text-xs text-muted-foreground">{order.quantity * (events?.find(e => e.id === order.eventId)?.price ?? 70)} DKK</div>
+                            <div className="text-xs text-muted-foreground">
+                              {order.quantity * (events?.find(e => e.id === order.eventId)?.price ?? 70)} DKK
+                            </div>
                           </div>
                         </TableCell>
                         <TableCell className="text-sm">{order.pickupSlot}</TableCell>
@@ -415,9 +532,7 @@ export function AdminDashboard() {
                             value={order.status}
                             onValueChange={(val) => handleStatusChange(order.id, val as OrderUpdateStatus)}
                           >
-                            <SelectTrigger className="h-8 w-[120px] text-xs">
-                              <SelectValue />
-                            </SelectTrigger>
+                            <SelectTrigger className="h-8 w-[120px] text-xs"><SelectValue /></SelectTrigger>
                             <SelectContent>
                               <SelectItem value="pending">Pending</SelectItem>
                               <SelectItem value="confirmed">Confirmed</SelectItem>
@@ -439,8 +554,9 @@ export function AdminDashboard() {
             </Card>
           </TabsContent>
 
-          {/* EVENTS TAB */}
+          {/* EVENTS */}
           <TabsContent value="events" className="pt-4 space-y-4">
+            {/* Create form */}
             <Card>
               <CardHeader className="pb-3">
                 <CardTitle className="text-lg flex items-center gap-2"><CalendarDays className="w-5 h-5" /> Create Event</CardTitle>
@@ -450,57 +566,38 @@ export function AdminDashboard() {
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-1.5">
                       <Label className="text-sm">Event Name</Label>
-                      <Input
-                        placeholder="e.g. Neapolitan Pizza Night"
-                        value={newEventName}
-                        onChange={(e) => setNewEventName(e.target.value)}
-                      />
+                      <Input placeholder="e.g. Neapolitan Pizza Night" value={newEventName} onChange={(e) => setNewEventName(e.target.value)} />
                     </div>
                     <div className="space-y-1.5">
                       <Label className="text-sm">Date</Label>
-                      <Input
-                        type="date"
-                        value={newEventDate}
-                        onChange={(e) => setNewEventDate(e.target.value)}
-                      />
+                      <Input type="date" value={newEventDate} onChange={(e) => setNewEventDate(e.target.value)} />
                     </div>
                     <div className="space-y-1.5">
                       <Label className="text-sm">Total Capacity</Label>
-                      <Input
-                        type="number"
-                        min={1}
-                        value={newEventCapacity}
-                        onChange={(e) => setNewEventCapacity(e.target.value)}
-                      />
+                      <Input type="number" min={1} value={newEventCapacity} onChange={(e) => setNewEventCapacity(e.target.value)} />
                     </div>
                     <div className="space-y-1.5">
                       <Label className="text-sm">Pizzas per Slot</Label>
-                      <Input
-                        type="number"
-                        min={1}
-                        value={newEventSlot}
-                        onChange={(e) => setNewEventSlot(e.target.value)}
-                      />
+                      <Input type="number" min={1} value={newEventSlot} onChange={(e) => setNewEventSlot(e.target.value)} />
                     </div>
                     <div className="space-y-1.5">
                       <Label className="text-sm">Price per Pizza (DKK)</Label>
-                      <Input
-                        type="number"
-                        min={1}
-                        value={newEventPrice}
-                        onChange={(e) => setNewEventPrice(e.target.value)}
-                      />
+                      <Input type="number" min={1} value={newEventPrice} onChange={(e) => setNewEventPrice(e.target.value)} />
                     </div>
                   </div>
                   <div className="space-y-1.5">
-                    <Label className="text-sm">Description (shown on home &amp; order pages)</Label>
+                    <Label className="text-sm">Description</Label>
                     <Textarea
-                      placeholder="e.g. Collected money will go toward funding a future BBQ gathering."
+                      placeholder="Shown on home &amp; order pages..."
                       value={newEventDescription}
                       onChange={(e) => setNewEventDescription(e.target.value)}
                       className="resize-none"
                       rows={2}
                     />
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <TagEditor label="Pickup Slots" tags={newEventSlots} onChange={setNewEventSlots} placeholder="e.g. 17:00-17:30" />
+                    <TagEditor label="Pizza Types" tags={newEventPizzaTypes} onChange={setNewEventPizzaTypes} placeholder="e.g. Quattro Stagioni" />
                   </div>
                   <Button type="submit" disabled={createEvent.isPending || !newEventName.trim() || !newEventDate}>
                     <Plus className="w-4 h-4 mr-2" /> Create Event
@@ -509,73 +606,74 @@ export function AdminDashboard() {
               </CardContent>
             </Card>
 
-            <Card>
-              <CardContent className="p-0">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Name</TableHead>
-                      <TableHead>Date</TableHead>
-                      <TableHead>Capacity</TableHead>
-                      <TableHead>Price</TableHead>
-                      <TableHead>Active</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {(!events || events.length === 0) && (
-                      <TableRow>
-                        <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">No events yet.</TableCell>
-                      </TableRow>
+            {/* Events list */}
+            <div className="space-y-3">
+              {(!events || events.length === 0) && (
+                <p className="text-center py-8 text-muted-foreground">No events yet.</p>
+              )}
+              {events?.map((event) => (
+                <Card key={event.id} className={!event.active ? "opacity-60" : ""}>
+                  <CardContent className="pt-4 pb-4">
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-semibold text-foreground">{event.name}</span>
+                          <Badge variant={event.active ? "default" : "secondary"} className="text-xs">
+                            {event.active ? "Active" : "Inactive"}
+                          </Badge>
+                        </div>
+                        <div className="flex flex-wrap gap-x-4 gap-y-0.5 mt-1 text-sm text-muted-foreground">
+                          <span>{formatEventDate(event.date)}</span>
+                          <span>{event.totalCapacity} pizzas total · {event.slotCapacity}/slot · {event.price} DKK</span>
+                        </div>
+                        {event.description && (
+                          <p className="text-xs text-muted-foreground mt-1 truncate max-w-md">{event.description}</p>
+                        )}
+                        <div className="flex flex-wrap gap-1 mt-2">
+                          {(event.slots ?? []).map((s) => (
+                            <Badge key={s} variant="outline" className="text-xs font-normal">{s}</Badge>
+                          ))}
+                        </div>
+                        <div className="flex flex-wrap gap-1 mt-1">
+                          {(event.pizzaTypes ?? []).map((t) => (
+                            <Badge key={t} variant="secondary" className="text-xs font-normal">{t}</Badge>
+                          ))}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <Switch checked={event.active} onCheckedChange={(v) => handleToggleEvent(event.id, v)} />
+                        <Button
+                          variant="ghost" size="icon" className="h-8 w-8"
+                          onClick={() => setEditingEventId(editingEventId === event.id ? null : event.id)}
+                          title="Edit"
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:bg-destructive/10"
+                          onClick={() => handleDeleteEvent(event.id)}
+                          title="Delete"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+
+                    {editingEventId === event.id && (
+                      <EventEditPanel event={event} onClose={() => setEditingEventId(null)} />
                     )}
-                    {events?.map((event) => (
-                      <>
-                        <TableRow key={event.id} className={!event.active ? "opacity-60" : ""}>
-                          <TableCell>
-                            <div className="font-medium">{event.name}</div>
-                            {event.description && (
-                              <div className="text-xs text-muted-foreground mt-0.5 max-w-[200px] truncate">{event.description}</div>
-                            )}
-                          </TableCell>
-                          <TableCell className="text-sm">{formatEventDate(event.date)}</TableCell>
-                          <TableCell className="text-sm">{event.totalCapacity} / {event.slotCapacity} per slot</TableCell>
-                          <TableCell className="text-sm font-medium">{event.price} DKK</TableCell>
-                          <TableCell>
-                            <Switch
-                              checked={event.active}
-                              onCheckedChange={(val) => handleToggleEvent(event.id, val)}
-                            />
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => handleDeleteEvent(event.id)}
-                              className="h-8 w-8 text-destructive hover:bg-destructive/10"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                        <TableRow key={`${event.id}-users`} className={!event.active ? "opacity-60" : ""}>
-                          <TableCell colSpan={6} className="pt-0 pb-4 px-4">
-                            <EventUserManager eventId={event.id} allUsers={users ?? []} />
-                          </TableCell>
-                        </TableRow>
-                      </>
-                    ))}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
+
+                    <EventUserManager eventId={event.id} allUsers={users ?? []} />
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
           </TabsContent>
 
-          {/* GUESTS TAB */}
+          {/* GUESTS */}
           <TabsContent value="users" className="pt-4 space-y-4">
             <Card>
-              <CardHeader className="pb-4">
-                <CardTitle className="text-lg">Add Guest</CardTitle>
-              </CardHeader>
+              <CardHeader className="pb-4"><CardTitle className="text-lg">Add Guest</CardTitle></CardHeader>
               <CardContent>
                 <form onSubmit={handleAddUser} className="flex gap-4">
                   <Input
@@ -590,7 +688,6 @@ export function AdminDashboard() {
                 </form>
               </CardContent>
             </Card>
-
             <Card>
               <CardContent className="p-0">
                 <Table>
@@ -608,16 +705,13 @@ export function AdminDashboard() {
                         <TableCell className="font-medium">{user.name}</TableCell>
                         <TableCell className="font-mono tracking-widest">{user.code}</TableCell>
                         <TableCell>
-                          <Switch
-                            checked={user.active}
-                            onCheckedChange={(val) => handleToggleUser(user.id, val)}
-                          />
+                          <Switch checked={user.active} onCheckedChange={(v) => handleToggleUser(user.id, v)} />
                         </TableCell>
                         <TableCell className="text-right space-x-2">
-                          <Button variant="ghost" size="icon" onClick={() => handleRegenerateCode(user.id)} title="Regenerate Code" className="h-8 w-8">
+                          <Button variant="ghost" size="icon" onClick={() => regenerateCode.mutate({ id: user.id }, { onSuccess: () => { toast({ title: "Code regenerated" }); queryClient.invalidateQueries({ queryKey: getListUsersQueryKey() }); } })} className="h-8 w-8">
                             <RefreshCw className="h-4 w-4" />
                           </Button>
-                          <Button variant="ghost" size="icon" onClick={() => handleDeleteUser(user.id)} title="Delete Guest" className="h-8 w-8 text-destructive hover:bg-destructive/10">
+                          <Button variant="ghost" size="icon" onClick={() => { if (!confirm("Delete this guest?")) return; deleteUser.mutate({ id: user.id }, { onSuccess: () => { toast({ title: "Guest deleted" }); queryClient.invalidateQueries({ queryKey: getListUsersQueryKey() }); } }); }} className="h-8 w-8 text-destructive hover:bg-destructive/10">
                             <Trash2 className="h-4 w-4" />
                           </Button>
                         </TableCell>

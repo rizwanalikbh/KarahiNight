@@ -19,6 +19,7 @@ export interface EventSummary {
   price: number;
   /** @nullable */
   description?: string | null;
+  pizzaTypes: string[];
   slots: SlotSummary[];
   guests: EventGuest[];
 }

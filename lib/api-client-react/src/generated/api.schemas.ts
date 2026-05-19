@@ -74,6 +74,8 @@ export interface Event {
      * @nullable
      */
   description?: string | null;
+  slots: string[];
+  pizzaTypes: string[];
   active: boolean;
   createdAt: string;
 }
@@ -86,6 +88,8 @@ export interface EventInput {
   slotCapacity?: number;
   price?: number;
   description?: string;
+  slots?: string[];
+  pizzaTypes?: string[];
 }
 
 export interface EventUpdate {
@@ -95,6 +99,8 @@ export interface EventUpdate {
   slotCapacity?: number;
   price?: number;
   description?: string;
+  slots?: string[];
+  pizzaTypes?: string[];
   active?: boolean;
 }
 
@@ -215,6 +221,7 @@ export interface EventSummary {
   price: number;
   /** @nullable */
   description?: string | null;
+  pizzaTypes: string[];
   slots: SlotSummary[];
   guests: EventGuest[];
 }

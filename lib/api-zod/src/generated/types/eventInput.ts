@@ -14,4 +14,6 @@ export interface EventInput {
   slotCapacity?: number;
   price?: number;
   description?: string;
+  slots?: string[];
+  pizzaTypes?: string[];
 }

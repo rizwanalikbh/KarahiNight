@@ -479,7 +479,7 @@ components:
 
     Event:
       type: object
-      required: [id, name, date, totalCapacity, slotCapacity, price, active, createdAt]
+      required: [id, name, date, totalCapacity, slotCapacity, price, active, slots, pizzaTypes, createdAt]
       properties:
         id:
           type: integer
@@ -498,6 +498,14 @@ components:
         description:
           type: ["string", "null"]
           description: Event description or fundraising note
+        slots:
+          type: array
+          items:
+            type: string
+        pizzaTypes:
+          type: array
+          items:
+            type: string
         active:
           type: boolean
         createdAt:
@@ -524,6 +532,14 @@ components:
           default: 70
         description:
           type: string
+        slots:
+          type: array
+          items:
+            type: string
+        pizzaTypes:
+          type: array
+          items:
+            type: string
 
     EventUpdate:
       type: object
@@ -540,6 +556,14 @@ components:
           type: integer
         description:
           type: string
+        slots:
+          type: array
+          items:
+            type: string
+        pizzaTypes:
+          type: array
+          items:
+            type: string
         active:
           type: boolean
 
@@ -682,7 +706,7 @@ components:
 
     EventSummary:
       type: object
-      required: [eventId, eventName, eventDate, totalCapacity, totalBooked, totalRemaining, orderingOpen, price, slots, guests]
+      required: [eventId, eventName, eventDate, totalCapacity, totalBooked, totalRemaining, orderingOpen, price, pizzaTypes, slots, guests]
       properties:
         eventId:
           type: integer
@@ -702,6 +726,10 @@ components:
           type: integer
         description:
           type: ["string", "null"]
+        pizzaTypes:
+          type: array
+          items:
+            type: string
         slots:
           type: array
           items:

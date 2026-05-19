@@ -3,15 +3,6 @@ import { db, usersTable, ordersTable, eventsTable, eventUsersTable, type PizzaIt
 import { eq, and } from "drizzle-orm";
 import { CreateOrderBody, UpdateOrderParams, UpdateOrderBody, DeleteOrderParams, ListOrdersQueryParams } from "@workspace/api-zod";
 
-const VALID_SLOTS = [
-  "16:00-16:30",
-  "16:30-17:00",
-  "17:00-17:30",
-  "17:30-18:00",
-  "18:00-18:30",
-  "18:30-19:00",
-];
-
 const router: IRouter = Router();
 
 function requireAuth(req: any, res: any, next: any): void {
@@ -64,8 +55,7 @@ router.get("/orders", requireAuth, async (req, res): Promise<void> => {
     rawOrders = await db.select().from(ordersTable).where(and(...filters));
   }
 
-  const orders = await enrichOrders(rawOrders);
-  res.json(orders);
+  res.json(await enrichOrders(rawOrders));
 });
 
 router.post("/orders", requireAuth, async (req, res): Promise<void> => {
@@ -82,15 +72,17 @@ router.post("/orders", requireAuth, async (req, res): Promise<void> => {
 
   const { eventId, items, pickupSlot, notes } = parsed.data;
 
-  if (!VALID_SLOTS.includes(pickupSlot)) {
-    res.status(400).json({ error: "Invalid pickup slot" });
-    return;
-  }
-
-  // Validate event exists and user is assigned to it
   const [event] = await db.select().from(eventsTable).where(eq(eventsTable.id, eventId));
   if (!event || !event.active) {
     res.status(400).json({ error: "Event not found or not active" });
+    return;
+  }
+
+  const eventSlots = Array.isArray(event.slots) ? event.slots : [];
+  const eventPizzaTypes = Array.isArray(event.pizzaTypes) ? event.pizzaTypes : [];
+
+  if (!eventSlots.includes(pickupSlot)) {
+    res.status(400).json({ error: "Invalid pickup slot for this event" });
     return;
   }
 
@@ -106,25 +98,24 @@ router.post("/orders", requireAuth, async (req, res): Promise<void> => {
     return;
   }
 
-  // Validate items
-  const validChoices = ["Margherita", "Pepperoni", "Special"];
   const validItems =
     Array.isArray(items) &&
     items.length > 0 &&
     items.every(
       (i: any) =>
-        validChoices.includes(i.pizzaChoice) &&
+        eventPizzaTypes.includes(i.pizzaChoice) &&
         typeof i.quantity === "number" &&
         i.quantity >= 1
     );
+
   if (!validItems) {
-    res.status(400).json({ error: "Invalid pizza items" });
+    res.status(400).json({ error: "Invalid pizza items for this event" });
     return;
   }
+
   const typedItems = items as PizzaItem[];
   const totalQuantity = typedItems.reduce((sum: number, item: PizzaItem) => sum + item.quantity, 0);
 
-  // Check one order per user per event
   const existingOrders = await db
     .select()
     .from(ordersTable)
@@ -135,12 +126,7 @@ router.post("/orders", requireAuth, async (req, res): Promise<void> => {
     return;
   }
 
-  // Check event capacity
-  const allEventOrders = await db
-    .select()
-    .from(ordersTable)
-    .where(eq(ordersTable.eventId, eventId));
-
+  const allEventOrders = await db.select().from(ordersTable).where(eq(ordersTable.eventId, eventId));
   const totalBooked = allEventOrders.reduce((sum, o) => sum + o.quantity, 0);
 
   if (totalBooked >= event.totalCapacity) {
@@ -178,8 +164,7 @@ router.post("/orders", requireAuth, async (req, res): Promise<void> => {
     })
     .returning();
 
-  const enriched = await enrichOrders([order]);
-  res.status(201).json(enriched[0]);
+  res.status(201).json((await enrichOrders([order]))[0]);
 });
 
 router.patch("/orders/:id", requireAdmin, async (req, res): Promise<void> => {
@@ -200,23 +185,9 @@ router.patch("/orders/:id", requireAdmin, async (req, res): Promise<void> => {
   if (parsed.data.pickupSlot !== undefined) updateData.pickupSlot = parsed.data.pickupSlot;
   if (parsed.data.notes !== undefined) updateData.notes = parsed.data.notes;
   if (parsed.data.items !== undefined) {
-    const validChoices2 = ["Margherita", "Pepperoni", "Special"];
-    const validItems2 =
-      Array.isArray(parsed.data.items) &&
-      parsed.data.items.length > 0 &&
-      parsed.data.items.every(
-        (i: any) =>
-          validChoices2.includes(i.pizzaChoice) &&
-          typeof i.quantity === "number" &&
-          i.quantity >= 1
-      );
-    if (!validItems2) {
-      res.status(400).json({ error: "Invalid pizza items" });
-      return;
-    }
-    const typedItems2 = parsed.data.items as PizzaItem[];
-    updateData.pizzaItems = typedItems2;
-    updateData.quantity = typedItems2.reduce((sum: number, item: PizzaItem) => sum + item.quantity, 0);
+    const typedItems = parsed.data.items as PizzaItem[];
+    updateData.pizzaItems = typedItems;
+    updateData.quantity = typedItems.reduce((sum: number, item: PizzaItem) => sum + item.quantity, 0);
   }
 
   const [order] = await db
@@ -230,8 +201,7 @@ router.patch("/orders/:id", requireAdmin, async (req, res): Promise<void> => {
     return;
   }
 
-  const enriched = await enrichOrders([order]);
-  res.status(200).json(enriched[0]);
+  res.status(200).json((await enrichOrders([order]))[0]);
 });
 
 router.delete("/orders/:id", requireAdmin, async (req, res): Promise<void> => {

@@ -20,6 +20,8 @@ export interface Event {
      * @nullable
      */
   description?: string | null;
+  slots: string[];
+  pizzaTypes: string[];
   active: boolean;
   createdAt: Date;
 }
