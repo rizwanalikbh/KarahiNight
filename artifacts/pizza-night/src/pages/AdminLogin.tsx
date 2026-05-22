@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAdminLogin, useGetMe } from "@workspace/api-client-react";
 import { useLocation } from "wouter";
 import { Layout } from "../components/Layout";
@@ -20,10 +20,11 @@ export function AdminLogin() {
   const adminLogin = useAdminLogin();
   const { data: session } = useGetMe();
 
-  if (session?.authenticated && session.role === "admin") {
-    setLocation("/admin/dashboard");
-    return null;
-  }
+  useEffect(() => {
+    if (session?.authenticated && session.role === "admin") {
+      setLocation("/admin/dashboard");
+    }
+  }, [session, setLocation]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();

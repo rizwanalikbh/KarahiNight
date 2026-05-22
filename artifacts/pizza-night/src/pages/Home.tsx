@@ -40,8 +40,8 @@ export function Home() {
     login.mutate(
       { data: { name: guest.name, code } },
       {
-        onSuccess: () => {
-          queryClient.invalidateQueries({ queryKey: getGetMeQueryKey() });
+        onSuccess: async () => {
+          await queryClient.refetchQueries({ queryKey: getGetMeQueryKey() });
           setLocation("/order");
         },
         onError: () => {

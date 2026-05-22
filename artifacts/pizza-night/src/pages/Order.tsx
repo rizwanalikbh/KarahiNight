@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   useGetMe, useGetSummary, useListOrders, useCreateOrder, useListEvents,
   getListOrdersQueryKey, getGetSummaryQueryKey
@@ -89,7 +89,13 @@ export function Order() {
 
   const isLoading = sessionLoading || eventsLoading || ordersLoading;
 
-  if (isLoading) {
+  useEffect(() => {
+    if (!isLoading && (!session?.authenticated || session.role !== "user")) {
+      setLocation("/");
+    }
+  }, [isLoading, session, setLocation]);
+
+  if (isLoading || !session?.authenticated || session.role !== "user") {
     return (
       <Layout>
         <div className="space-y-4">
@@ -98,11 +104,6 @@ export function Order() {
         </div>
       </Layout>
     );
-  }
-
-  if (!session?.authenticated || session.role !== "user") {
-    setLocation("/");
-    return null;
   }
 
   if (!events || events.length === 0) {
