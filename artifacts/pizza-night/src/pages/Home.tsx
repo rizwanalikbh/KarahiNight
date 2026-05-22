@@ -119,43 +119,35 @@ export function Home() {
           <img
             src="/pizza-hero.png"
             alt="Handmade pizza"
-            className={`w-full h-full object-cover transition-all duration-500 ${!isLoading && summary && !summary.orderingOpen ? "brightness-50" : ""}`}
+            className="w-full h-full object-cover"
           />
 
           {!isLoading && summary && (
             <>
-              {summary.orderingOpen ? (
-                /* Open state: price + description at bottom, optional countdown top-right */
-                <>
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex flex-col justify-end p-6 text-left">
-                    <div className="flex items-end justify-between gap-4">
-                      <div>
-                        <div className="text-white font-medium text-lg">{summary.price} DKK per pizza</div>
-                        {summary.description && (
-                          <div className="text-white/80 text-sm">{summary.description}</div>
-                        )}
-                      </div>
-                      {countdown && (
-                        <div className="shrink-0 bg-black/40 backdrop-blur-sm rounded-lg px-3 py-2">
-                          <div className="text-white/60 text-[10px] uppercase tracking-widest mb-0.5">Closes in</div>
-                          <CountdownDisplay t={countdown} />
-                        </div>
-                      )}
-                    </div>
+              <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex flex-col justify-end p-6 text-left">
+                <div className="flex items-end justify-between gap-4">
+                  <div>
+                    <div className="text-white font-medium text-lg">{summary.price} DKK per pizza</div>
+                    {summary.description && (
+                      <div className="text-white/80 text-sm">{summary.description}</div>
+                    )}
                   </div>
-                </>
-              ) : (
-                /* Closed state: centred "Orders Closed" teaser */
-                <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 p-6">
-                  <div className="bg-black/60 backdrop-blur-sm rounded-2xl px-8 py-6 flex flex-col items-center gap-3">
-                    <Lock className="w-8 h-8 text-white/70" />
-                    <div className="text-white font-serif text-2xl font-bold">Orders Closed</div>
-                    <div className="text-white/70 text-sm">
-                      {summary.totalRemaining <= 0
-                        ? "All spots have been taken — see you there!"
-                        : "The ordering window has ended."}
+                  {summary.orderingOpen && countdown && (
+                    <div className="shrink-0 bg-black/40 backdrop-blur-sm rounded-lg px-3 py-2">
+                      <div className="text-white/60 text-[10px] uppercase tracking-widest mb-0.5">Closes in</div>
+                      <CountdownDisplay t={countdown} />
                     </div>
-                    <div className="text-white/50 text-xs">{summary.price} DKK per pizza</div>
+                  )}
+                </div>
+              </div>
+              {!summary.orderingOpen && (
+                /* Closed badge — top-left, doesn't cover the pizza */
+                <div className="absolute top-4 left-4">
+                  <div className="flex items-center gap-2 bg-black/55 backdrop-blur-sm rounded-full pl-3 pr-4 py-2">
+                    <Lock className="w-3.5 h-3.5 text-white/80 shrink-0" />
+                    <span className="text-white text-sm font-semibold leading-none">
+                      {summary.totalRemaining <= 0 ? "Fully Booked" : "Orders Closed"}
+                    </span>
                   </div>
                 </div>
               )}
