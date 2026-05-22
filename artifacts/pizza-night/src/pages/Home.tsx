@@ -48,11 +48,13 @@ function useCountdown(targetIso: string | null | undefined): Countdown | null {
 function pad(n: number) { return String(n).padStart(2, "0"); }
 
 function CountdownDisplay({ t }: { t: Countdown }) {
+  const days = Math.floor(t.h / 24);
+  const hours = t.h % 24;
   return (
     <div className="flex items-center gap-1.5 text-white">
       <Clock className="w-4 h-4 shrink-0 opacity-80" />
       <span className="font-mono text-sm font-semibold tabular-nums">
-        {pad(t.h)}:{pad(t.m)}:{pad(t.s)}
+        {days > 0 ? `${days}d ` : ""}{pad(hours)}:{pad(t.m)}:{pad(t.s)}
       </span>
     </div>
   );
