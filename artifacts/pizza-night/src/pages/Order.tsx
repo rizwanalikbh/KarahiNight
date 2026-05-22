@@ -337,15 +337,21 @@ export function Order() {
     );
   }
 
-  if (summary && summary.totalRemaining <= 0) {
+  if (summary && !summary.orderingOpen && !myOrder) {
     return (
       <Layout>
         <div className="max-w-xl mx-auto w-full pt-8">
           <Card className="border-card-border shadow-md text-center bg-secondary/20">
             <CardContent className="pt-10 pb-10 flex flex-col items-center">
               <AlertCircle className="w-16 h-16 text-muted-foreground mb-4" />
-              <h2 className="text-2xl font-serif font-bold text-foreground mb-2">Fully Booked</h2>
-              <p className="text-muted-foreground">Sorry, the event is fully booked!</p>
+              <h2 className="text-2xl font-serif font-bold text-foreground mb-2">
+                {summary.totalRemaining <= 0 ? "Fully Booked" : "Ordering Closed"}
+              </h2>
+              <p className="text-muted-foreground">
+                {summary.totalRemaining <= 0
+                  ? "All spots have been taken. See you there!"
+                  : "Orders are no longer being accepted for this event."}
+              </p>
             </CardContent>
           </Card>
         </div>

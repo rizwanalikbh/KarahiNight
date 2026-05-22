@@ -94,56 +94,58 @@ export function Home() {
           <Card className="w-full bg-card border-card-border shadow-sm">
             <CardHeader>
               <CardTitle className="font-serif text-2xl">
-                {summary.orderingOpen ? "Reserve Your Spot" : "Ordering Closed"}
+                {summary.orderingOpen ? "Reserve Your Spot" : "Your Order"}
               </CardTitle>
             </CardHeader>
             <CardContent>
-              {summary.orderingOpen ? (
-                <form onSubmit={handleLogin} className="space-y-5">
-                  <div className="space-y-2 text-left">
-                    <Label className="text-sm font-semibold">Your Name</Label>
-                    <Select value={selectedGuestId} onValueChange={setSelectedGuestId}>
-                      <SelectTrigger className="h-12">
-                        <SelectValue placeholder="Select your name..." />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {summary.guests.map((guest) => (
-                          <SelectItem key={guest.id} value={String(guest.id)}>
-                            {guest.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="space-y-2 text-left">
-                    <Label htmlFor="code" className="text-sm font-semibold">4-Digit Code</Label>
-                    <Input
-                      id="code"
-                      type="text"
-                      inputMode="numeric"
-                      maxLength={4}
-                      placeholder="••••"
-                      value={code}
-                      onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 4))}
-                      className="h-12 text-center text-2xl tracking-[0.5em] font-mono"
-                    />
-                  </div>
-
-                  <Button
-                    type="submit"
-                    size="lg"
-                    className="w-full h-14 text-lg"
-                    disabled={!selectedGuestId || code.length !== 4 || login.isPending}
-                  >
-                    {login.isPending ? <Loader2 className="w-5 h-5 animate-spin" /> : "Order My Pizza"}
-                  </Button>
-                </form>
-              ) : (
-                <p className="text-muted-foreground text-center py-4">
-                  All spots have been taken. See you there!
+              {!summary.orderingOpen && (
+                <p className="text-sm text-muted-foreground text-center mb-5 pb-5 border-b border-border">
+                  {summary.totalRemaining <= 0 ? "All spots have been taken." : "Ordering is now closed."}{" "}
+                  Log in below to view your order.
                 </p>
               )}
+              <form onSubmit={handleLogin} className="space-y-5">
+                <div className="space-y-2 text-left">
+                  <Label className="text-sm font-semibold">Your Name</Label>
+                  <Select value={selectedGuestId} onValueChange={setSelectedGuestId}>
+                    <SelectTrigger className="h-12">
+                      <SelectValue placeholder="Select your name..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {summary.guests.map((guest) => (
+                        <SelectItem key={guest.id} value={String(guest.id)}>
+                          {guest.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2 text-left">
+                  <Label htmlFor="code" className="text-sm font-semibold">4-Digit Code</Label>
+                  <Input
+                    id="code"
+                    type="text"
+                    inputMode="numeric"
+                    maxLength={4}
+                    placeholder="••••"
+                    value={code}
+                    onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 4))}
+                    className="h-12 text-center text-2xl tracking-[0.5em] font-mono"
+                  />
+                </div>
+
+                <Button
+                  type="submit"
+                  size="lg"
+                  className="w-full h-14 text-lg"
+                  disabled={!selectedGuestId || code.length !== 4 || login.isPending}
+                >
+                  {login.isPending
+                    ? <Loader2 className="w-5 h-5 animate-spin" />
+                    : summary.orderingOpen ? "Order My Pizza" : "View My Order"}
+                </Button>
+              </form>
             </CardContent>
           </Card>
         ) : null}
