@@ -106,8 +106,9 @@ export function Receipt() {
 
           {/* Pickup */}
           <div className="mb-8">
-            <h2 className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-3">Pickup Slot</h2>
+            <h2 className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-3">Pickup</h2>
             <p className="font-semibold text-lg">{order.pickupSlot}</p>
+            <p className="text-gray-500 text-sm mt-0.5">{formatDate(event.date)}</p>
           </div>
 
           {order.notes && (
