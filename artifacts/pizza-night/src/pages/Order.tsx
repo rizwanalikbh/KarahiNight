@@ -273,10 +273,21 @@ export function Order() {
                   </div>
                 ) : (
                   <div className="bg-secondary/30 rounded-xl border border-border divide-y divide-border/50">
-                    {displayItems.map((item, i) => (
-                      <div key={i} className="flex justify-between items-center px-4 py-3">
-                        <span className="font-medium text-foreground">{item.pizzaChoice}</span>
-                        <span className="text-sm text-muted-foreground">{item.quantity}×</span>
+                    {Object.entries(
+                      displayItems.reduce<Record<string, number>>((acc, item) => {
+                        acc[item.pizzaChoice] = (acc[item.pizzaChoice] ?? 0) + item.quantity;
+                        return acc;
+                      }, {})
+                    ).map(([choice, qty]) => (
+                      <div key={choice} className="flex justify-between items-center px-4 py-3">
+                        <div>
+                          <span className="font-medium text-foreground">{choice}</span>
+                          <span className="text-xs text-muted-foreground ml-2">{pricePerPizza} DKK each</span>
+                        </div>
+                        <div className="text-right">
+                          <span className="text-sm text-muted-foreground">{qty}×</span>
+                          <span className="ml-2 font-medium text-foreground">{qty * pricePerPizza} DKK</span>
+                        </div>
                       </div>
                     ))}
                   </div>
