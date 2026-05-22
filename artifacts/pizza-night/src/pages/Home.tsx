@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useGetSummary, useLogin, getGetMeQueryKey } from "@workspace/api-client-react";
 import { useLocation } from "wouter";
 import { Layout } from "../components/Layout";
@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2 } from "lucide-react";
+import { Loader2, Clock, Lock } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useQueryClient } from "@tanstack/react-query";
 
@@ -21,6 +21,43 @@ function formatEventDate(dateStr: string): string {
   }
 }
 
+interface Countdown { h: number; m: number; s: number }
+
+function useCountdown(targetIso: string | null | undefined): Countdown | null {
+  const [timeLeft, setTimeLeft] = useState<Countdown | null>(null);
+
+  useEffect(() => {
+    if (!targetIso) { setTimeLeft(null); return; }
+    const tick = () => {
+      const diff = new Date(targetIso).getTime() - Date.now();
+      if (diff <= 0) { setTimeLeft(null); return; }
+      setTimeLeft({
+        h: Math.floor(diff / 3_600_000),
+        m: Math.floor((diff % 3_600_000) / 60_000),
+        s: Math.floor((diff % 60_000) / 1_000),
+      });
+    };
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, [targetIso]);
+
+  return timeLeft;
+}
+
+function pad(n: number) { return String(n).padStart(2, "0"); }
+
+function CountdownDisplay({ t }: { t: Countdown }) {
+  return (
+    <div className="flex items-center gap-1.5 text-white">
+      <Clock className="w-4 h-4 shrink-0 opacity-80" />
+      <span className="font-mono text-sm font-semibold tracking-wider">
+        {t.h > 0 ? `${t.h}h ${pad(t.m)}m ${pad(t.s)}s` : `${t.m}m ${pad(t.s)}s`}
+      </span>
+    </div>
+  );
+}
+
 export function Home() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
@@ -28,6 +65,7 @@ export function Home() {
 
   const { data: summary, isLoading } = useGetSummary({});
   const login = useLogin();
+  const countdown = useCountdown(summary?.orderDeadline);
 
   const [selectedGuestId, setSelectedGuestId] = useState("");
   const [code, setCode] = useState("");
@@ -52,6 +90,10 @@ export function Home() {
     );
   };
 
+  const showProgress = summary && summary.totalCapacity > 0 &&
+    (summary.totalBooked / summary.totalCapacity) >= 0.25;
+  const progressPct = summary ? Math.min(100, Math.round((summary.totalBooked / summary.totalCapacity) * 100)) : 0;
+
   return (
     <Layout>
       <div className="flex flex-col items-center max-w-2xl mx-auto space-y-8 text-center">
@@ -72,22 +114,81 @@ export function Home() {
           </p>
         </div>
 
+        {/* Hero image */}
         <div className="w-full aspect-video md:aspect-[21/9] rounded-2xl overflow-hidden shadow-lg border relative">
           <img
             src="/pizza-hero.png"
             alt="Handmade pizza"
-            className="w-full h-full object-cover"
+            className={`w-full h-full object-cover transition-all duration-500 ${!isLoading && summary && !summary.orderingOpen ? "brightness-50" : ""}`}
           />
+
           {!isLoading && summary && (
-            <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex flex-col justify-end p-6 text-left">
-              <div className="text-white font-medium text-lg">{summary.price} DKK per pizza</div>
-              {summary.description && (
-                <div className="text-white/80 text-sm">{summary.description}</div>
+            <>
+              {summary.orderingOpen ? (
+                /* Open state: price + description at bottom, optional countdown top-right */
+                <>
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex flex-col justify-end p-6 text-left">
+                    <div className="flex items-end justify-between gap-4">
+                      <div>
+                        <div className="text-white font-medium text-lg">{summary.price} DKK per pizza</div>
+                        {summary.description && (
+                          <div className="text-white/80 text-sm">{summary.description}</div>
+                        )}
+                      </div>
+                      {countdown && (
+                        <div className="shrink-0 bg-black/40 backdrop-blur-sm rounded-lg px-3 py-2">
+                          <div className="text-white/60 text-[10px] uppercase tracking-widest mb-0.5">Closes in</div>
+                          <CountdownDisplay t={countdown} />
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </>
+              ) : (
+                /* Closed state: centred "Orders Closed" teaser */
+                <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 p-6">
+                  <div className="bg-black/60 backdrop-blur-sm rounded-2xl px-8 py-6 flex flex-col items-center gap-3">
+                    <Lock className="w-8 h-8 text-white/70" />
+                    <div className="text-white font-serif text-2xl font-bold">Orders Closed</div>
+                    <div className="text-white/70 text-sm">
+                      {summary.totalRemaining <= 0
+                        ? "All spots have been taken — see you there!"
+                        : "The ordering window has ended."}
+                    </div>
+                    <div className="text-white/50 text-xs">{summary.price} DKK per pizza</div>
+                  </div>
+                </div>
               )}
-            </div>
+            </>
           )}
         </div>
 
+        {/* Progress bar — only when ≥25% booked */}
+        {!isLoading && showProgress && (
+          <div className="w-full space-y-2">
+            <div className="flex justify-between text-sm">
+              <span className="text-muted-foreground font-medium">Spots filling up</span>
+              <span className="text-foreground font-semibold">
+                {summary!.totalBooked} / {summary!.totalCapacity} pizzas ordered
+              </span>
+            </div>
+            <div className="w-full h-3 bg-secondary rounded-full overflow-hidden">
+              <div
+                className={`h-full rounded-full transition-all duration-700 ${
+                  progressPct >= 90 ? "bg-destructive" :
+                  progressPct >= 70 ? "bg-orange-400" :
+                  "bg-primary"
+                }`}
+                style={{ width: `${progressPct}%` }}
+              />
+            </div>
+            <p className="text-xs text-muted-foreground text-right">
+              {summary!.totalRemaining} spot{summary!.totalRemaining !== 1 ? "s" : ""} remaining
+            </p>
+          </div>
+        )}
+
+        {/* Login card */}
         {isLoading ? (
           <Skeleton className="w-full h-48 rounded-xl" />
         ) : summary ? (
