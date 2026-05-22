@@ -3,13 +3,12 @@ import {
   useGetMe, useGetSummary, useListOrders, useUpdateOrder, useDeleteOrder,
   useListUsers, useUpdateUser, useDeleteUser, useRegenerateCode, useCreateUser,
   useListEvents, useCreateEvent, useUpdateEvent, useDeleteEvent,
-  useListEventUsers, useAddUserToEvent, useRemoveUserFromEvent,
   useListSegments, useCreateSegment, useDeleteSegment, useUpdateSegment,
   useListSegmentUsers, useAddUserToSegment, useRemoveUserFromSegment,
   useListEventSegments, useAddSegmentToEvent, useRemoveSegmentFromEvent,
   useImportUsers, useListUserSegments,
   getListOrdersQueryKey, getListUsersQueryKey, getGetSummaryQueryKey,
-  getListEventsQueryKey, getListEventUsersQueryKey,
+  getListEventsQueryKey,
   getListSegmentsQueryKey, getListSegmentUsersQueryKey, getListEventSegmentsQueryKey,
   getListUserSegmentsQueryKey,
 } from "@workspace/api-client-react";
@@ -194,89 +193,6 @@ function EventEditPanel({ event, onClose }: { event: Event; onClose: () => void 
         </Button>
       </div>
     </form>
-  );
-}
-
-// ── Guest manager per event ──────────────────────────────────────────────────
-function EventUserManager({ eventId, allUsers }: { eventId: number; allUsers: any[] }) {
-  const { toast } = useToast();
-  const queryClient = useQueryClient();
-  const [addUserId, setAddUserId] = useState("");
-  const [expanded, setExpanded] = useState(false);
-
-  const { data: eventUsers } = useListEventUsers(eventId, {
-    query: { enabled: expanded, queryKey: getListEventUsersQueryKey(eventId) },
-  });
-  const addUser = useAddUserToEvent();
-  const removeUser = useRemoveUserFromEvent();
-
-  const eventUserIds = new Set((eventUsers ?? []).map((u) => u.id));
-  const usersNotInEvent = allUsers.filter((u) => !eventUserIds.has(u.id));
-
-  const handleAdd = () => {
-    if (!addUserId) return;
-    addUser.mutate({ id: eventId, data: { userId: parseInt(addUserId, 10) } }, {
-      onSuccess: () => {
-        toast({ title: "Guest added" });
-        setAddUserId("");
-        queryClient.invalidateQueries({ queryKey: getListEventUsersQueryKey(eventId) });
-      },
-    });
-  };
-
-  return (
-    <div className="mt-3">
-      <button
-        type="button"
-        className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
-        onClick={() => setExpanded(!expanded)}
-      >
-        <Users className="w-4 h-4" />
-        {expanded ? "Hide" : "Manage"} guests
-        {expanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
-      </button>
-
-      {expanded && (
-        <div className="mt-3 border rounded-xl p-4 space-y-3 bg-secondary/20">
-          {(eventUsers ?? []).length === 0 ? (
-            <p className="text-sm text-muted-foreground">No guests assigned yet.</p>
-          ) : (
-            <div className="flex flex-wrap gap-2">
-              {(eventUsers ?? []).map((u) => (
-                <Badge key={u.id} variant="secondary" className="gap-1.5 pr-1">
-                  {u.name}
-                  <button
-                    type="button"
-                    onClick={() => removeUser.mutate({ id: eventId, userId: u.id }, {
-                      onSuccess: () => {
-                        toast({ title: "Guest removed" });
-                        queryClient.invalidateQueries({ queryKey: getListEventUsersQueryKey(eventId) });
-                      },
-                    })}
-                    className="hover:text-destructive transition-colors ml-1"
-                  >×</button>
-                </Badge>
-              ))}
-            </div>
-          )}
-          {usersNotInEvent.length > 0 && (
-            <div className="flex gap-2 items-center">
-              <Select value={addUserId} onValueChange={setAddUserId}>
-                <SelectTrigger className="h-8 text-xs flex-1"><SelectValue placeholder="Add a guest..." /></SelectTrigger>
-                <SelectContent>
-                  {usersNotInEvent.map((u) => (
-                    <SelectItem key={u.id} value={String(u.id)}>{u.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Button size="sm" className="h-8" onClick={handleAdd} disabled={!addUserId || addUser.isPending}>
-                <Plus className="w-3 h-3 mr-1" /> Add
-              </Button>
-            </div>
-          )}
-        </div>
-      )}
-    </div>
   );
 }
 
@@ -1530,7 +1446,6 @@ export function AdminDashboard() {
                       <EventEditPanel event={event} onClose={() => setEditingEventId(null)} />
                     )}
 
-                    <EventUserManager eventId={event.id} allUsers={users ?? []} />
                     <EventSegmentManager eventId={event.id} allSegments={segments ?? []} />
                   </CardContent>
                 </Card>

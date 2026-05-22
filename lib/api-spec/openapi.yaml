@@ -168,71 +168,6 @@ paths:
         "204":
           description: Deleted
 
-  /events/{id}/users:
-    get:
-      operationId: listEventUsers
-      tags: [events]
-      summary: List users assigned to an event (admin only)
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: integer
-      responses:
-        "200":
-          description: Users in this event
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/User"
-
-    post:
-      operationId: addUserToEvent
-      tags: [events]
-      summary: Add a user to an event (admin only)
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: integer
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/EventUserInput"
-      responses:
-        "201":
-          description: User added
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/User"
-
-  /events/{id}/users/{userId}:
-    delete:
-      operationId: removeUserFromEvent
-      tags: [events]
-      summary: Remove a user from an event (admin only)
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: integer
-        - name: userId
-          in: path
-          required: true
-          schema:
-            type: integer
-      responses:
-        "204":
-          description: Removed
-
   /users:
     get:
       operationId: listUsers
@@ -826,13 +761,6 @@ components:
             type: string
         active:
           type: boolean
-
-    EventUserInput:
-      type: object
-      required: [userId]
-      properties:
-        userId:
-          type: integer
 
     User:
       type: object

@@ -13,7 +13,6 @@ export * from './eventInput';
 export * from './eventSegmentInput';
 export * from './eventSummary';
 export * from './eventUpdate';
-export * from './eventUserInput';
 export * from './getSummaryParams';
 export * from './healthStatus';
 export * from './listOrdersParams';

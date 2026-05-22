@@ -120,10 +120,6 @@ export interface EventUpdate {
   active?: boolean;
 }
 
-export interface EventUserInput {
-  userId: number;
-}
-
 export interface User {
   id: number;
   name: string;

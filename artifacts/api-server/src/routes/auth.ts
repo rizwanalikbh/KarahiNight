@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { db, usersTable, eventUsersTable, userSegmentsTable, eventSegmentsTable } from "@workspace/db";
+import { db, usersTable, userSegmentsTable, eventSegmentsTable } from "@workspace/db";
 import { eq, and, inArray } from "drizzle-orm";
 import { LoginBody, AdminLoginBody } from "@workspace/api-zod";
 
@@ -16,12 +16,6 @@ const ADMIN_PASSWORD = "IamAdmin";
 const router: IRouter = Router();
 
 async function userBelongsToEvent(userId: number, eventId: number): Promise<boolean> {
-  const [direct] = await db
-    .select({ id: eventUsersTable.userId })
-    .from(eventUsersTable)
-    .where(and(eq(eventUsersTable.eventId, eventId), eq(eventUsersTable.userId, userId)));
-  if (direct) return true;
-
   const userSegs = await db
     .select({ segmentId: userSegmentsTable.segmentId })
     .from(userSegmentsTable)

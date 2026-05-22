@@ -1,15 +1,11 @@
 import { Router, type IRouter } from "express";
-import { db, eventsTable, eventUsersTable, usersTable, userSegmentsTable, eventSegmentsTable, segmentsTable } from "@workspace/db";
-import { eq, and, inArray } from "drizzle-orm";
+import { db, eventsTable, userSegmentsTable, eventSegmentsTable, segmentsTable } from "@workspace/db";
+import { eq, inArray } from "drizzle-orm";
 import {
   CreateEventBody,
   UpdateEventParams,
   UpdateEventBody,
   DeleteEventParams,
-  ListEventUsersParams,
-  AddUserToEventParams,
-  AddUserToEventBody,
-  RemoveUserFromEventParams,
 } from "@workspace/api-zod";
 
 const DEFAULT_SLOTS = ["16:00-16:30","16:30-17:00","17:00-17:30","17:30-18:00","18:00-18:30","18:30-19:00"];
@@ -76,34 +72,25 @@ router.get("/events", async (req, res): Promise<void> => {
 
   const userId = req.session.userId!;
 
-  // Direct event_users assignments
-  const directRows = await db
-    .select({ eventId: eventUsersTable.eventId })
-    .from(eventUsersTable)
-    .where(eq(eventUsersTable.userId, userId));
-  const directEventIds = directRows.map((r) => r.eventId);
-
-  // Events via user's segments
+  // Events via user's segments only
   const userSegmentRows = await db
     .select({ segmentId: userSegmentsTable.segmentId })
     .from(userSegmentsTable)
     .where(eq(userSegmentsTable.userId, userId));
   const userSegmentIds = userSegmentRows.map((r) => r.segmentId);
 
-  let segmentEventIds: number[] = [];
-  if (userSegmentIds.length > 0) {
-    const segmentEvents = await db
-      .select({ eventId: eventSegmentsTable.eventId })
-      .from(eventSegmentsTable)
-      .where(inArray(eventSegmentsTable.segmentId, userSegmentIds));
-    segmentEventIds = segmentEvents.map((r) => r.eventId);
-  }
+  if (userSegmentIds.length === 0) { res.json([]); return; }
 
-  const allEventIds = [...new Set([...directEventIds, ...segmentEventIds])];
-  if (allEventIds.length === 0) { res.json([]); return; }
+  const segmentEvents = await db
+    .select({ eventId: eventSegmentsTable.eventId })
+    .from(eventSegmentsTable)
+    .where(inArray(eventSegmentsTable.segmentId, userSegmentIds));
+  const eventIds = [...new Set(segmentEvents.map((r) => r.eventId))];
+
+  if (eventIds.length === 0) { res.json([]); return; }
 
   const events = await db.select().from(eventsTable).orderBy(eventsTable.date);
-  const visible = events.filter((e) => allEventIds.includes(e.id) && e.active);
+  const visible = events.filter((e) => eventIds.includes(e.id) && e.active);
   res.json(await attachSegmentDescriptions(visible));
 });
 
@@ -163,47 +150,6 @@ router.delete("/events/:id", requireAdmin, async (req, res): Promise<void> => {
   const params = DeleteEventParams.safeParse(req.params);
   if (!params.success) { res.status(400).json({ error: params.error.message }); return; }
   await db.delete(eventsTable).where(eq(eventsTable.id, params.data.id));
-  res.sendStatus(204);
-});
-
-router.get("/events/:id/users", requireAdmin, async (req, res): Promise<void> => {
-  const params = ListEventUsersParams.safeParse(req.params);
-  if (!params.success) { res.status(400).json({ error: params.error.message }); return; }
-
-  const eventUsers = await db
-    .select({ userId: eventUsersTable.userId })
-    .from(eventUsersTable)
-    .where(eq(eventUsersTable.eventId, params.data.id));
-
-  if (eventUsers.length === 0) { res.json([]); return; }
-
-  const userIds = eventUsers.map((eu) => eu.userId);
-  const users = await db.select().from(usersTable).orderBy(usersTable.name);
-  res.json(users.filter((u) => userIds.includes(u.id)));
-});
-
-router.post("/events/:id/users", requireAdmin, async (req, res): Promise<void> => {
-  const params = AddUserToEventParams.safeParse(req.params);
-  if (!params.success) { res.status(400).json({ error: params.error.message }); return; }
-
-  const parsed = AddUserToEventBody.safeParse(req.body);
-  if (!parsed.success) { res.status(400).json({ error: parsed.error.message }); return; }
-
-  const [user] = await db.select().from(usersTable).where(eq(usersTable.id, parsed.data.userId));
-  if (!user) { res.status(404).json({ error: "User not found" }); return; }
-
-  await db.insert(eventUsersTable).values({ eventId: params.data.id, userId: parsed.data.userId }).onConflictDoNothing();
-  res.status(201).json(user);
-});
-
-router.delete("/events/:id/users/:userId", requireAdmin, async (req, res): Promise<void> => {
-  const params = RemoveUserFromEventParams.safeParse(req.params);
-  if (!params.success) { res.status(400).json({ error: params.error.message }); return; }
-
-  await db
-    .delete(eventUsersTable)
-    .where(and(eq(eventUsersTable.eventId, params.data.id), eq(eventUsersTable.userId, params.data.userId)));
-
   res.sendStatus(204);
 });
 

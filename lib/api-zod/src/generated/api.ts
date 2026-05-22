@@ -151,46 +151,6 @@ export const DeleteEventParams = zod.object({
 
 
 /**
- * @summary List users assigned to an event (admin only)
- */
-export const ListEventUsersParams = zod.object({
-  "id": zod.coerce.number()
-})
-
-export const ListEventUsersResponseItem = zod.object({
-  "id": zod.number(),
-  "name": zod.string(),
-  "code": zod.string(),
-  "email": zod.string().nullish(),
-  "mobile": zod.string().nullish(),
-  "active": zod.boolean(),
-  "createdAt": zod.coerce.date()
-})
-export const ListEventUsersResponse = zod.array(ListEventUsersResponseItem)
-
-
-/**
- * @summary Add a user to an event (admin only)
- */
-export const AddUserToEventParams = zod.object({
-  "id": zod.coerce.number()
-})
-
-export const AddUserToEventBody = zod.object({
-  "userId": zod.number()
-})
-
-
-/**
- * @summary Remove a user from an event (admin only)
- */
-export const RemoveUserFromEventParams = zod.object({
-  "id": zod.coerce.number(),
-  "userId": zod.coerce.number()
-})
-
-
-/**
  * @summary List all users (admin only)
  */
 export const ListUsersResponseItem = zod.object({
