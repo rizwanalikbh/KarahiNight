@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
-import { db, eventsTable, eventUsersTable, usersTable } from "@workspace/db";
-import { eq, and } from "drizzle-orm";
+import { db, eventsTable, eventUsersTable, usersTable, userSegmentsTable, eventSegmentsTable } from "@workspace/db";
+import { eq, and, inArray } from "drizzle-orm";
 import {
   CreateEventBody,
   UpdateEventParams,
@@ -41,16 +41,35 @@ router.get("/events", requireAuth, async (req, res): Promise<void> => {
   }
 
   const userId = req.session.userId!;
-  const eventUsers = await db
+
+  // Direct event_users assignments
+  const directRows = await db
     .select({ eventId: eventUsersTable.eventId })
     .from(eventUsersTable)
     .where(eq(eventUsersTable.userId, userId));
+  const directEventIds = directRows.map((r) => r.eventId);
 
-  if (eventUsers.length === 0) { res.json([]); return; }
+  // Events via user's segments
+  const userSegmentRows = await db
+    .select({ segmentId: userSegmentsTable.segmentId })
+    .from(userSegmentsTable)
+    .where(eq(userSegmentsTable.userId, userId));
+  const userSegmentIds = userSegmentRows.map((r) => r.segmentId);
 
-  const eventIds = eventUsers.map((eu) => eu.eventId);
+  let segmentEventIds: number[] = [];
+  if (userSegmentIds.length > 0) {
+    const segmentEvents = await db
+      .select({ eventId: eventSegmentsTable.eventId })
+      .from(eventSegmentsTable)
+      .where(inArray(eventSegmentsTable.segmentId, userSegmentIds));
+    segmentEventIds = segmentEvents.map((r) => r.eventId);
+  }
+
+  const allEventIds = [...new Set([...directEventIds, ...segmentEventIds])];
+  if (allEventIds.length === 0) { res.json([]); return; }
+
   const events = await db.select().from(eventsTable).orderBy(eventsTable.date);
-  res.json(events.filter((e) => eventIds.includes(e.id) && e.active));
+  res.json(events.filter((e) => allEventIds.includes(e.id) && e.active));
 });
 
 router.post("/events", requireAdmin, async (req, res): Promise<void> => {

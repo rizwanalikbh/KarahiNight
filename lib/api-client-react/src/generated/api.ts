@@ -23,6 +23,7 @@ import type {
   AdminLoginInput,
   Event,
   EventInput,
+  EventSegmentInput,
   EventSummary,
   EventUpdate,
   EventUserInput,
@@ -34,6 +35,9 @@ import type {
   Order,
   OrderInput,
   OrderUpdate,
+  Segment,
+  SegmentInput,
+  SegmentUserInput,
   SessionInfo,
   User,
   UserInput,
@@ -1584,6 +1588,666 @@ export const useDeleteOrder = <TError = ErrorType<unknown>,
         TContext
       > => {
       return useMutation(getDeleteOrderMutationOptions(options));
+    }
+
+export const getListSegmentsUrl = () => {
+
+
+
+
+  return `/api/segments`
+}
+
+/**
+ * @summary List all segments (admin only)
+ */
+export const listSegments = async ( options?: RequestInit): Promise<Segment[]> => {
+
+  return customFetch<Segment[]>(getListSegmentsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListSegmentsQueryKey = () => {
+    return [
+    `/api/segments`
+    ] as const;
+    }
+
+
+export const getListSegmentsQueryOptions = <TData = Awaited<ReturnType<typeof listSegments>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listSegments>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListSegmentsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listSegments>>> = ({ signal }) => listSegments({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listSegments>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListSegmentsQueryResult = NonNullable<Awaited<ReturnType<typeof listSegments>>>
+export type ListSegmentsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary List all segments (admin only)
+ */
+
+export function useListSegments<TData = Awaited<ReturnType<typeof listSegments>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listSegments>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListSegmentsQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getCreateSegmentUrl = () => {
+
+
+
+
+  return `/api/segments`
+}
+
+/**
+ * @summary Create a segment (admin only)
+ */
+export const createSegment = async (segmentInput: SegmentInput, options?: RequestInit): Promise<Segment> => {
+
+  return customFetch<Segment>(getCreateSegmentUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      segmentInput,)
+  }
+);}
+
+
+
+
+export const getCreateSegmentMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createSegment>>, TError,{data: BodyType<SegmentInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createSegment>>, TError,{data: BodyType<SegmentInput>}, TContext> => {
+
+const mutationKey = ['createSegment'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createSegment>>, {data: BodyType<SegmentInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  createSegment(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateSegmentMutationResult = NonNullable<Awaited<ReturnType<typeof createSegment>>>
+    export type CreateSegmentMutationBody = BodyType<SegmentInput>
+    export type CreateSegmentMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Create a segment (admin only)
+ */
+export const useCreateSegment = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createSegment>>, TError,{data: BodyType<SegmentInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createSegment>>,
+        TError,
+        {data: BodyType<SegmentInput>},
+        TContext
+      > => {
+      return useMutation(getCreateSegmentMutationOptions(options));
+    }
+
+export const getDeleteSegmentUrl = (id: number,) => {
+
+
+
+
+  return `/api/segments/${id}`
+}
+
+/**
+ * @summary Delete a segment (admin only)
+ */
+export const deleteSegment = async (id: number, options?: RequestInit): Promise<void> => {
+
+  return customFetch<void>(getDeleteSegmentUrl(id),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+export const getDeleteSegmentMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteSegment>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof deleteSegment>>, TError,{id: number}, TContext> => {
+
+const mutationKey = ['deleteSegment'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteSegment>>, {id: number}> = (props) => {
+          const {id} = props ?? {};
+
+          return  deleteSegment(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteSegmentMutationResult = NonNullable<Awaited<ReturnType<typeof deleteSegment>>>
+
+    export type DeleteSegmentMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Delete a segment (admin only)
+ */
+export const useDeleteSegment = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteSegment>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof deleteSegment>>,
+        TError,
+        {id: number},
+        TContext
+      > => {
+      return useMutation(getDeleteSegmentMutationOptions(options));
+    }
+
+export const getListSegmentUsersUrl = (id: number,) => {
+
+
+
+
+  return `/api/segments/${id}/users`
+}
+
+/**
+ * @summary List users in a segment (admin only)
+ */
+export const listSegmentUsers = async (id: number, options?: RequestInit): Promise<User[]> => {
+
+  return customFetch<User[]>(getListSegmentUsersUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListSegmentUsersQueryKey = (id: number,) => {
+    return [
+    `/api/segments/${id}/users`
+    ] as const;
+    }
+
+
+export const getListSegmentUsersQueryOptions = <TData = Awaited<ReturnType<typeof listSegmentUsers>>, TError = ErrorType<unknown>>(id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listSegmentUsers>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListSegmentUsersQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listSegmentUsers>>> = ({ signal }) => listSegmentUsers(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: !!(id), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listSegmentUsers>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListSegmentUsersQueryResult = NonNullable<Awaited<ReturnType<typeof listSegmentUsers>>>
+export type ListSegmentUsersQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary List users in a segment (admin only)
+ */
+
+export function useListSegmentUsers<TData = Awaited<ReturnType<typeof listSegmentUsers>>, TError = ErrorType<unknown>>(
+ id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listSegmentUsers>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListSegmentUsersQueryOptions(id,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getAddUserToSegmentUrl = (id: number,) => {
+
+
+
+
+  return `/api/segments/${id}/users`
+}
+
+/**
+ * @summary Add a user to a segment (admin only)
+ */
+export const addUserToSegment = async (id: number,
+    segmentUserInput: SegmentUserInput, options?: RequestInit): Promise<User> => {
+
+  return customFetch<User>(getAddUserToSegmentUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      segmentUserInput,)
+  }
+);}
+
+
+
+
+export const getAddUserToSegmentMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof addUserToSegment>>, TError,{id: number;data: BodyType<SegmentUserInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof addUserToSegment>>, TError,{id: number;data: BodyType<SegmentUserInput>}, TContext> => {
+
+const mutationKey = ['addUserToSegment'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof addUserToSegment>>, {id: number;data: BodyType<SegmentUserInput>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  addUserToSegment(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type AddUserToSegmentMutationResult = NonNullable<Awaited<ReturnType<typeof addUserToSegment>>>
+    export type AddUserToSegmentMutationBody = BodyType<SegmentUserInput>
+    export type AddUserToSegmentMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Add a user to a segment (admin only)
+ */
+export const useAddUserToSegment = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof addUserToSegment>>, TError,{id: number;data: BodyType<SegmentUserInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof addUserToSegment>>,
+        TError,
+        {id: number;data: BodyType<SegmentUserInput>},
+        TContext
+      > => {
+      return useMutation(getAddUserToSegmentMutationOptions(options));
+    }
+
+export const getRemoveUserFromSegmentUrl = (id: number,
+    userId: number,) => {
+
+
+
+
+  return `/api/segments/${id}/users/${userId}`
+}
+
+/**
+ * @summary Remove a user from a segment (admin only)
+ */
+export const removeUserFromSegment = async (id: number,
+    userId: number, options?: RequestInit): Promise<void> => {
+
+  return customFetch<void>(getRemoveUserFromSegmentUrl(id,userId),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+export const getRemoveUserFromSegmentMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof removeUserFromSegment>>, TError,{id: number;userId: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof removeUserFromSegment>>, TError,{id: number;userId: number}, TContext> => {
+
+const mutationKey = ['removeUserFromSegment'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof removeUserFromSegment>>, {id: number;userId: number}> = (props) => {
+          const {id,userId} = props ?? {};
+
+          return  removeUserFromSegment(id,userId,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RemoveUserFromSegmentMutationResult = NonNullable<Awaited<ReturnType<typeof removeUserFromSegment>>>
+
+    export type RemoveUserFromSegmentMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Remove a user from a segment (admin only)
+ */
+export const useRemoveUserFromSegment = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof removeUserFromSegment>>, TError,{id: number;userId: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof removeUserFromSegment>>,
+        TError,
+        {id: number;userId: number},
+        TContext
+      > => {
+      return useMutation(getRemoveUserFromSegmentMutationOptions(options));
+    }
+
+export const getListEventSegmentsUrl = (id: number,) => {
+
+
+
+
+  return `/api/events/${id}/segments`
+}
+
+/**
+ * @summary List segments assigned to an event (admin only)
+ */
+export const listEventSegments = async (id: number, options?: RequestInit): Promise<Segment[]> => {
+
+  return customFetch<Segment[]>(getListEventSegmentsUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListEventSegmentsQueryKey = (id: number,) => {
+    return [
+    `/api/events/${id}/segments`
+    ] as const;
+    }
+
+
+export const getListEventSegmentsQueryOptions = <TData = Awaited<ReturnType<typeof listEventSegments>>, TError = ErrorType<unknown>>(id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listEventSegments>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListEventSegmentsQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listEventSegments>>> = ({ signal }) => listEventSegments(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: !!(id), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listEventSegments>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListEventSegmentsQueryResult = NonNullable<Awaited<ReturnType<typeof listEventSegments>>>
+export type ListEventSegmentsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary List segments assigned to an event (admin only)
+ */
+
+export function useListEventSegments<TData = Awaited<ReturnType<typeof listEventSegments>>, TError = ErrorType<unknown>>(
+ id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listEventSegments>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListEventSegmentsQueryOptions(id,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getAddSegmentToEventUrl = (id: number,) => {
+
+
+
+
+  return `/api/events/${id}/segments`
+}
+
+/**
+ * @summary Assign a segment to an event (admin only)
+ */
+export const addSegmentToEvent = async (id: number,
+    eventSegmentInput: EventSegmentInput, options?: RequestInit): Promise<void> => {
+
+  return customFetch<void>(getAddSegmentToEventUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      eventSegmentInput,)
+  }
+);}
+
+
+
+
+export const getAddSegmentToEventMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof addSegmentToEvent>>, TError,{id: number;data: BodyType<EventSegmentInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof addSegmentToEvent>>, TError,{id: number;data: BodyType<EventSegmentInput>}, TContext> => {
+
+const mutationKey = ['addSegmentToEvent'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof addSegmentToEvent>>, {id: number;data: BodyType<EventSegmentInput>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  addSegmentToEvent(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type AddSegmentToEventMutationResult = NonNullable<Awaited<ReturnType<typeof addSegmentToEvent>>>
+    export type AddSegmentToEventMutationBody = BodyType<EventSegmentInput>
+    export type AddSegmentToEventMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Assign a segment to an event (admin only)
+ */
+export const useAddSegmentToEvent = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof addSegmentToEvent>>, TError,{id: number;data: BodyType<EventSegmentInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof addSegmentToEvent>>,
+        TError,
+        {id: number;data: BodyType<EventSegmentInput>},
+        TContext
+      > => {
+      return useMutation(getAddSegmentToEventMutationOptions(options));
+    }
+
+export const getRemoveSegmentFromEventUrl = (id: number,
+    segmentId: number,) => {
+
+
+
+
+  return `/api/events/${id}/segments/${segmentId}`
+}
+
+/**
+ * @summary Remove a segment from an event (admin only)
+ */
+export const removeSegmentFromEvent = async (id: number,
+    segmentId: number, options?: RequestInit): Promise<void> => {
+
+  return customFetch<void>(getRemoveSegmentFromEventUrl(id,segmentId),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+export const getRemoveSegmentFromEventMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof removeSegmentFromEvent>>, TError,{id: number;segmentId: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof removeSegmentFromEvent>>, TError,{id: number;segmentId: number}, TContext> => {
+
+const mutationKey = ['removeSegmentFromEvent'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof removeSegmentFromEvent>>, {id: number;segmentId: number}> = (props) => {
+          const {id,segmentId} = props ?? {};
+
+          return  removeSegmentFromEvent(id,segmentId,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RemoveSegmentFromEventMutationResult = NonNullable<Awaited<ReturnType<typeof removeSegmentFromEvent>>>
+
+    export type RemoveSegmentFromEventMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Remove a segment from an event (admin only)
+ */
+export const useRemoveSegmentFromEvent = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof removeSegmentFromEvent>>, TError,{id: number;segmentId: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof removeSegmentFromEvent>>,
+        TError,
+        {id: number;segmentId: number},
+        TContext
+      > => {
+      return useMutation(getRemoveSegmentFromEventMutationOptions(options));
     }
 
 export const getGetSummaryUrl = (params?: GetSummaryParams,) => {

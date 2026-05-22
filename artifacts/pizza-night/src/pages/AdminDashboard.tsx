@@ -4,8 +4,12 @@ import {
   useListUsers, useUpdateUser, useDeleteUser, useRegenerateCode, useCreateUser,
   useListEvents, useCreateEvent, useUpdateEvent, useDeleteEvent,
   useListEventUsers, useAddUserToEvent, useRemoveUserFromEvent,
+  useListSegments, useCreateSegment, useDeleteSegment,
+  useListSegmentUsers, useAddUserToSegment, useRemoveUserFromSegment,
+  useListEventSegments, useAddSegmentToEvent, useRemoveSegmentFromEvent,
   getListOrdersQueryKey, getListUsersQueryKey, getGetSummaryQueryKey,
   getListEventsQueryKey, getListEventUsersQueryKey,
+  getListSegmentsQueryKey, getListSegmentUsersQueryKey, getListEventSegmentsQueryKey,
 } from "@workspace/api-client-react";
 import type { Event } from "@workspace/api-client-react";
 import { useLocation } from "wouter";
@@ -23,7 +27,7 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import {
   Loader2, Trash2, RefreshCw, UserPlus, Plus, CalendarDays,
-  Users, ChevronDown, ChevronUp, Pencil, X, Check, FileText,
+  Users, ChevronDown, ChevronUp, Pencil, X, Check, FileText, Tag,
 } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { OrderUpdateStatus } from "@workspace/api-client-react";
@@ -274,6 +278,93 @@ function EventUserManager({ eventId, allUsers }: { eventId: number; allUsers: an
   );
 }
 
+// ── Segment manager per event ────────────────────────────────────────────────
+function EventSegmentManager({ eventId, allSegments }: { eventId: number; allSegments: any[] }) {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [addSegmentId, setAddSegmentId] = useState("");
+  const [expanded, setExpanded] = useState(false);
+
+  const { data: eventSegments } = useListEventSegments(eventId, {
+    query: { enabled: expanded, queryKey: getListEventSegmentsQueryKey(eventId) },
+  });
+  const addSegment = useAddSegmentToEvent();
+  const removeSegment = useRemoveSegmentFromEvent();
+
+  const eventSegmentIds = new Set((eventSegments ?? []).map((s) => s.id));
+  const segmentsNotInEvent = allSegments.filter((s) => !eventSegmentIds.has(s.id));
+
+  const handleAdd = () => {
+    if (!addSegmentId) return;
+    addSegment.mutate({ id: eventId, data: { segmentId: parseInt(addSegmentId, 10) } }, {
+      onSuccess: () => {
+        toast({ title: "Segment assigned" });
+        setAddSegmentId("");
+        queryClient.invalidateQueries({ queryKey: getListEventSegmentsQueryKey(eventId) });
+        queryClient.invalidateQueries({ queryKey: getGetSummaryQueryKey() });
+      },
+    });
+  };
+
+  return (
+    <div className="mt-2">
+      <button
+        type="button"
+        className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+        onClick={() => setExpanded(!expanded)}
+      >
+        <Tag className="w-4 h-4" />
+        {expanded ? "Hide" : "Manage"} segments
+        {expanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+      </button>
+
+      {expanded && (
+        <div className="mt-3 border rounded-xl p-4 space-y-3 bg-secondary/20">
+          {(eventSegments ?? []).length === 0 ? (
+            <p className="text-sm text-muted-foreground">No segments assigned yet.</p>
+          ) : (
+            <div className="flex flex-wrap gap-2">
+              {(eventSegments ?? []).map((s) => (
+                <Badge key={s.id} variant="secondary" className="gap-1.5 pr-1">
+                  <Tag className="w-3 h-3" />
+                  {s.name}
+                  <span className="text-muted-foreground text-xs">({s.memberCount})</span>
+                  <button
+                    type="button"
+                    onClick={() => removeSegment.mutate({ id: eventId, segmentId: s.id }, {
+                      onSuccess: () => {
+                        toast({ title: "Segment removed" });
+                        queryClient.invalidateQueries({ queryKey: getListEventSegmentsQueryKey(eventId) });
+                        queryClient.invalidateQueries({ queryKey: getGetSummaryQueryKey() });
+                      },
+                    })}
+                    className="hover:text-destructive transition-colors ml-1"
+                  >×</button>
+                </Badge>
+              ))}
+            </div>
+          )}
+          {segmentsNotInEvent.length > 0 && (
+            <div className="flex gap-2 items-center">
+              <Select value={addSegmentId} onValueChange={setAddSegmentId}>
+                <SelectTrigger className="h-8 text-xs flex-1"><SelectValue placeholder="Assign a segment..." /></SelectTrigger>
+                <SelectContent>
+                  {segmentsNotInEvent.map((s) => (
+                    <SelectItem key={s.id} value={String(s.id)}>{s.name} ({s.memberCount} members)</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Button size="sm" className="h-8" onClick={handleAdd} disabled={!addSegmentId || addSegment.isPending}>
+                <Plus className="w-3 h-3 mr-1" /> Assign
+              </Button>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── Inline order editor ─────────────────────────────────────────────────────
 function OrderEditPanel({
   order, event, onClose, onSave,
@@ -402,6 +493,180 @@ function OrderEditPanel({
   );
 }
 
+// ── Segment member manager (used inside segments tab) ────────────────────────
+function SegmentMemberManager({ segmentId, allUsers }: { segmentId: number; allUsers: any[] }) {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [addUserId, setAddUserId] = useState("");
+  const [expanded, setExpanded] = useState(false);
+
+  const { data: members } = useListSegmentUsers(segmentId, {
+    query: { enabled: expanded, queryKey: getListSegmentUsersQueryKey(segmentId) },
+  });
+  const addUser = useAddUserToSegment();
+  const removeUser = useRemoveUserFromSegment();
+
+  const memberIds = new Set((members ?? []).map((u) => u.id));
+  const usersNotInSegment = allUsers.filter((u) => !memberIds.has(u.id));
+
+  const handleAdd = () => {
+    if (!addUserId) return;
+    addUser.mutate({ id: segmentId, data: { userId: parseInt(addUserId, 10) } }, {
+      onSuccess: () => {
+        toast({ title: "Guest added to segment" });
+        setAddUserId("");
+        queryClient.invalidateQueries({ queryKey: getListSegmentUsersQueryKey(segmentId) });
+        queryClient.invalidateQueries({ queryKey: getListSegmentsQueryKey() });
+        queryClient.invalidateQueries({ queryKey: getGetSummaryQueryKey() });
+      },
+    });
+  };
+
+  return (
+    <div className="mt-2">
+      <button
+        type="button"
+        className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+        onClick={() => setExpanded(!expanded)}
+      >
+        <Users className="w-4 h-4" />
+        {expanded ? "Hide" : "Manage"} members
+        {expanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+      </button>
+
+      {expanded && (
+        <div className="mt-3 border rounded-xl p-4 space-y-3 bg-secondary/20">
+          {(members ?? []).length === 0 ? (
+            <p className="text-sm text-muted-foreground">No members yet.</p>
+          ) : (
+            <div className="flex flex-wrap gap-2">
+              {(members ?? []).map((u) => (
+                <Badge key={u.id} variant="secondary" className="gap-1.5 pr-1">
+                  {u.name}
+                  <button
+                    type="button"
+                    onClick={() => removeUser.mutate({ id: segmentId, userId: u.id }, {
+                      onSuccess: () => {
+                        toast({ title: "Guest removed from segment" });
+                        queryClient.invalidateQueries({ queryKey: getListSegmentUsersQueryKey(segmentId) });
+                        queryClient.invalidateQueries({ queryKey: getListSegmentsQueryKey() });
+                        queryClient.invalidateQueries({ queryKey: getGetSummaryQueryKey() });
+                      },
+                    })}
+                    className="hover:text-destructive transition-colors ml-1"
+                  >×</button>
+                </Badge>
+              ))}
+            </div>
+          )}
+          {usersNotInSegment.length > 0 && (
+            <div className="flex gap-2 items-center">
+              <Select value={addUserId} onValueChange={setAddUserId}>
+                <SelectTrigger className="h-8 text-xs flex-1"><SelectValue placeholder="Add a guest..." /></SelectTrigger>
+                <SelectContent>
+                  {usersNotInSegment.map((u) => (
+                    <SelectItem key={u.id} value={String(u.id)}>{u.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Button size="sm" className="h-8" onClick={handleAdd} disabled={!addUserId || addUser.isPending}>
+                <Plus className="w-3 h-3 mr-1" /> Add
+              </Button>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Segments tab ─────────────────────────────────────────────────────────────
+function SegmentsTab({ allUsers }: { allUsers: any[] }) {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [newSegmentName, setNewSegmentName] = useState("");
+
+  const { data: segments } = useListSegments({ query: { queryKey: getListSegmentsQueryKey() } });
+  const createSegment = useCreateSegment();
+  const deleteSegment = useDeleteSegment();
+
+  const handleCreate = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newSegmentName.trim()) return;
+    createSegment.mutate({ data: { name: newSegmentName.trim() } }, {
+      onSuccess: () => {
+        toast({ title: "Segment created" });
+        setNewSegmentName("");
+        queryClient.invalidateQueries({ queryKey: getListSegmentsQueryKey() });
+      },
+      onError: () => toast({ title: "Failed to create segment", variant: "destructive" }),
+    });
+  };
+
+  const handleDelete = (id: number, name: string) => {
+    if (!confirm(`Delete segment "${name}"? Guests will not be deleted.`)) return;
+    deleteSegment.mutate({ id }, {
+      onSuccess: () => {
+        toast({ title: "Segment deleted" });
+        queryClient.invalidateQueries({ queryKey: getListSegmentsQueryKey() });
+        queryClient.invalidateQueries({ queryKey: getGetSummaryQueryKey() });
+      },
+    });
+  };
+
+  return (
+    <>
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-lg flex items-center gap-2"><Tag className="w-5 h-5" /> Create Segment</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleCreate} className="flex gap-4">
+            <Input
+              placeholder="Segment name, e.g. Fun Party"
+              value={newSegmentName}
+              onChange={(e) => setNewSegmentName(e.target.value)}
+              className="max-w-xs"
+            />
+            <Button type="submit" disabled={createSegment.isPending || !newSegmentName.trim()}>
+              <Plus className="w-4 h-4 mr-2" /> Create
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
+
+      <div className="space-y-3">
+        {(!segments || segments.length === 0) && (
+          <p className="text-center py-8 text-muted-foreground">No segments yet.</p>
+        )}
+        {(segments ?? []).map((seg) => (
+          <Card key={seg.id}>
+            <CardContent className="pt-4 pb-4">
+              <div className="flex items-center justify-between gap-4">
+                <div className="flex items-center gap-3 min-w-0">
+                  <Tag className="w-4 h-4 text-primary shrink-0" />
+                  <div>
+                    <span className="font-semibold text-foreground">{seg.name}</span>
+                    <span className="ml-2 text-sm text-muted-foreground">{seg.memberCount} member{seg.memberCount !== 1 ? "s" : ""}</span>
+                  </div>
+                </div>
+                <Button
+                  variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:bg-destructive/10 shrink-0"
+                  onClick={() => handleDelete(seg.id, seg.name)}
+                  title="Delete segment"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </div>
+              <SegmentMemberManager segmentId={seg.id} allUsers={allUsers} />
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    </>
+  );
+}
+
 // ── Main dashboard ───────────────────────────────────────────────────────────
 export function AdminDashboard() {
   const [, setLocation] = useLocation();
@@ -412,6 +677,7 @@ export function AdminDashboard() {
   const { data: events } = useListEvents();
   const { data: orders } = useListOrders({});
   const { data: users } = useListUsers();
+  const { data: segments } = useListSegments({ query: { queryKey: getListSegmentsQueryKey() } });
 
   const [summaryEventId, setSummaryEventId] = useState<number | undefined>(undefined);
   const activeEventId = summaryEventId ?? events?.[0]?.id;
@@ -575,11 +841,12 @@ export function AdminDashboard() {
         <h1 className="text-3xl font-serif font-bold text-foreground">Kitchen Dashboard</h1>
 
         <Tabs defaultValue="summary" className="w-full">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="summary">Summary</TabsTrigger>
             <TabsTrigger value="orders">Orders</TabsTrigger>
             <TabsTrigger value="events">Events</TabsTrigger>
             <TabsTrigger value="users">Guests</TabsTrigger>
+            <TabsTrigger value="segments">Segments</TabsTrigger>
           </TabsList>
 
           {/* SUMMARY */}
@@ -888,10 +1155,16 @@ export function AdminDashboard() {
                     )}
 
                     <EventUserManager eventId={event.id} allUsers={users ?? []} />
+                    <EventSegmentManager eventId={event.id} allSegments={segments ?? []} />
                   </CardContent>
                 </Card>
               ))}
             </div>
+          </TabsContent>
+
+          {/* SEGMENTS */}
+          <TabsContent value="segments" className="pt-4 space-y-4">
+            <SegmentsTab allUsers={users ?? []} />
           </TabsContent>
 
           {/* GUESTS */}

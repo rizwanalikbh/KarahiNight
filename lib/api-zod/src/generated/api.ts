@@ -360,6 +360,109 @@ export const DeleteOrderParams = zod.object({
 
 
 /**
+ * @summary List all segments (admin only)
+ */
+export const ListSegmentsResponseItem = zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "memberCount": zod.number(),
+  "createdAt": zod.coerce.date()
+})
+export const ListSegmentsResponse = zod.array(ListSegmentsResponseItem)
+
+
+/**
+ * @summary Create a segment (admin only)
+ */
+export const CreateSegmentBody = zod.object({
+  "name": zod.string()
+})
+
+
+/**
+ * @summary Delete a segment (admin only)
+ */
+export const DeleteSegmentParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+
+/**
+ * @summary List users in a segment (admin only)
+ */
+export const ListSegmentUsersParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const ListSegmentUsersResponseItem = zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "code": zod.string(),
+  "active": zod.boolean(),
+  "createdAt": zod.coerce.date()
+})
+export const ListSegmentUsersResponse = zod.array(ListSegmentUsersResponseItem)
+
+
+/**
+ * @summary Add a user to a segment (admin only)
+ */
+export const AddUserToSegmentParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const AddUserToSegmentBody = zod.object({
+  "userId": zod.number()
+})
+
+
+/**
+ * @summary Remove a user from a segment (admin only)
+ */
+export const RemoveUserFromSegmentParams = zod.object({
+  "id": zod.coerce.number(),
+  "userId": zod.coerce.number()
+})
+
+
+/**
+ * @summary List segments assigned to an event (admin only)
+ */
+export const ListEventSegmentsParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const ListEventSegmentsResponseItem = zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "memberCount": zod.number(),
+  "createdAt": zod.coerce.date()
+})
+export const ListEventSegmentsResponse = zod.array(ListEventSegmentsResponseItem)
+
+
+/**
+ * @summary Assign a segment to an event (admin only)
+ */
+export const AddSegmentToEventParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const AddSegmentToEventBody = zod.object({
+  "segmentId": zod.number()
+})
+
+
+/**
+ * @summary Remove a segment from an event (admin only)
+ */
+export const RemoveSegmentFromEventParams = zod.object({
+  "id": zod.coerce.number(),
+  "segmentId": zod.coerce.number()
+})
+
+
+/**
  * @summary Get event summary and slot capacities
  */
 export const GetSummaryQueryParams = zod.object({

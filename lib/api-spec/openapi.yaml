@@ -14,6 +14,7 @@ tags:
   - name: users
   - name: orders
   - name: summary
+  - name: segments
 
 paths:
   /healthz:
@@ -403,6 +404,180 @@ paths:
         "204":
           description: Deleted
 
+  /segments:
+    get:
+      operationId: listSegments
+      tags: [segments]
+      summary: List all segments (admin only)
+      responses:
+        "200":
+          description: List of segments
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Segment"
+
+    post:
+      operationId: createSegment
+      tags: [segments]
+      summary: Create a segment (admin only)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SegmentInput"
+      responses:
+        "201":
+          description: Segment created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Segment"
+
+  /segments/{id}:
+    delete:
+      operationId: deleteSegment
+      tags: [segments]
+      summary: Delete a segment (admin only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /segments/{id}/users:
+    get:
+      operationId: listSegmentUsers
+      tags: [segments]
+      summary: List users in a segment (admin only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Users in segment
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/User"
+
+    post:
+      operationId: addUserToSegment
+      tags: [segments]
+      summary: Add a user to a segment (admin only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SegmentUserInput"
+      responses:
+        "201":
+          description: User added
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+
+  /segments/{id}/users/{userId}:
+    delete:
+      operationId: removeUserFromSegment
+      tags: [segments]
+      summary: Remove a user from a segment (admin only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Removed
+
+  /events/{id}/segments:
+    get:
+      operationId: listEventSegments
+      tags: [segments]
+      summary: List segments assigned to an event (admin only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Segments for event
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Segment"
+
+    post:
+      operationId: addSegmentToEvent
+      tags: [segments]
+      summary: Assign a segment to an event (admin only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EventSegmentInput"
+      responses:
+        "201":
+          description: Segment assigned
+
+  /events/{id}/segments/{segmentId}:
+    delete:
+      operationId: removeSegmentFromEvent
+      tags: [segments]
+      summary: Remove a segment from an event (admin only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: segmentId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Removed
+
   /summary:
     get:
       operationId: getSummary
@@ -697,6 +872,41 @@ components:
           type: string
         paid:
           type: boolean
+
+    Segment:
+      type: object
+      required: [id, name, memberCount, createdAt]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        memberCount:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+
+    SegmentInput:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+
+    SegmentUserInput:
+      type: object
+      required: [userId]
+      properties:
+        userId:
+          type: integer
+
+    EventSegmentInput:
+      type: object
+      required: [segmentId]
+      properties:
+        segmentId:
+          type: integer
 
     SlotSummary:
       type: object

@@ -212,6 +212,25 @@ export interface OrderUpdate {
   paid?: boolean;
 }
 
+export interface Segment {
+  id: number;
+  name: string;
+  memberCount: number;
+  createdAt: string;
+}
+
+export interface SegmentInput {
+  name: string;
+}
+
+export interface SegmentUserInput {
+  userId: number;
+}
+
+export interface EventSegmentInput {
+  segmentId: number;
+}
+
 export interface SlotSummary {
   slot: string;
   booked: number;
