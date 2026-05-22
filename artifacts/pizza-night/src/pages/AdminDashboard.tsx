@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import {
   useGetMe, useGetSummary, useListOrders, useUpdateOrder, useDeleteOrder,
   useListUsers, useUpdateUser, useDeleteUser, useRegenerateCode, useCreateUser,
@@ -984,11 +984,14 @@ export function AdminDashboard() {
   const [editingUserId, setEditingUserId] = useState<number | null>(null);
   const [filterEventId, setFilterEventId] = useState<string>("all");
 
+  useEffect(() => {
+    if (!sessionLoading && (!session?.authenticated || session.role !== "admin")) {
+      setLocation("/admin");
+    }
+  }, [sessionLoading, session, setLocation]);
+
   if (sessionLoading) return <Layout><div className="flex justify-center p-12"><Loader2 className="animate-spin text-primary" /></div></Layout>;
-  if (!session?.authenticated || session.role !== "admin") {
-    setLocation("/admin");
-    return null;
-  }
+  if (!session?.authenticated || session.role !== "admin") return null;
 
   const handleStatusChange = (id: number, status: OrderUpdateStatus) => {
     updateOrder.mutate({ id, data: { status } }, {
