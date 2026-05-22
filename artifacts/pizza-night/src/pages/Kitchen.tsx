@@ -240,7 +240,7 @@ export function Kitchen() {
     <div className="min-h-screen flex flex-col bg-[#faf9f6]">
       <KitchenHeader
         session={session}
-        onLogout={() => logout.mutate(undefined, { onSuccess: () => setLocation("/") })}
+        onLogout={() => { setLocation("/"); logout.mutate(undefined); }}
         onDashboard={() => setLocation("/admin/dashboard")}
       >
         {/* Event selector + stats */}
