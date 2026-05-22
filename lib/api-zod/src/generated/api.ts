@@ -74,6 +74,7 @@ export const ListEventsResponseItem = zod.object({
   "slotCapacity": zod.number(),
   "price": zod.number().describe('Price per pizza in DKK'),
   "description": zod.string().nullish().describe('Event description or fundraising note'),
+  "orderDeadline": zod.coerce.date().nullish().describe('Cutoff datetime after which no new orders or edits are accepted'),
   "slots": zod.array(zod.string()),
   "pizzaTypes": zod.array(zod.string()),
   "active": zod.boolean(),
@@ -96,6 +97,7 @@ export const CreateEventBody = zod.object({
   "slotCapacity": zod.number().default(createEventBodySlotCapacityDefault),
   "price": zod.number().default(createEventBodyPriceDefault),
   "description": zod.string().optional(),
+  "orderDeadline": zod.coerce.date().optional().describe('Cutoff datetime after which no new orders or edits are accepted'),
   "slots": zod.array(zod.string()).optional(),
   "pizzaTypes": zod.array(zod.string()).optional()
 })
@@ -115,6 +117,7 @@ export const UpdateEventBody = zod.object({
   "slotCapacity": zod.number().optional(),
   "price": zod.number().optional(),
   "description": zod.string().optional(),
+  "orderDeadline": zod.coerce.date().nullish().describe('Cutoff datetime after which no new orders or edits are accepted'),
   "slots": zod.array(zod.string()).optional(),
   "pizzaTypes": zod.array(zod.string()).optional(),
   "active": zod.boolean().optional()
@@ -128,6 +131,7 @@ export const UpdateEventResponse = zod.object({
   "slotCapacity": zod.number(),
   "price": zod.number().describe('Price per pizza in DKK'),
   "description": zod.string().nullish().describe('Event description or fundraising note'),
+  "orderDeadline": zod.coerce.date().nullish().describe('Cutoff datetime after which no new orders or edits are accepted'),
   "slots": zod.array(zod.string()),
   "pizzaTypes": zod.array(zod.string()),
   "active": zod.boolean(),
@@ -370,6 +374,7 @@ export const GetSummaryResponse = zod.object({
   "totalBooked": zod.number(),
   "totalRemaining": zod.number(),
   "orderingOpen": zod.boolean(),
+  "orderDeadline": zod.coerce.date().nullish().describe('Cutoff datetime after which no new orders or edits are accepted'),
   "price": zod.number(),
   "description": zod.string().nullish(),
   "pizzaTypes": zod.array(zod.string()),

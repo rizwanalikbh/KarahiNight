@@ -20,6 +20,11 @@ export interface Event {
      * @nullable
      */
   description?: string | null;
+  /**
+     * Cutoff datetime after which no new orders or edits are accepted
+     * @nullable
+     */
+  orderDeadline?: Date | null;
   slots: string[];
   pizzaTypes: string[];
   active: boolean;

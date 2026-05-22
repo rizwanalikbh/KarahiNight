@@ -16,6 +16,11 @@ export interface EventSummary {
   totalBooked: number;
   totalRemaining: number;
   orderingOpen: boolean;
+  /**
+     * Cutoff datetime after which no new orders or edits are accepted
+     * @nullable
+     */
+  orderDeadline?: Date | null;
   price: number;
   /** @nullable */
   description?: string | null;

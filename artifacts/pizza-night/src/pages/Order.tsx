@@ -206,7 +206,7 @@ export function Order() {
                   >
                     {myOrder.status}
                   </span>
-                  {!isEditing && myOrder.status !== "completed" && myOrder.status !== "declined" && (
+                  {!isEditing && myOrder.status !== "completed" && myOrder.status !== "declined" && summary?.orderingOpen && (
                     <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setIsEditing(true)}>
                       <Pencil className="w-4 h-4" />
                     </Button>

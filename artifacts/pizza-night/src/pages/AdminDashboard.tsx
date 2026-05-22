@@ -89,6 +89,12 @@ function EventEditPanel({ event, onClose }: { event: Event; onClose: () => void 
   const [slotCap, setSlotCap] = useState(String(event.slotCapacity));
   const [price, setPrice] = useState(String(event.price));
   const [description, setDescription] = useState(event.description ?? "");
+  const [orderDeadline, setOrderDeadline] = useState<string>(() => {
+    if (!event.orderDeadline) return "";
+    const d = new Date(event.orderDeadline);
+    const pad = (n: number) => String(n).padStart(2, "0");
+    return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  });
   const [slots, setSlots] = useState<string[]>(event.slots ?? DEFAULT_SLOTS);
   const [pizzaTypes, setPizzaTypes] = useState<string[]>(event.pizzaTypes ?? DEFAULT_PIZZA_TYPES);
 
@@ -103,6 +109,7 @@ function EventEditPanel({ event, onClose }: { event: Event; onClose: () => void 
           slotCapacity: parseInt(slotCap, 10) || 3,
           price: parseInt(price, 10) || 70,
           description: description || undefined,
+          orderDeadline: orderDeadline || null,
           slots,
           pizzaTypes,
         },
@@ -141,6 +148,11 @@ function EventEditPanel({ event, onClose }: { event: Event; onClose: () => void 
         <div className="space-y-1.5">
           <Label className="text-sm">Price per Pizza (DKK)</Label>
           <Input type="number" min={1} value={price} onChange={(e) => setPrice(e.target.value)} />
+        </div>
+        <div className="space-y-1.5">
+          <Label className="text-sm">Order Deadline</Label>
+          <Input type="datetime-local" value={orderDeadline} onChange={(e) => setOrderDeadline(e.target.value)} />
+          <p className="text-xs text-muted-foreground">After this time, no new orders or edits are accepted.</p>
         </div>
       </div>
       <div className="space-y-1.5">
@@ -425,6 +437,7 @@ export function AdminDashboard() {
   const [newEventSlot, setNewEventSlot] = useState("3");
   const [newEventPrice, setNewEventPrice] = useState("70");
   const [newEventDescription, setNewEventDescription] = useState("");
+  const [newEventDeadline, setNewEventDeadline] = useState("");
   const [newEventSlots, setNewEventSlots] = useState<string[]>(DEFAULT_SLOTS);
   const [newEventPizzaTypes, setNewEventPizzaTypes] = useState<string[]>(DEFAULT_PIZZA_TYPES);
 
@@ -513,6 +526,7 @@ export function AdminDashboard() {
           slotCapacity: parseInt(newEventSlot, 10) || 3,
           price: parseInt(newEventPrice, 10) || 70,
           description: newEventDescription || undefined,
+          orderDeadline: newEventDeadline || undefined,
           slots: newEventSlots,
           pizzaTypes: newEventPizzaTypes,
         },
@@ -522,6 +536,7 @@ export function AdminDashboard() {
           toast({ title: "Event created" });
           setNewEventName("");
           setNewEventDescription("");
+          setNewEventDeadline("");
           setNewEventSlots(DEFAULT_SLOTS);
           setNewEventPizzaTypes(DEFAULT_PIZZA_TYPES);
           queryClient.invalidateQueries({ queryKey: getListEventsQueryKey() });
@@ -783,6 +798,11 @@ export function AdminDashboard() {
                       <Label className="text-sm">Price per Pizza (DKK)</Label>
                       <Input type="number" min={1} value={newEventPrice} onChange={(e) => setNewEventPrice(e.target.value)} />
                     </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-sm">Order Deadline <span className="text-muted-foreground font-normal">(optional)</span></Label>
+                      <Input type="datetime-local" value={newEventDeadline} onChange={(e) => setNewEventDeadline(e.target.value)} />
+                      <p className="text-xs text-muted-foreground">After this time, no new orders or edits.</p>
+                    </div>
                   </div>
                   <div className="space-y-1.5">
                     <Label className="text-sm">Description</Label>
@@ -824,6 +844,11 @@ export function AdminDashboard() {
                         <div className="flex flex-wrap gap-x-4 gap-y-0.5 mt-1 text-sm text-muted-foreground">
                           <span>{formatEventDate(event.date)}</span>
                           <span>{event.totalCapacity} pizzas total · {event.slotCapacity}/slot · {event.price} DKK</span>
+                          {event.orderDeadline && (
+                            <span className={new Date() > new Date(event.orderDeadline) ? "text-destructive" : ""}>
+                              Orders close {new Date(event.orderDeadline).toLocaleString("en-GB", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
+                            </span>
+                          )}
                         </div>
                         {event.description && (
                           <p className="text-xs text-muted-foreground mt-1 truncate max-w-md">{event.description}</p>

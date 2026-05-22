@@ -41,7 +41,8 @@ router.get("/summary", async (req, res): Promise<void> => {
 
   const totalBooked = allOrders.reduce((sum, o) => sum + o.quantity, 0);
   const totalRemaining = Math.max(0, event.totalCapacity - totalBooked);
-  const orderingOpen = totalRemaining > 0 && event.active;
+  const pastDeadline = event.orderDeadline ? new Date() > new Date(event.orderDeadline) : false;
+  const orderingOpen = totalRemaining > 0 && event.active && !pastDeadline;
 
   const slots = eventSlots.map((slot) => {
     const slotOrders = allOrders.filter((o) => o.pickupSlot === slot);
@@ -76,6 +77,7 @@ router.get("/summary", async (req, res): Promise<void> => {
     totalBooked,
     totalRemaining,
     orderingOpen,
+    orderDeadline: event.orderDeadline ? event.orderDeadline.toISOString() : null,
     price: event.price,
     description: event.description ?? null,
     pizzaTypes: eventPizzaTypes,

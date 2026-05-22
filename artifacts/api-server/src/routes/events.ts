@@ -66,6 +66,7 @@ router.post("/events", requireAdmin, async (req, res): Promise<void> => {
       slotCapacity: parsed.data.slotCapacity ?? 3,
       price: parsed.data.price ?? 70,
       description: parsed.data.description ?? null,
+      orderDeadline: parsed.data.orderDeadline ?? null,
       slots: parsed.data.slots?.length ? parsed.data.slots : DEFAULT_SLOTS,
       pizzaTypes: parsed.data.pizzaTypes?.length ? parsed.data.pizzaTypes : DEFAULT_PIZZA_TYPES,
       active: true,
@@ -89,6 +90,7 @@ router.patch("/events/:id", requireAdmin, async (req, res): Promise<void> => {
   if (parsed.data.slotCapacity !== undefined) updateData.slotCapacity = parsed.data.slotCapacity;
   if (parsed.data.price !== undefined) updateData.price = parsed.data.price;
   if (parsed.data.description !== undefined) updateData.description = parsed.data.description;
+  if ("orderDeadline" in parsed.data) updateData.orderDeadline = parsed.data.orderDeadline ?? null;
   if (parsed.data.slots !== undefined) updateData.slots = parsed.data.slots;
   if (parsed.data.pizzaTypes !== undefined) updateData.pizzaTypes = parsed.data.pizzaTypes;
   if (parsed.data.active !== undefined) updateData.active = parsed.data.active;

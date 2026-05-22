@@ -498,6 +498,10 @@ components:
         description:
           type: ["string", "null"]
           description: Event description or fundraising note
+        orderDeadline:
+          type: ["string", "null"]
+          format: date-time
+          description: Cutoff datetime after which no new orders or edits are accepted
         slots:
           type: array
           items:
@@ -532,6 +536,10 @@ components:
           default: 70
         description:
           type: string
+        orderDeadline:
+          type: string
+          format: date-time
+          description: Cutoff datetime after which no new orders or edits are accepted
         slots:
           type: array
           items:
@@ -556,6 +564,10 @@ components:
           type: integer
         description:
           type: string
+        orderDeadline:
+          type: ["string", "null"]
+          format: date-time
+          description: Cutoff datetime after which no new orders or edits are accepted
         slots:
           type: array
           items:
@@ -726,6 +738,10 @@ components:
           type: integer
         orderingOpen:
           type: boolean
+        orderDeadline:
+          type: ["string", "null"]
+          format: date-time
+          description: Cutoff datetime after which no new orders or edits are accepted
         price:
           type: integer
         description:

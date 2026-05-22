@@ -74,6 +74,11 @@ export interface Event {
      * @nullable
      */
   description?: string | null;
+  /**
+     * Cutoff datetime after which no new orders or edits are accepted
+     * @nullable
+     */
+  orderDeadline?: string | null;
   slots: string[];
   pizzaTypes: string[];
   active: boolean;
@@ -88,6 +93,8 @@ export interface EventInput {
   slotCapacity?: number;
   price?: number;
   description?: string;
+  /** Cutoff datetime after which no new orders or edits are accepted */
+  orderDeadline?: string;
   slots?: string[];
   pizzaTypes?: string[];
 }
@@ -99,6 +106,11 @@ export interface EventUpdate {
   slotCapacity?: number;
   price?: number;
   description?: string;
+  /**
+     * Cutoff datetime after which no new orders or edits are accepted
+     * @nullable
+     */
+  orderDeadline?: string | null;
   slots?: string[];
   pizzaTypes?: string[];
   active?: boolean;
@@ -220,6 +232,11 @@ export interface EventSummary {
   totalBooked: number;
   totalRemaining: number;
   orderingOpen: boolean;
+  /**
+     * Cutoff datetime after which no new orders or edits are accepted
+     * @nullable
+     */
+  orderDeadline?: string | null;
   price: number;
   /** @nullable */
   description?: string | null;

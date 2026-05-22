@@ -14,6 +14,8 @@ export interface EventInput {
   slotCapacity?: number;
   price?: number;
   description?: string;
+  /** Cutoff datetime after which no new orders or edits are accepted */
+  orderDeadline?: Date;
   slots?: string[];
   pizzaTypes?: string[];
 }
