@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { db, usersTable, ordersTable, eventsTable, eventUsersTable, type PizzaItem } from "@workspace/db";
+import { db, usersTable, ordersTable, eventsTable, eventSegmentsTable, userSegmentsTable, type PizzaItem } from "@workspace/db";
 import { eq, and } from "drizzle-orm";
 import { CreateOrderBody, UpdateOrderParams, UpdateOrderBody, DeleteOrderParams, ListOrdersQueryParams } from "@workspace/api-zod";
 
@@ -90,14 +90,23 @@ router.post("/orders", requireAuth, async (req, res): Promise<void> => {
 
   const userId = req.session.userId!;
 
-  const [eventUser] = await db
+  const eventSegs = await db
     .select()
-    .from(eventUsersTable)
-    .where(and(eq(eventUsersTable.eventId, eventId), eq(eventUsersTable.userId, userId)));
+    .from(eventSegmentsTable)
+    .where(eq(eventSegmentsTable.eventId, eventId));
 
-  if (!eventUser) {
-    res.status(403).json({ error: "You are not invited to this event" });
-    return;
+  if (eventSegs.length > 0) {
+    const segmentIds = eventSegs.map((es) => es.segmentId);
+    const userSegs = await db
+      .select()
+      .from(userSegmentsTable)
+      .where(and(eq(userSegmentsTable.userId, userId)));
+    const userSegIds = userSegs.map((us) => us.segmentId);
+    const hasAccess = segmentIds.some((sid) => userSegIds.includes(sid));
+    if (!hasAccess) {
+      res.status(403).json({ error: "You are not invited to this event" });
+      return;
+    }
   }
 
   const validItems =
