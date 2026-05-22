@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useGetSummary, useLogin, getGetMeQueryKey } from "@workspace/api-client-react";
+import { useGetSummary, useLogin, useListEvents, getGetMeQueryKey, getGetSummaryQueryKey } from "@workspace/api-client-react";
 import { useLocation } from "wouter";
 import { Layout } from "../components/Layout";
 import { Button } from "@/components/ui/button";
@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Clock, Lock } from "lucide-react";
+import { Loader2, Clock, Lock, CalendarDays } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useQueryClient } from "@tanstack/react-query";
 
@@ -60,12 +60,33 @@ function CountdownDisplay({ t }: { t: Countdown }) {
   );
 }
 
+function formatShortDate(dateStr: string): string {
+  try {
+    const d = new Date(dateStr + "T12:00:00");
+    return d.toLocaleDateString("en-GB", { day: "numeric", month: "short" });
+  } catch { return dateStr; }
+}
+
 export function Home() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const { data: summary, isLoading } = useGetSummary({});
+  const { data: events } = useListEvents();
+  const [selectedEventId, setSelectedEventId] = useState<number | undefined>(undefined);
+
+  // Default to first event once list loads
+  useEffect(() => {
+    if (events && events.length > 0 && selectedEventId === undefined) {
+      setSelectedEventId(events[0].id);
+    }
+  }, [events, selectedEventId]);
+
+  const eventId = selectedEventId ?? events?.[0]?.id;
+  const { data: summary, isLoading } = useGetSummary(
+    { eventId },
+    { query: { enabled: !!eventId, queryKey: getGetSummaryQueryKey({ eventId }) } }
+  );
   const login = useLogin();
   const countdown = useCountdown(summary?.orderDeadline);
 
@@ -96,8 +117,27 @@ export function Home() {
     (summary.totalBooked / summary.totalCapacity) >= 0.25;
   const progressPct = summary ? Math.min(100, Math.round((summary.totalBooked / summary.totalCapacity) * 100)) : 0;
 
+  const eventSelector = events && events.length > 1 ? (
+    <Select
+      value={selectedEventId !== undefined ? String(selectedEventId) : ""}
+      onValueChange={(v) => { setSelectedEventId(Number(v)); setSelectedGuestId(""); setCode(""); }}
+    >
+      <SelectTrigger className="h-8 text-sm w-auto min-w-[180px] max-w-[260px] gap-2 border-border/60">
+        <CalendarDays className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+        <SelectValue placeholder="Select event…" />
+      </SelectTrigger>
+      <SelectContent>
+        {events.map((ev) => (
+          <SelectItem key={ev.id} value={String(ev.id)}>
+            {ev.name} — {formatShortDate(ev.date)}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+  ) : null;
+
   return (
-    <Layout>
+    <Layout topbarExtra={eventSelector}>
       <div className="flex flex-col items-center max-w-2xl mx-auto space-y-8 text-center">
         <div className="space-y-4">
           <div className="w-24 h-24 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-6">

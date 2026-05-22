@@ -3,7 +3,12 @@ import { Link, useLocation } from "wouter";
 import { Button } from "./ui/button";
 import { LogOut, Pizza } from "lucide-react";
 
-export function Layout({ children }: { children: React.ReactNode }) {
+interface LayoutProps {
+  children: React.ReactNode;
+  topbarExtra?: React.ReactNode;
+}
+
+export function Layout({ children, topbarExtra }: LayoutProps) {
   const { data: session } = useGetMe();
   const logout = useLogout();
   const [, setLocation] = useLocation();
@@ -19,13 +24,19 @@ export function Layout({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-[100dvh] flex flex-col">
       <header className="border-b bg-card">
-        <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2 text-primary font-serif font-bold text-xl hover:opacity-80 transition-opacity">
+        <div className="container mx-auto px-4 h-16 flex items-center gap-4">
+          <Link href="/" className="flex items-center gap-2 text-primary font-serif font-bold text-xl hover:opacity-80 transition-opacity shrink-0">
             <Pizza className="w-6 h-6" />
             <span>Pizza Night</span>
           </Link>
-          
-          <nav className="flex items-center gap-4">
+
+          {topbarExtra && (
+            <div className="flex-1 flex justify-center">
+              {topbarExtra}
+            </div>
+          )}
+
+          <nav className={`flex items-center gap-4 ${topbarExtra ? "" : "ml-auto"}`}>
             {session?.authenticated ? (
               <div className="flex items-center gap-4">
                 <span className="text-sm font-medium hidden sm:inline-block">

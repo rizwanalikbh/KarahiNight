@@ -33,7 +33,14 @@ function requireAuth(req: any, res: any, next: any): void {
   next();
 }
 
-router.get("/events", requireAuth, async (req, res): Promise<void> => {
+router.get("/events", async (req, res): Promise<void> => {
+  // Unauthenticated: return all active events (needed for home-page event selector)
+  if (!req.session?.role) {
+    const events = await db.select().from(eventsTable).orderBy(eventsTable.date);
+    res.json(events.filter((e) => e.active));
+    return;
+  }
+
   if (req.session.role === "admin") {
     const events = await db.select().from(eventsTable).orderBy(eventsTable.date);
     res.json(events);
