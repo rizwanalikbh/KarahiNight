@@ -304,7 +304,7 @@ export const ListOrdersResponseItem = zod.object({
   "eventName": zod.string(),
   "eventDate": zod.string().describe('ISO date string (YYYY-MM-DD) of the event'),
   "items": zod.array(zod.object({
-  "pizzaChoice": zod.enum(['Margherita', 'Pepperoni', 'Special']),
+  "pizzaChoice": zod.string(),
   "quantity": zod.number().min(1).max(listOrdersResponseItemsItemQuantityMax)
 })),
   "quantity": zod.number().min(1).max(listOrdersResponseQuantityMax),
@@ -328,7 +328,7 @@ export const createOrderBodyItemsItemQuantityMax = 3;
 export const CreateOrderBody = zod.object({
   "eventId": zod.number(),
   "items": zod.array(zod.object({
-  "pizzaChoice": zod.enum(['Margherita', 'Pepperoni', 'Special']),
+  "pizzaChoice": zod.string(),
   "quantity": zod.number().min(1).max(createOrderBodyItemsItemQuantityMax)
 })).min(1),
   "pickupSlot": zod.string(),
@@ -351,7 +351,7 @@ export const updateOrderBodyItemsItemQuantityMax = 3;
 export const UpdateOrderBody = zod.object({
   "status": zod.enum(['pending', 'confirmed', 'declined', 'completed']).optional(),
   "items": zod.array(zod.object({
-  "pizzaChoice": zod.enum(['Margherita', 'Pepperoni', 'Special']),
+  "pizzaChoice": zod.string(),
   "quantity": zod.number().min(1).max(updateOrderBodyItemsItemQuantityMax)
 })).min(1).optional(),
   "pickupSlot": zod.string().optional(),
@@ -373,7 +373,7 @@ export const UpdateOrderResponse = zod.object({
   "eventName": zod.string(),
   "eventDate": zod.string().describe('ISO date string (YYYY-MM-DD) of the event'),
   "items": zod.array(zod.object({
-  "pizzaChoice": zod.enum(['Margherita', 'Pepperoni', 'Special']),
+  "pizzaChoice": zod.string(),
   "quantity": zod.number().min(1).max(updateOrderResponseItemsItemQuantityMax)
 })),
   "quantity": zod.number().min(1).max(updateOrderResponseQuantityMax),

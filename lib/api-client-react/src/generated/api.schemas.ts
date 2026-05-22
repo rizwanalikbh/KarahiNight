@@ -184,17 +184,8 @@ export interface UserImportResult {
   errors: string[];
 }
 
-export type PizzaItemPizzaChoice = typeof PizzaItemPizzaChoice[keyof typeof PizzaItemPizzaChoice];
-
-
-export const PizzaItemPizzaChoice = {
-  Margherita: 'Margherita',
-  Pepperoni: 'Pepperoni',
-  Special: 'Special',
-} as const;
-
 export interface PizzaItem {
-  pizzaChoice: PizzaItemPizzaChoice;
+  pizzaChoice: string;
   /**
      * @minimum 1
      * @maximum 3

@@ -933,7 +933,6 @@ components:
       properties:
         pizzaChoice:
           type: string
-          enum: [Margherita, Pepperoni, Special]
         quantity:
           type: integer
           minimum: 1

@@ -25,7 +25,6 @@ export * from './orderStatus';
 export * from './orderUpdate';
 export * from './orderUpdateStatus';
 export * from './pizzaItem';
-export * from './pizzaItemPizzaChoice';
 export * from './recipe';
 export * from './recipeIngredient';
 export * from './recipeInput';

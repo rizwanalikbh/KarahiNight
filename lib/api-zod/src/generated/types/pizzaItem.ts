@@ -5,10 +5,9 @@
  * Private Pizza Night preorder API
  * OpenAPI spec version: 0.1.0
  */
-import type { PizzaItemPizzaChoice } from './pizzaItemPizzaChoice';
 
 export interface PizzaItem {
-  pizzaChoice: PizzaItemPizzaChoice;
+  pizzaChoice: string;
   /**
      * @minimum 1
      * @maximum 3
