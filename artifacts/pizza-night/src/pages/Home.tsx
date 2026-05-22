@@ -1,5 +1,8 @@
 import { useState, useEffect } from "react";
-import { useGetSummary, useLogin, useListEvents, getGetMeQueryKey, getGetSummaryQueryKey } from "@workspace/api-client-react";
+import {
+  useGetSummary, useLogin, useListEvents, useGetMe,
+  getGetMeQueryKey, getGetSummaryQueryKey,
+} from "@workspace/api-client-react";
 import type { Event } from "@workspace/api-client-react";
 import { useLocation } from "wouter";
 import { Layout } from "../components/Layout";
@@ -10,23 +13,23 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Clock, Lock, CalendarDays, ArrowRight, Check, Search } from "lucide-react";
+import { Loader2, Clock, Lock, CalendarDays, ArrowRight, Check, Search, ChevronLeft, Pizza } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useQueryClient } from "@tanstack/react-query";
+
+// ─── Helpers ─────────────────────────────────────────────────────────────────
 
 function formatEventDate(dateStr: string): string {
   try {
     const d = new Date(dateStr + "T12:00:00");
     return d.toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
-  } catch {
-    return dateStr;
-  }
+  } catch { return dateStr; }
 }
 
 function formatModalDate(dateStr: string): string {
   try {
     const d = new Date(dateStr + "T12:00:00");
-    return d.toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
+    return d.toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" });
   } catch { return dateStr; }
 }
 
@@ -34,7 +37,6 @@ interface Countdown { h: number; m: number; s: number }
 
 function useCountdown(targetIso: string | null | undefined): Countdown | null {
   const [timeLeft, setTimeLeft] = useState<Countdown | null>(null);
-
   useEffect(() => {
     if (!targetIso) { setTimeLeft(null); return; }
     const tick = () => {
@@ -50,7 +52,6 @@ function useCountdown(targetIso: string | null | undefined): Countdown | null {
     const id = setInterval(tick, 1000);
     return () => clearInterval(id);
   }, [targetIso]);
-
   return timeLeft;
 }
 
@@ -68,6 +69,8 @@ function CountdownDisplay({ t }: { t: Countdown }) {
     </div>
   );
 }
+
+// ─── Event picker modal ───────────────────────────────────────────────────────
 
 interface EventPickerModalProps {
   events: Event[];
@@ -132,9 +135,7 @@ function EventPickerModal({ events, selectedId, open, onSelect, onOpenChange }: 
           {filtered.map((ev) => {
             const isSelected = ev.id === selectedId;
             const segDescs = (ev.segmentDescriptions ?? []).filter(Boolean);
-            const subtitle = segDescs.length > 0
-              ? segDescs.join(", ")
-              : ev.description ?? null;
+            const subtitle = segDescs.length > 0 ? segDescs.join(", ") : ev.description ?? null;
             return (
               <button
                 key={ev.id}
@@ -150,13 +151,9 @@ function EventPickerModal({ events, selectedId, open, onSelect, onOpenChange }: 
                     <div className={`font-serif font-bold text-lg leading-tight ${isSelected ? "text-primary" : "text-foreground"}`}>
                       {ev.name}
                     </div>
-                    <div className="text-sm text-muted-foreground mt-0.5">
-                      {formatModalDate(ev.date)}
-                    </div>
+                    <div className="text-sm text-muted-foreground mt-0.5">{formatModalDate(ev.date)}</div>
                     {subtitle && (
-                      <div className="text-xs text-muted-foreground/70 mt-1.5 leading-relaxed line-clamp-2">
-                        {subtitle}
-                      </div>
+                      <div className="text-xs text-muted-foreground/70 mt-1.5 leading-relaxed line-clamp-2">{subtitle}</div>
                     )}
                   </div>
                   <div className={`shrink-0 w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${
@@ -176,8 +173,7 @@ function EventPickerModal({ events, selectedId, open, onSelect, onOpenChange }: 
             disabled={selectedId === undefined}
             onClick={() => onOpenChange(false)}
           >
-            Continue
-            <ArrowRight className="w-4 h-4" />
+            Continue <ArrowRight className="w-4 h-4" />
           </Button>
         </div>
       </DialogContent>
@@ -185,24 +181,30 @@ function EventPickerModal({ events, selectedId, open, onSelect, onOpenChange }: 
   );
 }
 
+// ─── Main page ────────────────────────────────────────────────────────────────
+
 export function Home() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
+  const { data: session } = useGetMe();
+  const isLoggedIn = session?.authenticated === true;
+  const isUser = session?.role === "user";
+
+  // Events list — server returns only the user's events when authenticated,
+  // all active events when not authenticated.
   const { data: events } = useListEvents();
   const [selectedEventId, setSelectedEventId] = useState<number | undefined>(undefined);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [pickerShownOnce, setPickerShownOnce] = useState(false);
 
+  // "login" phase only shown when unauthenticated and user has clicked the CTA
+  const [loginPhase, setLoginPhase] = useState<"view" | "login">("view");
+
   useEffect(() => {
-    if (!events) return;
-    if (events.length === 0) return;
-
-    if (selectedEventId === undefined) {
-      setSelectedEventId(events[0].id);
-    }
-
+    if (!events || events.length === 0) return;
+    if (selectedEventId === undefined) setSelectedEventId(events[0].id);
     if (events.length > 1 && !pickerShownOnce) {
       setPickerOpen(true);
       setPickerShownOnce(true);
@@ -213,6 +215,7 @@ export function Home() {
     setSelectedEventId(id);
     setSelectedGuestId("");
     setCode("");
+    setLoginPhase("view");
   };
 
   const eventId = selectedEventId ?? events?.[0]?.id;
@@ -232,14 +235,23 @@ export function Home() {
     if (!guest || !code) return;
 
     login.mutate(
-      { data: { name: guest.name, code } },
+      { data: { name: guest.name, code, eventId } },
       {
         onSuccess: async () => {
           await queryClient.refetchQueries({ queryKey: getGetMeQueryKey() });
           setLocation("/order");
         },
-        onError: () => {
-          toast({ title: "Wrong code", description: "That code doesn't match. Try again.", variant: "destructive" });
+        onError: (err: any) => {
+          const msg: string = err?.response?.data?.error ?? "";
+          if (msg.includes("not on the guest list")) {
+            toast({
+              title: "Not on the guest list",
+              description: "You're not invited to this event. Try selecting a different one.",
+              variant: "destructive",
+            });
+          } else {
+            toast({ title: "Wrong code", description: "That code doesn't match. Try again.", variant: "destructive" });
+          }
           setCode("");
         },
       }
@@ -248,11 +260,14 @@ export function Home() {
 
   const showProgress = summary && summary.totalCapacity > 0 &&
     (summary.totalBooked / summary.totalCapacity) >= 0.25;
-  const progressPct = summary ? Math.min(100, Math.round((summary.totalBooked / summary.totalCapacity) * 100)) : 0;
+  const progressPct = summary
+    ? Math.min(100, Math.round((summary.totalBooked / summary.totalCapacity) * 100))
+    : 0;
   const multipleEvents = events && events.length > 1;
 
   return (
     <Layout>
+      {/* Only show event picker when there are multiple events to choose from */}
       {multipleEvents && events && (
         <EventPickerModal
           events={events}
@@ -264,6 +279,7 @@ export function Home() {
       )}
 
       <div className="flex flex-col items-center max-w-2xl mx-auto space-y-8 text-center">
+        {/* Header */}
         <div className="space-y-4">
           <div className="w-24 h-24 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-6">
             <img src="/pizza-icon.png" alt="Pizza" className="w-16 h-16 opacity-80" />
@@ -293,12 +309,7 @@ export function Home() {
 
         {/* Hero image */}
         <div className="w-full aspect-video md:aspect-[21/9] rounded-2xl overflow-hidden shadow-lg border relative">
-          <img
-            src="/pizza-hero.png"
-            alt="Handmade pizza"
-            className="w-full h-full object-cover"
-          />
-
+          <img src="/pizza-hero.png" alt="Handmade pizza" className="w-full h-full object-cover" />
           {!isLoading && summary && (
             <>
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex flex-col justify-end p-6 text-left">
@@ -344,8 +355,7 @@ export function Home() {
               <div
                 className={`h-full rounded-full transition-all duration-700 ${
                   progressPct >= 90 ? "bg-destructive" :
-                  progressPct >= 70 ? "bg-orange-400" :
-                  "bg-primary"
+                  progressPct >= 70 ? "bg-orange-400" : "bg-primary"
                 }`}
                 style={{ width: `${progressPct}%` }}
               />
@@ -356,67 +366,124 @@ export function Home() {
           </div>
         )}
 
-        {/* Login card */}
+        {/* Bottom action area */}
         {isLoading ? (
-          <Skeleton className="w-full h-48 rounded-xl" />
+          <Skeleton className="w-full h-36 rounded-xl" />
         ) : summary ? (
-          <Card className="w-full bg-card border-card-border shadow-sm">
-            <CardHeader>
-              <CardTitle className="font-serif text-2xl">
-                {summary.orderingOpen ? "Reserve Your Spot" : "Your Order"}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {!summary.orderingOpen && (
-                <p className="text-sm text-muted-foreground text-center mb-5 pb-5 border-b border-border">
-                  {summary.totalRemaining <= 0 ? "All spots have been taken." : "Ordering is now closed."}{" "}
-                  Log in below to view your order.
-                </p>
-              )}
-              <form onSubmit={handleLogin} className="space-y-5">
-                <div className="space-y-2 text-left">
-                  <Label className="text-sm font-semibold">Your Name</Label>
-                  <Select value={selectedGuestId} onValueChange={setSelectedGuestId}>
-                    <SelectTrigger className="h-12">
-                      <SelectValue placeholder="Select your name..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {summary.guests.map((guest) => (
-                        <SelectItem key={guest.id} value={String(guest.id)}>
-                          {guest.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2 text-left">
-                  <Label htmlFor="code" className="text-sm font-semibold">4-Digit Code</Label>
-                  <Input
-                    id="code"
-                    type="text"
-                    inputMode="numeric"
-                    maxLength={4}
-                    placeholder="••••"
-                    value={code}
-                    onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 4))}
-                    className="h-12 text-center text-2xl tracking-[0.5em] font-mono"
-                  />
-                </div>
-
-                <Button
-                  type="submit"
-                  size="lg"
-                  className="w-full h-14 text-lg"
-                  disabled={!selectedGuestId || code.length !== 4 || login.isPending}
-                >
-                  {login.isPending
-                    ? <Loader2 className="w-5 h-5 animate-spin" />
-                    : summary.orderingOpen ? "Order My Pizza" : "View My Order"}
-                </Button>
-              </form>
-            </CardContent>
-          </Card>
+          <>
+            {/* ── Already logged in ── */}
+            {isLoggedIn && isUser ? (
+              <Card className="w-full bg-card shadow-sm">
+                <CardContent className="pt-6 pb-6 flex flex-col items-center gap-4">
+                  <div className="text-center space-y-1">
+                    <p className="font-semibold text-foreground">Welcome back, {session!.userName}!</p>
+                    <p className="text-sm text-muted-foreground">
+                      {summary.orderingOpen
+                        ? "Ready to place your order for this event?"
+                        : "Ordering is closed. You can still view your order."}
+                    </p>
+                  </div>
+                  <Button
+                    size="lg"
+                    className="w-full h-14 text-lg gap-2"
+                    onClick={() => setLocation("/order")}
+                  >
+                    <Pizza className="w-5 h-5" />
+                    {summary.orderingOpen ? "Place My Order" : "View My Order"}
+                  </Button>
+                </CardContent>
+              </Card>
+            ) : loginPhase === "view" ? (
+              /* ── Event viewer — CTA to trigger login form ── */
+              <Card className="w-full bg-card shadow-sm">
+                <CardContent className="pt-6 pb-6 flex flex-col items-center gap-4">
+                  {!summary.orderingOpen && (
+                    <p className="text-sm text-muted-foreground text-center">
+                      {summary.totalRemaining <= 0
+                        ? "All spots have been taken."
+                        : "Ordering is now closed."}{" "}
+                      Log in to view your existing order.
+                    </p>
+                  )}
+                  <Button
+                    size="lg"
+                    className="w-full h-14 text-lg gap-2"
+                    onClick={() => setLoginPhase("login")}
+                    disabled={!summary}
+                  >
+                    <Pizza className="w-5 h-5" />
+                    {summary.orderingOpen ? "Place Order" : "View My Order"}
+                  </Button>
+                </CardContent>
+              </Card>
+            ) : (
+              /* ── Login form ── */
+              <Card className="w-full bg-card shadow-sm">
+                <CardHeader className="pb-2">
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => { setLoginPhase("view"); setSelectedGuestId(""); setCode(""); }}
+                      className="text-muted-foreground hover:text-foreground transition-colors p-1 -ml-1 rounded"
+                      aria-label="Back"
+                    >
+                      <ChevronLeft className="w-4 h-4" />
+                    </button>
+                    <CardTitle className="font-serif text-2xl">
+                      {summary.orderingOpen ? "Reserve Your Spot" : "View Your Order"}
+                    </CardTitle>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  {!summary.orderingOpen && (
+                    <p className="text-sm text-muted-foreground text-center mb-5 pb-5 border-b border-border">
+                      {summary.totalRemaining <= 0 ? "All spots have been taken." : "Ordering is now closed."}{" "}
+                      Log in below to view your order.
+                    </p>
+                  )}
+                  <form onSubmit={handleLogin} className="space-y-5">
+                    <div className="space-y-2 text-left">
+                      <Label className="text-sm font-semibold">Your Name</Label>
+                      <Select value={selectedGuestId} onValueChange={setSelectedGuestId}>
+                        <SelectTrigger className="h-12">
+                          <SelectValue placeholder="Select your name..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {summary.guests.map((guest) => (
+                            <SelectItem key={guest.id} value={String(guest.id)}>
+                              {guest.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2 text-left">
+                      <Label htmlFor="code" className="text-sm font-semibold">4-Digit Code</Label>
+                      <Input
+                        id="code"
+                        type="text"
+                        inputMode="numeric"
+                        maxLength={4}
+                        placeholder="••••"
+                        value={code}
+                        onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 4))}
+                        className="h-12 text-center text-2xl tracking-[0.5em] font-mono"
+                      />
+                    </div>
+                    <Button
+                      type="submit"
+                      size="lg"
+                      className="w-full h-14 text-lg"
+                      disabled={!selectedGuestId || code.length !== 4 || login.isPending}
+                    >
+                      {login.isPending
+                        ? <Loader2 className="w-5 h-5 animate-spin" />
+                        : summary.orderingOpen ? "Order My Pizza" : "View My Order"}
+                    </Button>
+                  </form>
+                </CardContent>
+              </Card>
+            )}
+          </>
         ) : null}
       </div>
     </Layout>

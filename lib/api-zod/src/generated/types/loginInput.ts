@@ -13,4 +13,6 @@ export interface LoginInput {
      * @maxLength 4
      */
   code: string;
+  /** Event the guest is trying to log in for. If provided, login is rejected when the guest is not a member of this event. */
+  eventId?: number;
 }

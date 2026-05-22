@@ -26,7 +26,8 @@ export const loginBodyCodeMax = 4;
 
 export const LoginBody = zod.object({
   "name": zod.string(),
-  "code": zod.string().min(loginBodyCodeMin).max(loginBodyCodeMax)
+  "code": zod.string().min(loginBodyCodeMin).max(loginBodyCodeMax),
+  "eventId": zod.number().optional().describe('Event the guest is trying to log in for. If provided, login is rejected when the guest is not a member of this event.')
 })
 
 export const LoginResponse = zod.object({

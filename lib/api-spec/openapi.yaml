@@ -681,6 +681,9 @@ components:
           type: string
           minLength: 4
           maxLength: 4
+        eventId:
+          type: integer
+          description: Event the guest is trying to log in for. If provided, login is rejected when the guest is not a member of this event.
 
     AdminLoginInput:
       type: object
