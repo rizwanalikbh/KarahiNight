@@ -1,6 +1,6 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import {
-  useGetMe, useGetSummary, useListOrders, useCreateOrder, useListEvents,
+  useGetMe, useGetSummary, useListOrders, useCreateOrder, useUpdateOrder, useListEvents,
   getListOrdersQueryKey, getGetSummaryQueryKey
 } from "@workspace/api-client-react";
 import { useLocation } from "wouter";
@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, CheckCircle2, AlertCircle, CalendarDays } from "lucide-react";
+import { Loader2, CheckCircle2, AlertCircle, CalendarDays, Pencil, Plus, X, Check } from "lucide-react";
 import type { PizzaItem as APIPizzaItem } from "@workspace/api-client-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useQueryClient } from "@tanstack/react-query";
@@ -125,49 +125,82 @@ export function Order() {
   const activeEventId = selectedEventId ?? events[0]?.id;
   const myOrder = orders?.find((o) => o.userId === session.userId && o.eventId === activeEventId);
 
+  const updateOrder = useUpdateOrder();
+
+  // Edit state for existing order
+  const originalCount = myOrder ? (myOrder.items ?? []).length : 0;
+  const [editItems, setEditItems] = useState<PizzaItem[]>(() =>
+    myOrder ? (myOrder.items ?? []).map((i) => ({ pizzaChoice: i.pizzaChoice, quantity: i.quantity })) : []
+  );
+  const [isEditing, setIsEditing] = useState(false);
+
+  // Sync editItems if myOrder changes (e.g. after save)
+  useEffect(() => {
+    if (myOrder && !isEditing) {
+      setEditItems((myOrder.items ?? []).map((i) => ({ pizzaChoice: i.pizzaChoice, quantity: i.quantity })));
+    }
+  }, [myOrder, isEditing]);
+
   if (myOrder) {
-    const orderItems = myOrder.items ?? [];
-    const total = orderItems.reduce((s, i) => s + i.quantity, 0);
+    const displayItems = isEditing ? editItems : (myOrder.items ?? []);
+    const total = displayItems.reduce((s, i) => s + i.quantity, 0);
+    const slotAvailableForEdit = (summary?.slots.find((s) => s.slot === myOrder.pickupSlot)?.available ?? 0);
+    const maxTotal = myOrder.quantity + slotAvailableForEdit;
+    const canAddMore = editItems.length < maxTotal;
+
+    const handleSaveEdit = () => {
+      if (editItems.some((i) => !i.pizzaChoice)) return;
+      updateOrder.mutate(
+        { id: myOrder.id, data: { items: editItems as APIPizzaItem[] } },
+        {
+          onSuccess: () => {
+            setIsEditing(false);
+            queryClient.invalidateQueries({ queryKey: getListOrdersQueryKey() });
+            queryClient.invalidateQueries({ queryKey: getGetSummaryQueryKey() });
+            toast({ title: "Order updated!" });
+          },
+          onError: (err: any) => {
+            const msg = err?.response?.data?.error ?? "Could not update order.";
+            toast({ title: "Error", description: msg, variant: "destructive" });
+          },
+        }
+      );
+    };
+
+    const handleCancelEdit = () => {
+      setEditItems((myOrder.items ?? []).map((i) => ({ pizzaChoice: i.pizzaChoice, quantity: i.quantity })));
+      setIsEditing(false);
+    };
+
+    const updateEditChoice = (index: number, choice: string) =>
+      setEditItems((prev) => prev.map((it, i) => (i === index ? { ...it, pizzaChoice: choice } : it)));
+
+    const addEditPizza = () => {
+      if (!canAddMore) return;
+      setEditItems((prev) => [...prev, { pizzaChoice: pizzaTypes[0] ?? "", quantity: 1 }]);
+    };
+
+    const removeEditPizza = (index: number) => {
+      if (index < originalCount) return; // can't remove original pizzas
+      setEditItems((prev) => prev.filter((_, i) => i !== index));
+    };
+
     return (
       <Layout>
         <div className="max-w-xl mx-auto w-full pt-8">
-          <Card className="border-card-border shadow-md text-center">
-            <CardContent className="pt-10 pb-10 flex flex-col items-center">
-              <CheckCircle2 className="w-16 h-16 text-primary mb-4" />
-              <h2 className="text-2xl font-serif font-bold text-foreground mb-2">Order Received!</h2>
-              <p className="text-muted-foreground mb-8">
-                Thanks! Your order request has been received. I will confirm it by private message.
-              </p>
-              <div className="w-full bg-secondary/30 rounded-xl p-6 text-left space-y-4 border border-border">
-                <div className="flex justify-between border-b pb-4">
-                  <span className="text-muted-foreground">Event</span>
-                  <span className="font-medium text-foreground">{myOrder.eventName}</span>
-                </div>
-                <div className="border-b pb-4">
-                  <span className="text-muted-foreground block mb-2">Pizzas</span>
-                  <div className="space-y-1">
-                    {orderItems.length > 0 ? (
-                      orderItems.map((item, i) => (
-                        <div key={i} className="flex justify-between">
-                          <span className="font-medium text-foreground">{item.pizzaChoice}</span>
-                          <span className="text-muted-foreground">{item.quantity}x</span>
-                        </div>
-                      ))
-                    ) : (
-                      <span className="text-sm text-muted-foreground">—</span>
-                    )}
+          <Card className="border-card-border shadow-md">
+            <CardContent className="pt-8 pb-8">
+
+              {/* Header */}
+              <div className="flex items-start justify-between mb-6">
+                <div className="flex items-center gap-3">
+                  <CheckCircle2 className="w-8 h-8 text-primary shrink-0" />
+                  <div>
+                    <h2 className="text-xl font-serif font-bold text-foreground">Order Received</h2>
+                    <p className="text-sm text-muted-foreground">{myOrder.eventName} · {myOrder.pickupSlot}</p>
                   </div>
                 </div>
-                <div className="flex justify-between border-b pb-4">
-                  <span className="text-muted-foreground">Pickup Slot</span>
-                  <span className="font-medium text-foreground">{myOrder.pickupSlot}</span>
-                </div>
-                <div className="flex justify-between border-b pb-4">
-                  <span className="text-muted-foreground">Total</span>
-                  <span className="font-medium text-foreground">{total * pricePerPizza} DKK</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-muted-foreground">Status</span>
+                <div className="flex items-center gap-2">
                   <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium capitalize
                     ${myOrder.status === "confirmed" ? "bg-accent/10 text-accent" :
                       myOrder.status === "completed" ? "bg-gray-100 text-gray-800" :
@@ -176,8 +209,119 @@ export function Order() {
                   >
                     {myOrder.status}
                   </span>
+                  {!isEditing && myOrder.status !== "completed" && myOrder.status !== "declined" && (
+                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setIsEditing(true)}>
+                      <Pencil className="w-4 h-4" />
+                    </Button>
+                  )}
                 </div>
               </div>
+
+              {/* Pizzas */}
+              <div className="space-y-3 mb-6">
+                <div className="flex items-center justify-between">
+                  <Label className="text-sm font-semibold text-foreground">
+                    {isEditing ? `Pizzas (${editItems.length}/${maxTotal} max)` : "Your Pizzas"}
+                  </Label>
+                  {isEditing && (
+                    <Button
+                      type="button" size="sm" variant="outline"
+                      className="h-6 px-2 text-xs gap-1"
+                      onClick={addEditPizza}
+                      disabled={!canAddMore}
+                    >
+                      <Plus className="w-3 h-3" /> Add pizza
+                    </Button>
+                  )}
+                </div>
+
+                {isEditing ? (
+                  <div className="space-y-3">
+                    {editItems.map((item, index) => (
+                      <div key={index} className="space-y-1">
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs text-muted-foreground w-14 shrink-0">
+                            Pizza {index + 1}{index < originalCount ? "" : " ✦"}
+                          </span>
+                          <div className="flex-1 grid gap-1.5" style={{ gridTemplateColumns: `repeat(${Math.min(pizzaTypes.length, 3)}, minmax(0, 1fr))` }}>
+                            {pizzaTypes.map((choice) => (
+                              <button
+                                key={choice}
+                                type="button"
+                                onClick={() => updateEditChoice(index, choice)}
+                                className={`py-2 rounded-lg border text-xs font-medium transition-colors cursor-pointer truncate px-1
+                                  ${item.pizzaChoice === choice
+                                    ? "border-primary bg-primary/5 text-primary"
+                                    : "border-border hover:bg-secondary/50 text-foreground"
+                                  }`}
+                              >
+                                {choice}
+                              </button>
+                            ))}
+                          </div>
+                          {index >= originalCount ? (
+                            <Button
+                              type="button" variant="ghost" size="icon"
+                              className="h-7 w-7 shrink-0 text-muted-foreground hover:text-destructive"
+                              onClick={() => removeEditPizza(index)}
+                            >
+                              <X className="w-3.5 h-3.5" />
+                            </Button>
+                          ) : (
+                            <div className="w-7 shrink-0" />
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="bg-secondary/30 rounded-xl border border-border divide-y divide-border/50">
+                    {displayItems.map((item, i) => (
+                      <div key={i} className="flex justify-between items-center px-4 py-3">
+                        <span className="font-medium text-foreground">{item.pizzaChoice}</span>
+                        <span className="text-sm text-muted-foreground">{item.quantity}×</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Total */}
+              <div className="flex justify-between items-center py-4 border-t border-b border-border mb-6">
+                <span className="text-sm text-muted-foreground">Total</span>
+                <span className="font-serif font-bold text-lg text-primary">{total * pricePerPizza} DKK</span>
+              </div>
+
+              {isEditing && (
+                <p className="text-xs text-muted-foreground mb-4">
+                  ✦ Newly added. You can remove these before saving. Original pizzas cannot be removed.
+                  {myOrder.status === "confirmed" && " Saving will reset status to pending for re-confirmation."}
+                </p>
+              )}
+
+              {/* Edit actions */}
+              {isEditing && (
+                <div className="flex gap-3">
+                  <Button
+                    className="flex-1"
+                    onClick={handleSaveEdit}
+                    disabled={updateOrder.isPending || editItems.some((i) => !i.pizzaChoice)}
+                  >
+                    {updateOrder.isPending
+                      ? <Loader2 className="w-4 h-4 animate-spin" />
+                      : <><Check className="w-4 h-4 mr-1.5" />Save Changes</>}
+                  </Button>
+                  <Button variant="outline" onClick={handleCancelEdit} disabled={updateOrder.isPending}>
+                    Cancel
+                  </Button>
+                </div>
+              )}
+
+              {!isEditing && myOrder.status !== "declined" && myOrder.status !== "completed" && (
+                <p className="text-xs text-center text-muted-foreground">
+                  Need to change something? Tap the pencil icon above.
+                </p>
+              )}
             </CardContent>
           </Card>
         </div>

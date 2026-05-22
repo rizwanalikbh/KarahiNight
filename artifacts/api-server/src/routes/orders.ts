@@ -167,7 +167,7 @@ router.post("/orders", requireAuth, async (req, res): Promise<void> => {
   res.status(201).json((await enrichOrders([order]))[0]);
 });
 
-router.patch("/orders/:id", requireAdmin, async (req, res): Promise<void> => {
+router.patch("/orders/:id", requireAuth, async (req, res): Promise<void> => {
   const params = UpdateOrderParams.safeParse(req.params);
   if (!params.success) {
     res.status(400).json({ error: params.error.message });
@@ -180,15 +180,101 @@ router.patch("/orders/:id", requireAdmin, async (req, res): Promise<void> => {
     return;
   }
 
+  // Load the existing order first
+  const [existing] = await db
+    .select()
+    .from(ordersTable)
+    .where(eq(ordersTable.id, params.data.id));
+
+  if (!existing) {
+    res.status(404).json({ error: "Order not found" });
+    return;
+  }
+
+  const isAdmin = req.session.role === "admin";
+  const isOwner = req.session.role === "user" && req.session.userId === existing.userId;
+
+  if (!isAdmin && !isOwner) {
+    res.status(403).json({ error: "Not allowed" });
+    return;
+  }
+
   const updateData: Record<string, unknown> = {};
-  if (parsed.data.status !== undefined) updateData.status = parsed.data.status;
-  if (parsed.data.pickupSlot !== undefined) updateData.pickupSlot = parsed.data.pickupSlot;
-  if (parsed.data.notes !== undefined) updateData.notes = parsed.data.notes;
-  if (parsed.data.paid !== undefined) updateData.paid = parsed.data.paid;
-  if (parsed.data.items !== undefined) {
-    const typedItems = parsed.data.items as PizzaItem[];
-    updateData.pizzaItems = typedItems;
-    updateData.quantity = typedItems.reduce((sum: number, item: PizzaItem) => sum + item.quantity, 0);
+
+  if (isAdmin) {
+    // Admin can change anything
+    if (parsed.data.status !== undefined) updateData.status = parsed.data.status;
+    if (parsed.data.pickupSlot !== undefined) updateData.pickupSlot = parsed.data.pickupSlot;
+    if (parsed.data.notes !== undefined) updateData.notes = parsed.data.notes;
+    if (parsed.data.paid !== undefined) updateData.paid = parsed.data.paid;
+    if (parsed.data.items !== undefined) {
+      const typedItems = parsed.data.items as PizzaItem[];
+      updateData.pizzaItems = typedItems;
+      updateData.quantity = typedItems.reduce((sum: number, item: PizzaItem) => sum + item.quantity, 0);
+    }
+  } else {
+    // Guest can only change pizza types / add more pizzas — never reduce count
+    if (parsed.data.items === undefined) {
+      res.status(400).json({ error: "Only pizza items can be updated by guests" });
+      return;
+    }
+
+    const newItems = parsed.data.items as PizzaItem[];
+    const originalCount = Array.isArray(existing.pizzaItems) ? existing.pizzaItems.length : 0;
+
+    if (newItems.length < originalCount) {
+      res.status(400).json({ error: "You cannot remove pizzas from your order" });
+      return;
+    }
+
+    // Validate pizza types and slot capacity
+    const [event] = await db.select().from(eventsTable).where(eq(eventsTable.id, existing.eventId));
+    if (!event) {
+      res.status(400).json({ error: "Event not found" });
+      return;
+    }
+
+    const eventPizzaTypes = Array.isArray(event.pizzaTypes) ? event.pizzaTypes : [];
+    const validTypes = newItems.every((i) => eventPizzaTypes.includes(i.pizzaChoice));
+    if (!validTypes) {
+      res.status(400).json({ error: "Invalid pizza type" });
+      return;
+    }
+
+    const newTotal = newItems.reduce((s, i) => s + i.quantity, 0);
+    const existingTotal = existing.quantity;
+
+    if (newTotal > existingTotal) {
+      // Adding more pizzas — check slot and event capacity
+      const allEventOrders = await db
+        .select()
+        .from(ordersTable)
+        .where(eq(ordersTable.eventId, existing.eventId));
+
+      const totalBooked = allEventOrders
+        .filter((o) => o.id !== existing.id)
+        .reduce((s, o) => s + o.quantity, 0);
+
+      if (totalBooked + newTotal > event.totalCapacity) {
+        res.status(400).json({ error: `Only ${event.totalCapacity - totalBooked} pizza(s) remaining in total` });
+        return;
+      }
+
+      const slotOrders = allEventOrders.filter(
+        (o) => o.id !== existing.id && o.pickupSlot === existing.pickupSlot
+      );
+      const slotBooked = slotOrders.reduce((s, o) => s + o.quantity, 0);
+
+      if (slotBooked + newTotal > event.slotCapacity) {
+        res.status(400).json({ error: `Only ${event.slotCapacity - slotBooked} pizza(s) remaining in your slot` });
+        return;
+      }
+    }
+
+    updateData.pizzaItems = newItems;
+    updateData.quantity = newTotal;
+    // Reset to pending if confirmed, so admin re-confirms the updated order
+    if (existing.status === "confirmed") updateData.status = "pending";
   }
 
   const [order] = await db
@@ -196,11 +282,6 @@ router.patch("/orders/:id", requireAdmin, async (req, res): Promise<void> => {
     .set(updateData)
     .where(eq(ordersTable.id, params.data.id))
     .returning();
-
-  if (!order) {
-    res.status(404).json({ error: "Order not found" });
-    return;
-  }
 
   res.status(200).json((await enrichOrders([order]))[0]);
 });
