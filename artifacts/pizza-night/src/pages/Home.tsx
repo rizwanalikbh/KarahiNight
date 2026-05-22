@@ -51,8 +51,8 @@ function CountdownDisplay({ t }: { t: Countdown }) {
   return (
     <div className="flex items-center gap-1.5 text-white">
       <Clock className="w-4 h-4 shrink-0 opacity-80" />
-      <span className="font-mono text-sm font-semibold tracking-wider">
-        {t.h > 0 ? `${t.h}h ${pad(t.m)}m ${pad(t.s)}s` : `${t.m}m ${pad(t.s)}s`}
+      <span className="font-mono text-sm font-semibold tabular-nums">
+        {pad(t.h)}:{pad(t.m)}:{pad(t.s)}
       </span>
     </div>
   );
