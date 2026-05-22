@@ -70,9 +70,13 @@ function Ticket({ order, onConfirm, onComplete, onDecline, isPending }: TicketPr
         </div>
         <div className="flex flex-col items-end gap-1 shrink-0">
           <StatusBadge status={order.status} />
-          {order.paid && (
+          {order.paid ? (
             <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-green-100 text-green-700">
               Paid
+            </span>
+          ) : (
+            <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-orange-100 text-orange-700">
+              Unpaid
             </span>
           )}
         </div>
