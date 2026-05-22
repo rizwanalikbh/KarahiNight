@@ -3,15 +3,17 @@ import {
   useGetMe, useGetSummary, useListOrders, useCreateOrder, useUpdateOrder, useListEvents,
   getListOrdersQueryKey, getGetSummaryQueryKey
 } from "@workspace/api-client-react";
+import type { Event } from "@workspace/api-client-react";
 import { useLocation } from "wouter";
 import { Layout } from "../components/Layout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, CheckCircle2, AlertCircle, CalendarDays, Pencil, Plus, X, Check } from "lucide-react";
+import { Loader2, CheckCircle2, AlertCircle, CalendarDays, Pencil, Plus, X, Check, ArrowRight } from "lucide-react";
 import type { PizzaItem as APIPizzaItem } from "@workspace/api-client-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useQueryClient } from "@tanstack/react-query";
@@ -30,6 +32,85 @@ function formatEventDate(dateStr: string): string {
   }
 }
 
+function formatModalDate(dateStr: string): string {
+  try {
+    const d = new Date(dateStr + "T12:00:00");
+    return d.toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" });
+  } catch { return dateStr; }
+}
+
+interface EventPickerModalProps {
+  events: Event[];
+  selectedId: number | null;
+  open: boolean;
+  onSelect: (id: number) => void;
+  onOpenChange: (open: boolean) => void;
+}
+
+function EventPickerModal({ events, selectedId, open, onSelect, onOpenChange }: EventPickerModalProps) {
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-lg p-0 gap-0 overflow-hidden rounded-2xl" aria-describedby={undefined}>
+        <div className="bg-primary/5 border-b border-border/50 px-6 pt-7 pb-5 text-center">
+          <div className="w-14 h-14 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-3">
+            <CalendarDays className="w-6 h-6 text-primary" />
+          </div>
+          <DialogHeader>
+            <DialogTitle className="font-serif text-2xl font-bold text-foreground text-center">
+              Which evening are you joining?
+            </DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground mt-1.5">Select the pizza night you'd like to order for.</p>
+        </div>
+        <div className="p-4 space-y-2.5 max-h-[50vh] overflow-y-auto">
+          {events.map((ev) => {
+            const isSelected = ev.id === selectedId;
+            const segDescs = (ev.segmentDescriptions ?? []).filter(Boolean);
+            const subtitle = segDescs.length > 0 ? segDescs.join(", ") : ev.description ?? null;
+            return (
+              <button
+                key={ev.id}
+                onClick={() => onSelect(ev.id)}
+                className={`w-full text-left rounded-xl border-2 px-4 py-3.5 transition-all duration-150 group focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 ${
+                  isSelected
+                    ? "border-primary bg-primary/5 shadow-sm"
+                    : "border-border/60 bg-card hover:border-primary/40 hover:shadow-sm"
+                }`}
+              >
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex-1 min-w-0">
+                    <div className={`font-serif font-bold text-lg leading-tight ${isSelected ? "text-primary" : "text-foreground"}`}>
+                      {ev.name}
+                    </div>
+                    <div className="text-sm text-muted-foreground mt-0.5">{formatModalDate(ev.date)}</div>
+                    {subtitle && (
+                      <div className="text-xs text-muted-foreground/70 mt-1.5 leading-relaxed line-clamp-2">{subtitle}</div>
+                    )}
+                  </div>
+                  <div className={`shrink-0 w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${
+                    isSelected ? "border-primary bg-primary" : "border-border group-hover:border-primary/40"
+                  }`}>
+                    {isSelected && <Check className="w-3.5 h-3.5 text-primary-foreground" />}
+                  </div>
+                </div>
+              </button>
+            );
+          })}
+        </div>
+        <div className="px-4 pb-5">
+          <Button
+            className="w-full h-12 text-base gap-2"
+            disabled={selectedId === null}
+            onClick={() => onOpenChange(false)}
+          >
+            Continue <ArrowRight className="w-4 h-4" />
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 export function Order() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
@@ -42,6 +123,7 @@ export function Order() {
   const updateOrder = useUpdateOrder();
 
   const [selectedEventId, setSelectedEventId] = useState<number | null>(null);
+  const [pickerOpen, setPickerOpen] = useState(false);
   const [pickupSlot, setPickupSlot] = useState("");
   const [notes, setNotes] = useState("");
   const [totalQty, setTotalQty] = useState(1);
@@ -184,6 +266,19 @@ export function Order() {
 
     return (
       <Layout>
+        {events.length > 1 && (
+          <EventPickerModal
+            events={events}
+            selectedId={selectedEventId}
+            open={pickerOpen}
+            onSelect={(id) => {
+              setSelectedEventId(id);
+              setPickupSlot("");
+              setTotalQty(1);
+            }}
+            onOpenChange={setPickerOpen}
+          />
+        )}
         <div className="max-w-xl mx-auto w-full pt-8">
           <Card className="border-card-border shadow-md">
             <CardContent className="pt-8 pb-8">
@@ -194,7 +289,17 @@ export function Order() {
                   <CheckCircle2 className="w-8 h-8 text-primary shrink-0" />
                   <div>
                     <h2 className="text-xl font-serif font-bold text-foreground">Order Received</h2>
-                    <p className="text-sm text-muted-foreground">{myOrder.eventName} · {myOrder.pickupSlot}</p>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <p className="text-sm text-muted-foreground">{myOrder.eventName} · {myOrder.pickupSlot}</p>
+                      {events.length > 1 && (
+                        <button
+                          onClick={() => setPickerOpen(true)}
+                          className="text-xs text-muted-foreground/60 hover:text-primary underline underline-offset-2 transition-colors"
+                        >
+                          change event
+                        </button>
+                      )}
+                    </div>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
@@ -340,6 +445,15 @@ export function Order() {
   if (summary && !summary.orderingOpen && !myOrder) {
     return (
       <Layout>
+        {events.length > 1 && (
+          <EventPickerModal
+            events={events}
+            selectedId={selectedEventId}
+            open={pickerOpen}
+            onSelect={(id) => { setSelectedEventId(id); setPickupSlot(""); setTotalQty(1); }}
+            onOpenChange={setPickerOpen}
+          />
+        )}
         <div className="max-w-xl mx-auto w-full pt-8">
           <Card className="border-card-border shadow-md text-center bg-secondary/20">
             <CardContent className="pt-10 pb-10 flex flex-col items-center">
@@ -352,6 +466,14 @@ export function Order() {
                   ? "All spots have been taken. See you there!"
                   : "Orders are no longer being accepted for this event."}
               </p>
+              {events.length > 1 && (
+                <button
+                  onClick={() => setPickerOpen(true)}
+                  className="mt-4 text-sm text-muted-foreground/70 hover:text-primary underline underline-offset-2 transition-colors"
+                >
+                  change event
+                </button>
+              )}
             </CardContent>
           </Card>
         </div>
@@ -383,6 +505,15 @@ export function Order() {
 
   return (
     <Layout>
+      {events.length > 1 && (
+        <EventPickerModal
+          events={events}
+          selectedId={selectedEventId}
+          open={pickerOpen}
+          onSelect={(id) => { setSelectedEventId(id); setPickupSlot(""); setTotalQty(1); }}
+          onOpenChange={setPickerOpen}
+        />
+      )}
       <div className="max-w-xl mx-auto w-full">
         <Card className="border-card-border shadow-md">
           <CardHeader>
@@ -394,38 +525,27 @@ export function Order() {
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-8">
 
-              {events.length > 1 ? (
-                <div className="space-y-3">
-                  <Label className="text-base font-semibold">Select Event</Label>
-                  <Select
-                    value={selectedEventId ? String(selectedEventId) : ""}
-                    onValueChange={(v) => {
-                      setSelectedEventId(parseInt(v, 10));
-                      setPickupSlot("");
-                      setTotalQty(1);
-                    }}
-                  >
-                    <SelectTrigger className="h-12">
-                      <SelectValue placeholder="Choose an event..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {events.map((event) => (
-                        <SelectItem key={event.id} value={String(event.id)}>
-                          {event.name} — {formatEventDate(event.date)}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              ) : (
-                <div className="bg-secondary/40 rounded-xl p-4 flex items-center gap-3">
-                  <CalendarDays className="w-5 h-5 text-primary shrink-0" />
-                  <div>
-                    <p className="font-semibold text-foreground">{events[0].name}</p>
-                    <p className="text-sm text-muted-foreground">{formatEventDate(events[0].date)}</p>
+              {(() => {
+                const ev = events.find((e) => e.id === selectedEventId) ?? events[0];
+                return (
+                  <div className="bg-secondary/40 rounded-xl p-4 flex items-center gap-3">
+                    <CalendarDays className="w-5 h-5 text-primary shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold text-foreground">{ev.name}</p>
+                      <p className="text-sm text-muted-foreground">{formatEventDate(ev.date)}</p>
+                    </div>
+                    {events.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => setPickerOpen(true)}
+                        className="text-xs text-muted-foreground/70 hover:text-primary underline underline-offset-2 transition-colors shrink-0"
+                      >
+                        change event
+                      </button>
+                    )}
                   </div>
-                </div>
-              )}
+                );
+              })()}
 
               {selectedEventId && (
                 <div className="space-y-3">
