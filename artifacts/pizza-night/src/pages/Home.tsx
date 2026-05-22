@@ -13,7 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Clock, Lock, CalendarDays, ArrowRight, Check, Search, ChevronLeft, Pizza } from "lucide-react";
+import { Loader2, Clock, Lock, CalendarDays, ArrowRight, Check, Search, Pizza } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useQueryClient } from "@tanstack/react-query";
 
@@ -199,9 +199,6 @@ export function Home() {
   const [pickerOpen, setPickerOpen] = useState(false);
   const [pickerShownOnce, setPickerShownOnce] = useState(false);
 
-  // "login" phase only shown when unauthenticated and user has clicked the CTA
-  const [loginPhase, setLoginPhase] = useState<"view" | "login">("view");
-
   useEffect(() => {
     if (!events || events.length === 0) return;
     if (selectedEventId === undefined) setSelectedEventId(events[0].id);
@@ -215,7 +212,6 @@ export function Home() {
     setSelectedEventId(id);
     setSelectedGuestId("");
     setCode("");
-    setLoginPhase("view");
   };
 
   const eventId = selectedEventId ?? events?.[0]?.id;
@@ -394,45 +390,13 @@ export function Home() {
                   </Button>
                 </CardContent>
               </Card>
-            ) : loginPhase === "view" ? (
-              /* ── Event viewer — CTA to trigger login form ── */
-              <Card className="w-full bg-card shadow-sm">
-                <CardContent className="pt-6 pb-6 flex flex-col items-center gap-4">
-                  {!summary.orderingOpen && (
-                    <p className="text-sm text-muted-foreground text-center">
-                      {summary.totalRemaining <= 0
-                        ? "All spots have been taken."
-                        : "Ordering is now closed."}{" "}
-                      Log in to view your existing order.
-                    </p>
-                  )}
-                  <Button
-                    size="lg"
-                    className="w-full h-14 text-lg gap-2"
-                    onClick={() => setLoginPhase("login")}
-                    disabled={!summary}
-                  >
-                    <Pizza className="w-5 h-5" />
-                    {summary.orderingOpen ? "Place Order" : "View My Order"}
-                  </Button>
-                </CardContent>
-              </Card>
             ) : (
               /* ── Login form ── */
               <Card className="w-full bg-card shadow-sm">
                 <CardHeader className="pb-2">
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => { setLoginPhase("view"); setSelectedGuestId(""); setCode(""); }}
-                      className="text-muted-foreground hover:text-foreground transition-colors p-1 -ml-1 rounded"
-                      aria-label="Back"
-                    >
-                      <ChevronLeft className="w-4 h-4" />
-                    </button>
-                    <CardTitle className="font-serif text-2xl">
-                      {summary.orderingOpen ? "Reserve Your Spot" : "View Your Order"}
-                    </CardTitle>
-                  </div>
+                  <CardTitle className="font-serif text-2xl">
+                    {summary.orderingOpen ? "Reserve Your Spot" : "View Your Order"}
+                  </CardTitle>
                 </CardHeader>
                 <CardContent>
                   {!summary.orderingOpen && (
