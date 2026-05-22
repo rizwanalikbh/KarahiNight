@@ -15,6 +15,7 @@ tags:
   - name: orders
   - name: summary
   - name: segments
+  - name: recipes
 
 paths:
   /healthz:
@@ -597,6 +598,80 @@ paths:
               schema:
                 $ref: "#/components/schemas/EventSummary"
 
+  /recipes:
+    get:
+      operationId: listRecipes
+      tags: [recipes]
+      summary: List all pizza recipes (admin only)
+      responses:
+        "200":
+          description: List of recipes
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Recipe"
+    post:
+      operationId: createRecipe
+      tags: [recipes]
+      summary: Create a pizza recipe (admin only)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RecipeInput"
+      responses:
+        "201":
+          description: Recipe created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Recipe"
+        "409":
+          description: Recipe for this pizza type already exists
+
+  /recipes/{id}:
+    patch:
+      operationId: updateRecipe
+      tags: [recipes]
+      summary: Update a pizza recipe (admin only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RecipeUpdate"
+      responses:
+        "200":
+          description: Recipe updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Recipe"
+        "404":
+          description: Recipe not found
+    delete:
+      operationId: deleteRecipe
+      tags: [recipes]
+      summary: Delete a pizza recipe (admin only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
 components:
   schemas:
     HealthStatus:
@@ -987,6 +1062,54 @@ components:
           type: integer
         available:
           type: integer
+
+    RecipeIngredient:
+      type: object
+      required: [name, quantity, unit]
+      properties:
+        name:
+          type: string
+        quantity:
+          type: number
+        unit:
+          type: string
+
+    Recipe:
+      type: object
+      required: [id, pizzaType, ingredients, updatedAt]
+      properties:
+        id:
+          type: integer
+        pizzaType:
+          type: string
+        ingredients:
+          type: array
+          items:
+            $ref: "#/components/schemas/RecipeIngredient"
+        updatedAt:
+          type: string
+          format: date-time
+
+    RecipeInput:
+      type: object
+      required: [pizzaType, ingredients]
+      properties:
+        pizzaType:
+          type: string
+        ingredients:
+          type: array
+          items:
+            $ref: "#/components/schemas/RecipeIngredient"
+
+    RecipeUpdate:
+      type: object
+      properties:
+        pizzaType:
+          type: string
+        ingredients:
+          type: array
+          items:
+            $ref: "#/components/schemas/RecipeIngredient"
 
     EventGuest:
       type: object

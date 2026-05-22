@@ -539,3 +539,68 @@ export const GetSummaryResponse = zod.object({
 })
 
 
+/**
+ * @summary List all pizza recipes (admin only)
+ */
+export const ListRecipesResponseItem = zod.object({
+  "id": zod.number(),
+  "pizzaType": zod.string(),
+  "ingredients": zod.array(zod.object({
+  "name": zod.string(),
+  "quantity": zod.number(),
+  "unit": zod.string()
+})),
+  "updatedAt": zod.coerce.date()
+})
+export const ListRecipesResponse = zod.array(ListRecipesResponseItem)
+
+
+/**
+ * @summary Create a pizza recipe (admin only)
+ */
+export const CreateRecipeBody = zod.object({
+  "pizzaType": zod.string(),
+  "ingredients": zod.array(zod.object({
+  "name": zod.string(),
+  "quantity": zod.number(),
+  "unit": zod.string()
+}))
+})
+
+
+/**
+ * @summary Update a pizza recipe (admin only)
+ */
+export const UpdateRecipeParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const UpdateRecipeBody = zod.object({
+  "pizzaType": zod.string().optional(),
+  "ingredients": zod.array(zod.object({
+  "name": zod.string(),
+  "quantity": zod.number(),
+  "unit": zod.string()
+})).optional()
+})
+
+export const UpdateRecipeResponse = zod.object({
+  "id": zod.number(),
+  "pizzaType": zod.string(),
+  "ingredients": zod.array(zod.object({
+  "name": zod.string(),
+  "quantity": zod.number(),
+  "unit": zod.string()
+})),
+  "updatedAt": zod.coerce.date()
+})
+
+
+/**
+ * @summary Delete a pizza recipe (admin only)
+ */
+export const DeleteRecipeParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+

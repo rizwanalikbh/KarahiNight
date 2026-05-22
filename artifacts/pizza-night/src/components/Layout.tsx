@@ -51,6 +51,9 @@ export function Layout({ children, topbarExtra }: LayoutProps) {
                     <Link href="/kitchen" className="text-sm font-medium hover:text-primary transition-colors">
                       Kitchen
                     </Link>
+                    <Link href="/recipes" className="text-sm font-medium hover:text-primary transition-colors">
+                      Recipes
+                    </Link>
                   </>
                 )}
                 {session.role === "user" && (

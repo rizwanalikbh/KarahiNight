@@ -287,6 +287,29 @@ export interface SlotSummary {
   available: number;
 }
 
+export interface RecipeIngredient {
+  name: string;
+  quantity: number;
+  unit: string;
+}
+
+export interface Recipe {
+  id: number;
+  pizzaType: string;
+  ingredients: RecipeIngredient[];
+  updatedAt: string;
+}
+
+export interface RecipeInput {
+  pizzaType: string;
+  ingredients: RecipeIngredient[];
+}
+
+export interface RecipeUpdate {
+  pizzaType?: string;
+  ingredients?: RecipeIngredient[];
+}
+
 export interface EventGuest {
   id: number;
   name: string;

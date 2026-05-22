@@ -8,6 +8,7 @@ import { Order } from "./pages/Order";
 import { AdminDashboard } from "./pages/AdminDashboard";
 import { Kitchen } from "./pages/Kitchen";
 import { Receipt } from "./pages/Receipt";
+import { Recipes } from "./pages/Recipes";
 import NotFound from "@/pages/not-found";
 
 const queryClient = new QueryClient();
@@ -21,6 +22,7 @@ function Router() {
       <Route path="/admin/dashboard" component={AdminDashboard} />
       <Route path="/kitchen" component={Kitchen} />
       <Route path="/receipt/:id" component={Receipt} />
+      <Route path="/recipes" component={Recipes} />
       <Route component={NotFound} />
     </Switch>
   );

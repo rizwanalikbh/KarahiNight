@@ -6,6 +6,7 @@ import usersRouter from "./users";
 import ordersRouter from "./orders";
 import summaryRouter from "./summary";
 import segmentsRouter from "./segments";
+import recipesRouter from "./recipes";
 
 const router: IRouter = Router();
 
@@ -16,5 +17,6 @@ router.use(usersRouter);
 router.use(ordersRouter);
 router.use(summaryRouter);
 router.use(segmentsRouter);
+router.use(recipesRouter);
 
 export default router;
