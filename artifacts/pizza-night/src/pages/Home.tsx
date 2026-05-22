@@ -8,11 +8,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import {
-  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Clock, Lock, CalendarDays, ChevronDown, Check } from "lucide-react";
+import { Loader2, Clock, Lock, CalendarDays, ArrowRight, Check } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useQueryClient } from "@tanstack/react-query";
 
@@ -23,6 +21,13 @@ function formatEventDate(dateStr: string): string {
   } catch {
     return dateStr;
   }
+}
+
+function formatModalDate(dateStr: string): string {
+  try {
+    const d = new Date(dateStr + "T12:00:00");
+    return d.toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
+  } catch { return dateStr; }
 }
 
 interface Countdown { h: number; m: number; s: number }
@@ -64,61 +69,82 @@ function CountdownDisplay({ t }: { t: Countdown }) {
   );
 }
 
-function formatShortDate(dateStr: string): string {
-  try {
-    const d = new Date(dateStr + "T12:00:00");
-    return d.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
-  } catch { return dateStr; }
-}
-
-function formatDropdownDate(dateStr: string): string {
-  try {
-    const d = new Date(dateStr + "T12:00:00");
-    return d.toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "long" });
-  } catch { return dateStr; }
-}
-
-interface EventSelectorProps {
+interface EventPickerModalProps {
   events: Event[];
   selectedId: number | undefined;
+  open: boolean;
   onSelect: (id: number) => void;
+  onOpenChange: (open: boolean) => void;
 }
 
-function EventSelector({ events, selectedId, onSelect }: EventSelectorProps) {
-  const selected = events.find((e) => e.id === selectedId) ?? events[0];
-  if (!selected) return null;
-
+function EventPickerModal({ events, selectedId, open, onSelect, onOpenChange }: EventPickerModalProps) {
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <button className="group flex items-center gap-2.5 pl-3 pr-2.5 py-1.5 rounded-full border border-primary/30 bg-primary/5 hover:bg-primary/10 hover:border-primary/50 transition-all duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-1 shadow-sm">
-          <CalendarDays className="w-3.5 h-3.5 text-primary/70 shrink-0" />
-          <div className="text-left">
-            <div className="text-sm font-semibold text-foreground leading-tight">{selected.name}</div>
-            <div className="text-[10.5px] text-muted-foreground leading-tight tracking-wide">{formatShortDate(selected.date)}</div>
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-lg p-0 gap-0 overflow-hidden rounded-2xl" aria-describedby={undefined}>
+        <div className="bg-primary/5 border-b border-border/50 px-6 pt-7 pb-5 text-center">
+          <div className="w-14 h-14 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-3">
+            <CalendarDays className="w-6 h-6 text-primary" />
           </div>
-          <ChevronDown className="w-3.5 h-3.5 text-muted-foreground group-hover:text-foreground transition-colors ml-0.5 shrink-0" />
-        </button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="center" sideOffset={8} className="w-60 p-1.5 shadow-lg rounded-xl border border-border/60">
-        {events.map((ev) => {
-          const isSelected = ev.id === selected.id;
-          return (
-            <DropdownMenuItem
-              key={ev.id}
-              className={`flex items-center gap-2.5 px-3 py-2.5 rounded-lg cursor-pointer ${isSelected ? "bg-primary/8 text-primary font-medium" : "hover:bg-muted/60"}`}
-              onClick={() => onSelect(ev.id)}
-            >
-              <Check className={`w-3.5 h-3.5 shrink-0 transition-opacity ${isSelected ? "opacity-100 text-primary" : "opacity-0"}`} />
-              <div className="flex-1 min-w-0">
-                <div className="text-sm font-medium leading-tight truncate">{ev.name}</div>
-                <div className="text-[11px] text-muted-foreground mt-0.5">{formatDropdownDate(ev.date)}</div>
-              </div>
-            </DropdownMenuItem>
-          );
-        })}
-      </DropdownMenuContent>
-    </DropdownMenu>
+          <DialogHeader>
+            <DialogTitle className="font-serif text-2xl font-bold text-foreground text-center">
+              Which evening are you joining?
+            </DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground mt-1.5">
+            Select the pizza night you were invited to.
+          </p>
+        </div>
+
+        <div className="p-4 space-y-2.5">
+          {events.map((ev) => {
+            const isSelected = ev.id === selectedId;
+            return (
+              <button
+                key={ev.id}
+                onClick={() => onSelect(ev.id)}
+                className={`w-full text-left rounded-xl border-2 px-4 py-3.5 transition-all duration-150 group focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 ${
+                  isSelected
+                    ? "border-primary bg-primary/5 shadow-sm"
+                    : "border-border/60 bg-card hover:border-primary/40 hover:bg-primary/3 hover:shadow-sm"
+                }`}
+              >
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex-1 min-w-0">
+                    <div className={`font-serif font-bold text-lg leading-tight ${isSelected ? "text-primary" : "text-foreground"}`}>
+                      {ev.name}
+                    </div>
+                    <div className="text-sm text-muted-foreground mt-0.5 flex items-center gap-1.5">
+                      <span>{formatModalDate(ev.date)}</span>
+                    </div>
+                    {ev.description && (
+                      <div className="text-xs text-muted-foreground/70 mt-1.5 leading-relaxed line-clamp-2">
+                        {ev.description}
+                      </div>
+                    )}
+                  </div>
+                  <div className={`shrink-0 w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${
+                    isSelected ? "border-primary bg-primary" : "border-border group-hover:border-primary/40"
+                  }`}>
+                    {isSelected && <Check className="w-3.5 h-3.5 text-primary-foreground" />}
+                  </div>
+                </div>
+              </button>
+            );
+          })}
+        </div>
+
+        <div className="px-4 pb-5">
+          <Button
+            className="w-full h-12 text-base gap-2"
+            disabled={selectedId === undefined}
+            onClick={() => onOpenChange(false)}
+          >
+            Continue
+            <ArrowRight className="w-4 h-4" />
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }
 
@@ -129,13 +155,28 @@ export function Home() {
 
   const { data: events } = useListEvents();
   const [selectedEventId, setSelectedEventId] = useState<number | undefined>(undefined);
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [pickerShownOnce, setPickerShownOnce] = useState(false);
 
-  // Default to first event once list loads
   useEffect(() => {
-    if (events && events.length > 0 && selectedEventId === undefined) {
+    if (!events) return;
+    if (events.length === 0) return;
+
+    if (selectedEventId === undefined) {
       setSelectedEventId(events[0].id);
     }
-  }, [events, selectedEventId]);
+
+    if (events.length > 1 && !pickerShownOnce) {
+      setPickerOpen(true);
+      setPickerShownOnce(true);
+    }
+  }, [events, selectedEventId, pickerShownOnce]);
+
+  const handlePickerSelect = (id: number) => {
+    setSelectedEventId(id);
+    setSelectedGuestId("");
+    setCode("");
+  };
 
   const eventId = selectedEventId ?? events?.[0]?.id;
   const { data: summary, isLoading } = useGetSummary(
@@ -171,17 +212,20 @@ export function Home() {
   const showProgress = summary && summary.totalCapacity > 0 &&
     (summary.totalBooked / summary.totalCapacity) >= 0.25;
   const progressPct = summary ? Math.min(100, Math.round((summary.totalBooked / summary.totalCapacity) * 100)) : 0;
-
-  const eventSelector = events && events.length > 1 ? (
-    <EventSelector
-      events={events}
-      selectedId={selectedEventId}
-      onSelect={(id) => { setSelectedEventId(id); setSelectedGuestId(""); setCode(""); }}
-    />
-  ) : null;
+  const multipleEvents = events && events.length > 1;
 
   return (
-    <Layout topbarExtra={eventSelector}>
+    <Layout>
+      {multipleEvents && events && (
+        <EventPickerModal
+          events={events}
+          selectedId={selectedEventId}
+          open={pickerOpen}
+          onSelect={handlePickerSelect}
+          onOpenChange={setPickerOpen}
+        />
+      )}
+
       <div className="flex flex-col items-center max-w-2xl mx-auto space-y-8 text-center">
         <div className="space-y-4">
           <div className="w-24 h-24 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-6">
@@ -191,9 +235,19 @@ export function Home() {
             Private Pizza Night
           </h1>
           {!isLoading && summary && (
-            <p className="text-base font-medium text-primary">
-              {formatEventDate(summary.eventDate)} — {summary.eventName}
-            </p>
+            <div className="flex flex-col items-center gap-1">
+              <p className="text-base font-medium text-primary">
+                {formatEventDate(summary.eventDate)} — {summary.eventName}
+              </p>
+              {multipleEvents && (
+                <button
+                  onClick={() => setPickerOpen(true)}
+                  className="text-xs text-muted-foreground/70 hover:text-primary underline underline-offset-2 transition-colors"
+                >
+                  change event
+                </button>
+              )}
+            </div>
           )}
           <p className="text-lg text-muted-foreground max-w-lg mx-auto">
             You are invited to a private evening of handmade Neapolitan pizza. Limited spots available, pre-order only.
@@ -227,7 +281,6 @@ export function Home() {
                 </div>
               </div>
               {!summary.orderingOpen && (
-                /* Closed badge — top-left, doesn't cover the pizza */
                 <div className="absolute top-4 left-4">
                   <div className="flex items-center gap-2 bg-black/55 backdrop-blur-sm rounded-full pl-3 pr-4 py-2">
                     <Lock className="w-3.5 h-3.5 text-white/80 shrink-0" />
