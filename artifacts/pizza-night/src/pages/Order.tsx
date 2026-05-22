@@ -162,7 +162,7 @@ export function Order() {
 
   const selectedSlotData = summary?.slots.find((s) => s.slot === pickupSlot);
   const slotAvailable = selectedSlotData?.available ?? 0;
-  const maxAllowed = Math.min(summary?.totalRemaining ?? 0, slotAvailable, 3);
+  const maxAllowed = Math.min(summary?.totalRemaining ?? 0, slotAvailable);
 
   const handleSlotChange = (val: string) => {
     setPickupSlot(val);
@@ -706,7 +706,7 @@ export function Order() {
                       ))}
                     </SelectContent>
                   </Select>
-                  {maxAllowed < 3 && (
+                  {maxAllowed < slotAvailable && maxAllowed > 0 && (
                     <p className="text-xs text-muted-foreground">Quantity limited by remaining slot capacity.</p>
                   )}
                 </div>
