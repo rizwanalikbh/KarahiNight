@@ -199,19 +199,40 @@ export function Home() {
   const [pickerOpen, setPickerOpen] = useState(false);
   const [pickerShownOnce, setPickerShownOnce] = useState(false);
 
+  // Read ?event=<slug> from URL once on mount
+  const urlSlug = new URLSearchParams(window.location.search).get("event")?.toUpperCase() ?? null;
+
   useEffect(() => {
     if (!events || events.length === 0) return;
-    if (selectedEventId === undefined) setSelectedEventId(events[0].id);
+    if (selectedEventId !== undefined) return;
+
+    // 1. URL param takes highest priority
+    if (urlSlug) {
+      const match = events.find((e) => e.slug === urlSlug);
+      if (match) { setSelectedEventId(match.id); setPickerShownOnce(true); return; }
+    }
+
+    // 2. Remembered from last session
+    const savedSlug = localStorage.getItem("lastEventSlug");
+    if (savedSlug) {
+      const match = events.find((e) => e.slug === savedSlug);
+      if (match) { setSelectedEventId(match.id); setPickerShownOnce(true); return; }
+    }
+
+    // 3. Default: first event; show picker if multiple
+    setSelectedEventId(events[0].id);
     if (events.length > 1 && !pickerShownOnce) {
       setPickerOpen(true);
       setPickerShownOnce(true);
     }
-  }, [events, selectedEventId, pickerShownOnce]);
+  }, [events, selectedEventId, pickerShownOnce, urlSlug]);
 
   const handlePickerSelect = (id: number) => {
     setSelectedEventId(id);
     setSelectedGuestId("");
     setCode("");
+    const slug = events?.find((e) => e.id === id)?.slug;
+    if (slug) localStorage.setItem("lastEventSlug", slug);
   };
 
   const eventId = selectedEventId ?? events?.[0]?.id;

@@ -11,6 +11,20 @@ import {
 const DEFAULT_SLOTS = ["16:00-16:30","16:30-17:00","17:00-17:30","17:30-18:00","18:00-18:30","18:30-19:00"];
 const DEFAULT_PIZZA_TYPES = ["Margherita","Pepperoni","Special"];
 
+function generateSlug(): string {
+  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+  let slug = "";
+  for (let i = 0; i < 6; i++) slug += chars[Math.floor(Math.random() * chars.length)];
+  return slug;
+}
+
+async function uniqueSlug(): Promise<string> {
+  const existing = new Set((await db.select({ slug: eventsTable.slug }).from(eventsTable)).map((r) => r.slug));
+  let slug: string;
+  do { slug = generateSlug(); } while (existing.has(slug));
+  return slug;
+}
+
 const router: IRouter = Router();
 
 function requireAdmin(req: any, res: any, next: any): void {
@@ -101,6 +115,7 @@ router.post("/events", requireAdmin, async (req, res): Promise<void> => {
   const [event] = await db
     .insert(eventsTable)
     .values({
+      slug: await uniqueSlug(),
       name: parsed.data.name,
       date: parsed.data.date,
       totalCapacity: parsed.data.totalCapacity ?? 10,

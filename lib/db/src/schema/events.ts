@@ -7,6 +7,7 @@ const DEFAULT_PIZZA_TYPES = ["Margherita","Pepperoni","Special"];
 
 export const eventsTable = pgTable("events", {
   id: serial("id").primaryKey(),
+  slug: text("slug").notNull().unique(),
   name: text("name").notNull(),
   date: date("date").notNull(),
   totalCapacity: integer("total_capacity").notNull().default(10),

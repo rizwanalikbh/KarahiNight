@@ -69,6 +69,7 @@ export const GetMeResponse = zod.object({
  */
 export const ListEventsResponseItem = zod.object({
   "id": zod.number(),
+  "slug": zod.string().describe('6-character alphanumeric event code used in shareable URLs'),
   "name": zod.string(),
   "date": zod.string().describe('ISO date string (YYYY-MM-DD)'),
   "totalCapacity": zod.number(),
@@ -127,6 +128,7 @@ export const UpdateEventBody = zod.object({
 
 export const UpdateEventResponse = zod.object({
   "id": zod.number(),
+  "slug": zod.string().describe('6-character alphanumeric event code used in shareable URLs'),
   "name": zod.string(),
   "date": zod.string().describe('ISO date string (YYYY-MM-DD)'),
   "totalCapacity": zod.number(),

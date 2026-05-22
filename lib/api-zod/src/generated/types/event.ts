@@ -8,6 +8,8 @@
 
 export interface Event {
   id: number;
+  /** 6-character alphanumeric event code used in shareable URLs */
+  slug: string;
   name: string;
   /** ISO date string (YYYY-MM-DD) */
   date: string;

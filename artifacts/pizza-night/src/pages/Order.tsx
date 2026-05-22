@@ -231,7 +231,7 @@ export function Order() {
             events={events}
             selectedId={selectedEventId}
             open={pickerOpen}
-            onSelect={(id) => { setSelectedEventId(id); setPickupSlot(""); setTotalQty(1); setEventPreview(true); }}
+            onSelect={(id) => { setSelectedEventId(id); setPickupSlot(""); setTotalQty(1); setEventPreview(true); const s = events?.find((e) => e.id === id)?.slug; if (s) localStorage.setItem("lastEventSlug", s); }}
             onOpenChange={setPickerOpen}
           />
         )}
@@ -572,7 +572,7 @@ export function Order() {
             events={events}
             selectedId={selectedEventId}
             open={pickerOpen}
-            onSelect={(id) => { setSelectedEventId(id); setPickupSlot(""); setTotalQty(1); setEventPreview(true); }}
+            onSelect={(id) => { setSelectedEventId(id); setPickupSlot(""); setTotalQty(1); setEventPreview(true); const s = events?.find((e) => e.id === id)?.slug; if (s) localStorage.setItem("lastEventSlug", s); }}
             onOpenChange={setPickerOpen}
           />
         )}

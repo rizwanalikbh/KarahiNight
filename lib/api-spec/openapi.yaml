@@ -657,10 +657,13 @@ components:
 
     Event:
       type: object
-      required: [id, name, date, totalCapacity, slotCapacity, price, active, slots, pizzaTypes, createdAt]
+      required: [id, slug, name, date, totalCapacity, slotCapacity, price, active, slots, pizzaTypes, createdAt]
       properties:
         id:
           type: integer
+        slug:
+          type: string
+          description: 6-character alphanumeric event code used in shareable URLs
         name:
           type: string
         date:

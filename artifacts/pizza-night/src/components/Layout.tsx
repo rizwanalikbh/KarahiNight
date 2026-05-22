@@ -16,7 +16,8 @@ export function Layout({ children, topbarExtra }: LayoutProps) {
   const handleLogout = () => {
     logout.mutate(undefined, {
       onSuccess: () => {
-        setLocation("/");
+        const lastSlug = localStorage.getItem("lastEventSlug");
+        setLocation(lastSlug ? `/?event=${lastSlug}` : "/");
       },
     });
   };
