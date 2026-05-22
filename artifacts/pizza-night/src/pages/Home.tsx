@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useGetSummary, useLogin, useListEvents, getGetMeQueryKey, getGetSummaryQueryKey } from "@workspace/api-client-react";
+import type { Event } from "@workspace/api-client-react";
 import { useLocation } from "wouter";
 import { Layout } from "../components/Layout";
 import { Button } from "@/components/ui/button";
@@ -7,8 +8,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Clock, Lock, CalendarDays } from "lucide-react";
+import { Loader2, Clock, Lock, CalendarDays, ChevronDown, Check } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useQueryClient } from "@tanstack/react-query";
 
@@ -63,8 +67,59 @@ function CountdownDisplay({ t }: { t: Countdown }) {
 function formatShortDate(dateStr: string): string {
   try {
     const d = new Date(dateStr + "T12:00:00");
-    return d.toLocaleDateString("en-GB", { day: "numeric", month: "short" });
+    return d.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
   } catch { return dateStr; }
+}
+
+function formatDropdownDate(dateStr: string): string {
+  try {
+    const d = new Date(dateStr + "T12:00:00");
+    return d.toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "long" });
+  } catch { return dateStr; }
+}
+
+interface EventSelectorProps {
+  events: Event[];
+  selectedId: number | undefined;
+  onSelect: (id: number) => void;
+}
+
+function EventSelector({ events, selectedId, onSelect }: EventSelectorProps) {
+  const selected = events.find((e) => e.id === selectedId) ?? events[0];
+  if (!selected) return null;
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button className="group flex items-center gap-2.5 pl-3 pr-2.5 py-1.5 rounded-full border border-primary/30 bg-primary/5 hover:bg-primary/10 hover:border-primary/50 transition-all duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-1 shadow-sm">
+          <CalendarDays className="w-3.5 h-3.5 text-primary/70 shrink-0" />
+          <div className="text-left">
+            <div className="text-sm font-semibold text-foreground leading-tight">{selected.name}</div>
+            <div className="text-[10.5px] text-muted-foreground leading-tight tracking-wide">{formatShortDate(selected.date)}</div>
+          </div>
+          <ChevronDown className="w-3.5 h-3.5 text-muted-foreground group-hover:text-foreground transition-colors ml-0.5 shrink-0" />
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="center" sideOffset={8} className="w-60 p-1.5 shadow-lg rounded-xl border border-border/60">
+        {events.map((ev) => {
+          const isSelected = ev.id === selected.id;
+          return (
+            <DropdownMenuItem
+              key={ev.id}
+              className={`flex items-center gap-2.5 px-3 py-2.5 rounded-lg cursor-pointer ${isSelected ? "bg-primary/8 text-primary font-medium" : "hover:bg-muted/60"}`}
+              onClick={() => onSelect(ev.id)}
+            >
+              <Check className={`w-3.5 h-3.5 shrink-0 transition-opacity ${isSelected ? "opacity-100 text-primary" : "opacity-0"}`} />
+              <div className="flex-1 min-w-0">
+                <div className="text-sm font-medium leading-tight truncate">{ev.name}</div>
+                <div className="text-[11px] text-muted-foreground mt-0.5">{formatDropdownDate(ev.date)}</div>
+              </div>
+            </DropdownMenuItem>
+          );
+        })}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
 }
 
 export function Home() {
@@ -118,22 +173,11 @@ export function Home() {
   const progressPct = summary ? Math.min(100, Math.round((summary.totalBooked / summary.totalCapacity) * 100)) : 0;
 
   const eventSelector = events && events.length > 1 ? (
-    <Select
-      value={selectedEventId !== undefined ? String(selectedEventId) : ""}
-      onValueChange={(v) => { setSelectedEventId(Number(v)); setSelectedGuestId(""); setCode(""); }}
-    >
-      <SelectTrigger className="h-8 text-sm w-auto min-w-[180px] max-w-[260px] gap-2 border-border/60">
-        <CalendarDays className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
-        <SelectValue placeholder="Select event…" />
-      </SelectTrigger>
-      <SelectContent>
-        {events.map((ev) => (
-          <SelectItem key={ev.id} value={String(ev.id)}>
-            {ev.name} — {formatShortDate(ev.date)}
-          </SelectItem>
-        ))}
-      </SelectContent>
-    </Select>
+    <EventSelector
+      events={events}
+      selectedId={selectedEventId}
+      onSelect={(id) => { setSelectedEventId(id); setSelectedGuestId(""); setCode(""); }}
+    />
   ) : null;
 
   return (
