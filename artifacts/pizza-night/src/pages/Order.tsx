@@ -13,7 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, CheckCircle2, AlertCircle, CalendarDays, Pencil, Plus, X, Check, ArrowRight } from "lucide-react";
+import { Loader2, CheckCircle2, AlertCircle, CalendarDays, Pencil, Plus, X, Check, ArrowRight, Lock, Pizza } from "lucide-react";
 import type { PizzaItem as APIPizzaItem } from "@workspace/api-client-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useQueryClient } from "@tanstack/react-query";
@@ -124,6 +124,7 @@ export function Order() {
 
   const [selectedEventId, setSelectedEventId] = useState<number | null>(null);
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [eventPreview, setEventPreview] = useState(false);
   const [pickupSlot, setPickupSlot] = useState("");
   const [notes, setNotes] = useState("");
   const [totalQty, setTotalQty] = useState(1);
@@ -220,6 +221,120 @@ export function Order() {
     );
   }
 
+  if (eventPreview) {
+    const progressPct = summary ? Math.round((summary.totalBooked / summary.totalCapacity) * 100) : 0;
+    const showProgress = summary ? progressPct >= 25 : false;
+    return (
+      <Layout>
+        {events.length > 1 && (
+          <EventPickerModal
+            events={events}
+            selectedId={selectedEventId}
+            open={pickerOpen}
+            onSelect={(id) => { setSelectedEventId(id); setPickupSlot(""); setTotalQty(1); setEventPreview(true); }}
+            onOpenChange={setPickerOpen}
+          />
+        )}
+        <div className="flex flex-col items-center max-w-2xl mx-auto space-y-6 pt-8 text-center pb-12">
+          {/* Header */}
+          <div className="space-y-3">
+            <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mx-auto">
+              <img src="/pizza-icon.png" alt="Pizza" className="w-14 h-14 opacity-80" />
+            </div>
+            <h1 className="text-3xl sm:text-4xl font-serif font-bold text-foreground">Private Pizza Night</h1>
+            {summaryLoading ? (
+              <Skeleton className="h-5 w-64 mx-auto" />
+            ) : summary ? (
+              <div className="flex flex-col items-center gap-1">
+                <p className="text-base font-medium text-primary">
+                  {formatEventDate(summary.eventDate)} — {summary.eventName}
+                </p>
+                {events.length > 1 && (
+                  <button
+                    onClick={() => setPickerOpen(true)}
+                    className="inline-flex items-center gap-1.5 mt-1 px-3 py-1 rounded-full border border-border/60 bg-secondary/50 hover:bg-primary/10 hover:border-primary/40 hover:text-primary text-sm text-muted-foreground transition-all"
+                  >
+                    <CalendarDays className="w-3.5 h-3.5" />
+                    change event
+                  </button>
+                )}
+              </div>
+            ) : null}
+          </div>
+
+          {/* Hero image */}
+          <div className="w-full aspect-video md:aspect-[21/9] rounded-2xl overflow-hidden shadow-lg border relative">
+            <img src="/pizza-hero.png" alt="Handmade pizza" className="w-full h-full object-cover" />
+            {summary && (
+              <>
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex flex-col justify-end p-6 text-left">
+                  <div className="text-white font-medium text-lg">{summary.price} DKK per pizza</div>
+                  {summary.description && (
+                    <div className="text-white/80 text-sm">{summary.description}</div>
+                  )}
+                </div>
+                {!summary.orderingOpen && (
+                  <div className="absolute top-4 left-4">
+                    <div className="flex items-center gap-2 bg-black/55 backdrop-blur-sm rounded-full pl-3 pr-4 py-2">
+                      <Lock className="w-3.5 h-3.5 text-white/80 shrink-0" />
+                      <span className="text-white text-sm font-semibold leading-none">
+                        {summary.totalRemaining <= 0 ? "Fully Booked" : "Orders Closed"}
+                      </span>
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+
+          {/* Progress bar */}
+          {showProgress && summary && (
+            <div className="w-full space-y-2">
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground font-medium">Spots filling up</span>
+                <span className="text-foreground font-semibold">{summary.totalBooked} / {summary.totalCapacity} pizzas ordered</span>
+              </div>
+              <div className="w-full h-3 bg-secondary rounded-full overflow-hidden">
+                <div
+                  className={`h-full rounded-full transition-all duration-700 ${
+                    progressPct >= 90 ? "bg-destructive" : progressPct >= 70 ? "bg-orange-400" : "bg-primary"
+                  }`}
+                  style={{ width: `${progressPct}%` }}
+                />
+              </div>
+              <p className="text-xs text-muted-foreground text-right">
+                {summary.totalRemaining} spot{summary.totalRemaining !== 1 ? "s" : ""} remaining
+              </p>
+            </div>
+          )}
+
+          {/* CTA card */}
+          <Card className="w-full bg-card shadow-sm">
+            <CardContent className="pt-6 pb-6 flex flex-col items-center gap-4">
+              <div className="text-center space-y-1">
+                <p className="font-semibold text-foreground">Welcome back, {session.userName}!</p>
+                <p className="text-sm text-muted-foreground">
+                  {summaryLoading ? "Loading event details…" :
+                    summary?.orderingOpen
+                      ? (myOrder ? "You already have an order for this event." : "Ready to place your order?")
+                      : "Ordering is closed. You can still view your order."}
+                </p>
+              </div>
+              {summaryLoading ? (
+                <Skeleton className="w-full h-14 rounded-xl" />
+              ) : (
+                <Button size="lg" className="w-full h-14 text-lg gap-2" onClick={() => setEventPreview(false)}>
+                  <Pizza className="w-5 h-5" />
+                  {myOrder ? "View My Order" : summary?.orderingOpen ? "Place My Order" : "View My Order"}
+                </Button>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      </Layout>
+    );
+  }
+
   if (myOrder) {
     const displayItems = isEditing ? editItems : (myOrder.items ?? []);
     const total = displayItems.reduce((s, i) => s + i.quantity, 0);
@@ -275,6 +390,7 @@ export function Order() {
               setSelectedEventId(id);
               setPickupSlot("");
               setTotalQty(1);
+              setEventPreview(true);
             }}
             onOpenChange={setPickerOpen}
           />
@@ -456,7 +572,7 @@ export function Order() {
             events={events}
             selectedId={selectedEventId}
             open={pickerOpen}
-            onSelect={(id) => { setSelectedEventId(id); setPickupSlot(""); setTotalQty(1); }}
+            onSelect={(id) => { setSelectedEventId(id); setPickupSlot(""); setTotalQty(1); setEventPreview(true); }}
             onOpenChange={setPickerOpen}
           />
         )}
@@ -516,7 +632,7 @@ export function Order() {
           events={events}
           selectedId={selectedEventId}
           open={pickerOpen}
-          onSelect={(id) => { setSelectedEventId(id); setPickupSlot(""); setTotalQty(1); }}
+          onSelect={(id) => { setSelectedEventId(id); setPickupSlot(""); setTotalQty(1); setEventPreview(true); }}
           onOpenChange={setPickerOpen}
         />
       )}
