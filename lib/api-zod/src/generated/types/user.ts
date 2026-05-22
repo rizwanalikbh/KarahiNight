@@ -10,6 +10,10 @@ export interface User {
   id: number;
   name: string;
   code: string;
+  /** @nullable */
+  email?: string | null;
+  /** @nullable */
+  mobile?: string | null;
   active: boolean;
   createdAt: Date;
 }

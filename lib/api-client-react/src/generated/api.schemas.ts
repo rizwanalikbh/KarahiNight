@@ -124,17 +124,43 @@ export interface User {
   id: number;
   name: string;
   code: string;
+  /** @nullable */
+  email?: string | null;
+  /** @nullable */
+  mobile?: string | null;
   active: boolean;
   createdAt: string;
 }
 
 export interface UserInput {
   name: string;
+  email?: string;
+  mobile?: string;
 }
 
 export interface UserUpdate {
   active?: boolean;
   name?: string;
+  /** @nullable */
+  email?: string | null;
+  /** @nullable */
+  mobile?: string | null;
+}
+
+export type UserImportInputGuestsItem = {
+  name: string;
+  email?: string;
+  mobile?: string;
+};
+
+export interface UserImportInput {
+  guests: UserImportInputGuestsItem[];
+}
+
+export interface UserImportResult {
+  created: number;
+  skipped: number;
+  errors: string[];
 }
 
 export type PizzaItemPizzaChoice = typeof PizzaItemPizzaChoice[keyof typeof PizzaItemPizzaChoice];

@@ -40,6 +40,8 @@ import type {
   SegmentUserInput,
   SessionInfo,
   User,
+  UserImportInput,
+  UserImportResult,
   UserInput,
   UserUpdate
 } from './api.schemas';
@@ -1222,6 +1224,154 @@ export const useDeleteUser = <TError = ErrorType<unknown>,
       > => {
       return useMutation(getDeleteUserMutationOptions(options));
     }
+
+export const getImportUsersUrl = () => {
+
+
+
+
+  return `/api/users/import-csv`
+}
+
+/**
+ * @summary Bulk import guests from CSV data (admin only)
+ */
+export const importUsers = async (userImportInput: UserImportInput, options?: RequestInit): Promise<UserImportResult> => {
+
+  return customFetch<UserImportResult>(getImportUsersUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      userImportInput,)
+  }
+);}
+
+
+
+
+export const getImportUsersMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof importUsers>>, TError,{data: BodyType<UserImportInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof importUsers>>, TError,{data: BodyType<UserImportInput>}, TContext> => {
+
+const mutationKey = ['importUsers'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof importUsers>>, {data: BodyType<UserImportInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  importUsers(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ImportUsersMutationResult = NonNullable<Awaited<ReturnType<typeof importUsers>>>
+    export type ImportUsersMutationBody = BodyType<UserImportInput>
+    export type ImportUsersMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Bulk import guests from CSV data (admin only)
+ */
+export const useImportUsers = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof importUsers>>, TError,{data: BodyType<UserImportInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof importUsers>>,
+        TError,
+        {data: BodyType<UserImportInput>},
+        TContext
+      > => {
+      return useMutation(getImportUsersMutationOptions(options));
+    }
+
+export const getListUserSegmentsUrl = (id: number,) => {
+
+
+
+
+  return `/api/users/${id}/segments`
+}
+
+/**
+ * @summary List segments a user belongs to (admin only)
+ */
+export const listUserSegments = async (id: number, options?: RequestInit): Promise<Segment[]> => {
+
+  return customFetch<Segment[]>(getListUserSegmentsUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListUserSegmentsQueryKey = (id: number,) => {
+    return [
+    `/api/users/${id}/segments`
+    ] as const;
+    }
+
+
+export const getListUserSegmentsQueryOptions = <TData = Awaited<ReturnType<typeof listUserSegments>>, TError = ErrorType<unknown>>(id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listUserSegments>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListUserSegmentsQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listUserSegments>>> = ({ signal }) => listUserSegments(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: !!(id), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listUserSegments>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListUserSegmentsQueryResult = NonNullable<Awaited<ReturnType<typeof listUserSegments>>>
+export type ListUserSegmentsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary List segments a user belongs to (admin only)
+ */
+
+export function useListUserSegments<TData = Awaited<ReturnType<typeof listUserSegments>>, TError = ErrorType<unknown>>(
+ id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listUserSegments>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListUserSegmentsQueryOptions(id,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
 
 export const getRegenerateCodeUrl = (id: number,) => {
 

@@ -6,8 +6,8 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export interface UserInput {
+export type UserImportInputGuestsItem = {
   name: string;
   email?: string;
   mobile?: string;
-}
+};

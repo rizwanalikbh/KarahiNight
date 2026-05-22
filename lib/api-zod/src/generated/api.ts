@@ -158,6 +158,8 @@ export const ListEventUsersResponseItem = zod.object({
   "id": zod.number(),
   "name": zod.string(),
   "code": zod.string(),
+  "email": zod.string().nullish(),
+  "mobile": zod.string().nullish(),
   "active": zod.boolean(),
   "createdAt": zod.coerce.date()
 })
@@ -192,6 +194,8 @@ export const ListUsersResponseItem = zod.object({
   "id": zod.number(),
   "name": zod.string(),
   "code": zod.string(),
+  "email": zod.string().nullish(),
+  "mobile": zod.string().nullish(),
   "active": zod.boolean(),
   "createdAt": zod.coerce.date()
 })
@@ -202,7 +206,9 @@ export const ListUsersResponse = zod.array(ListUsersResponseItem)
  * @summary Add a new user (admin only)
  */
 export const CreateUserBody = zod.object({
-  "name": zod.string()
+  "name": zod.string(),
+  "email": zod.string().optional(),
+  "mobile": zod.string().optional()
 })
 
 
@@ -215,13 +221,17 @@ export const UpdateUserParams = zod.object({
 
 export const UpdateUserBody = zod.object({
   "active": zod.boolean().optional(),
-  "name": zod.string().optional()
+  "name": zod.string().optional(),
+  "email": zod.string().nullish(),
+  "mobile": zod.string().nullish()
 })
 
 export const UpdateUserResponse = zod.object({
   "id": zod.number(),
   "name": zod.string(),
   "code": zod.string(),
+  "email": zod.string().nullish(),
+  "mobile": zod.string().nullish(),
   "active": zod.boolean(),
   "createdAt": zod.coerce.date()
 })
@@ -236,6 +246,40 @@ export const DeleteUserParams = zod.object({
 
 
 /**
+ * @summary Bulk import guests from CSV data (admin only)
+ */
+export const ImportUsersBody = zod.object({
+  "guests": zod.array(zod.object({
+  "name": zod.string(),
+  "email": zod.string().optional(),
+  "mobile": zod.string().optional()
+}))
+})
+
+export const ImportUsersResponse = zod.object({
+  "created": zod.number(),
+  "skipped": zod.number(),
+  "errors": zod.array(zod.string())
+})
+
+
+/**
+ * @summary List segments a user belongs to (admin only)
+ */
+export const ListUserSegmentsParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const ListUserSegmentsResponseItem = zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "memberCount": zod.number(),
+  "createdAt": zod.coerce.date()
+})
+export const ListUserSegmentsResponse = zod.array(ListUserSegmentsResponseItem)
+
+
+/**
  * @summary Regenerate 4-digit code for a user (admin only)
  */
 export const RegenerateCodeParams = zod.object({
@@ -246,6 +290,8 @@ export const RegenerateCodeResponse = zod.object({
   "id": zod.number(),
   "name": zod.string(),
   "code": zod.string(),
+  "email": zod.string().nullish(),
+  "mobile": zod.string().nullish(),
   "active": zod.boolean(),
   "createdAt": zod.coerce.date()
 })
@@ -398,6 +444,8 @@ export const ListSegmentUsersResponseItem = zod.object({
   "id": zod.number(),
   "name": zod.string(),
   "code": zod.string(),
+  "email": zod.string().nullish(),
+  "mobile": zod.string().nullish(),
   "active": zod.boolean(),
   "createdAt": zod.coerce.date()
 })

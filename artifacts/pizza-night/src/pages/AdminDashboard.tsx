@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import {
   useGetMe, useGetSummary, useListOrders, useUpdateOrder, useDeleteOrder,
   useListUsers, useUpdateUser, useDeleteUser, useRegenerateCode, useCreateUser,
@@ -7,9 +7,11 @@ import {
   useListSegments, useCreateSegment, useDeleteSegment,
   useListSegmentUsers, useAddUserToSegment, useRemoveUserFromSegment,
   useListEventSegments, useAddSegmentToEvent, useRemoveSegmentFromEvent,
+  useImportUsers, useListUserSegments,
   getListOrdersQueryKey, getListUsersQueryKey, getGetSummaryQueryKey,
   getListEventsQueryKey, getListEventUsersQueryKey,
   getListSegmentsQueryKey, getListSegmentUsersQueryKey, getListEventSegmentsQueryKey,
+  getListUserSegmentsQueryKey,
 } from "@workspace/api-client-react";
 import type { Event } from "@workspace/api-client-react";
 import { useLocation } from "wouter";
@@ -27,7 +29,7 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import {
   Loader2, Trash2, RefreshCw, UserPlus, Plus, CalendarDays,
-  Users, ChevronDown, ChevronUp, Pencil, X, Check, FileText, Tag,
+  Users, ChevronDown, ChevronUp, Pencil, X, Check, FileText, Tag, Upload, Mail, Phone,
 } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { OrderUpdateStatus } from "@workspace/api-client-react";
@@ -493,6 +495,224 @@ function OrderEditPanel({
   );
 }
 
+// ── Guest inline edit panel ──────────────────────────────────────────────────
+function GuestEditPanel({ user, allSegments, onClose }: { user: any; allSegments: any[]; onClose: () => void }) {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [name, setName] = useState(user.name);
+  const [email, setEmail] = useState(user.email ?? "");
+  const [mobile, setMobile] = useState(user.mobile ?? "");
+  const [addSegmentId, setAddSegmentId] = useState("");
+
+  const { data: userSegments, isLoading: segmentsLoading } = useListUserSegments(user.id, {
+    query: { queryKey: getListUserSegmentsQueryKey(user.id) },
+  });
+  const updateUser = useUpdateUser();
+  const addToSegment = useAddUserToSegment();
+  const removeFromSegment = useRemoveUserFromSegment();
+
+  const userSegmentIds = new Set((userSegments ?? []).map((s) => s.id));
+  const availableSegments = allSegments.filter((s) => !userSegmentIds.has(s.id));
+
+  const handleSave = () => {
+    if (!name.trim()) return;
+    updateUser.mutate({
+      id: user.id,
+      data: { name: name.trim(), email: email.trim() || null, mobile: mobile.trim() || null },
+    }, {
+      onSuccess: () => {
+        toast({ title: "Guest updated" });
+        queryClient.invalidateQueries({ queryKey: getListUsersQueryKey() });
+        onClose();
+      },
+      onError: (err: any) => {
+        const msg = err?.response?.data?.error ?? "Failed to update guest";
+        toast({ title: msg, variant: "destructive" });
+      },
+    });
+  };
+
+  return (
+    <div className="mt-3 p-4 border rounded-xl bg-secondary/20 space-y-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <div className="space-y-1">
+          <Label className="text-xs">Name</Label>
+          <Input value={name} onChange={(e) => setName(e.target.value)} className="h-8 text-sm" />
+        </div>
+        <div className="space-y-1">
+          <Label className="text-xs flex items-center gap-1"><Mail className="w-3 h-3" /> Email</Label>
+          <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="h-8 text-sm" placeholder="Optional" />
+        </div>
+        <div className="space-y-1">
+          <Label className="text-xs flex items-center gap-1"><Phone className="w-3 h-3" /> Mobile</Label>
+          <Input type="tel" value={mobile} onChange={(e) => setMobile(e.target.value)} className="h-8 text-sm" placeholder="Optional" />
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        <Label className="text-xs flex items-center gap-1"><Tag className="w-3 h-3" /> Segments</Label>
+        <div className="flex flex-wrap gap-2 min-h-[1.75rem] items-center">
+          {segmentsLoading && <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />}
+          {!segmentsLoading && (userSegments ?? []).length === 0 && (
+            <span className="text-xs text-muted-foreground">No segments yet</span>
+          )}
+          {(userSegments ?? []).map((s) => (
+            <Badge key={s.id} variant="secondary" className="gap-1 pr-1">
+              {s.name}
+              <button type="button"
+                onClick={() => removeFromSegment.mutate({ id: s.id, userId: user.id }, {
+                  onSuccess: () => {
+                    queryClient.invalidateQueries({ queryKey: getListUserSegmentsQueryKey(user.id) });
+                    queryClient.invalidateQueries({ queryKey: getListSegmentsQueryKey() });
+                  },
+                })}
+                className="hover:text-destructive transition-colors ml-1"
+              >×</button>
+            </Badge>
+          ))}
+        </div>
+        {availableSegments.length > 0 && (
+          <div className="flex gap-2">
+            <Select value={addSegmentId} onValueChange={setAddSegmentId}>
+              <SelectTrigger className="h-8 text-xs flex-1 max-w-xs">
+                <SelectValue placeholder="Add to segment..." />
+              </SelectTrigger>
+              <SelectContent>
+                {availableSegments.map((s) => (
+                  <SelectItem key={s.id} value={String(s.id)}>{s.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Button size="sm" className="h-8" disabled={!addSegmentId || addToSegment.isPending}
+              onClick={() => {
+                if (!addSegmentId) return;
+                addToSegment.mutate({ id: parseInt(addSegmentId, 10), data: { userId: user.id } }, {
+                  onSuccess: () => {
+                    setAddSegmentId("");
+                    queryClient.invalidateQueries({ queryKey: getListUserSegmentsQueryKey(user.id) });
+                    queryClient.invalidateQueries({ queryKey: getListSegmentsQueryKey() });
+                  },
+                });
+              }}
+            >
+              <Plus className="w-3 h-3 mr-1" /> Add
+            </Button>
+          </div>
+        )}
+      </div>
+
+      <div className="flex gap-2">
+        <Button size="sm" onClick={handleSave} disabled={updateUser.isPending || !name.trim()}>
+          <Check className="w-3 h-3 mr-1" /> Save
+        </Button>
+        <Button size="sm" variant="ghost" onClick={onClose}>
+          <X className="w-3 h-3 mr-1" /> Cancel
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+// ── CSV upload card ───────────────────────────────────────────────────────────
+function CsvUploadCard() {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [rows, setRows] = useState<{ name: string; email?: string; mobile?: string }[]>([]);
+  const [fileName, setFileName] = useState("");
+  const [result, setResult] = useState<{ created: number; skipped: number; errors: string[] } | null>(null);
+  const importUsers = useImportUsers();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setResult(null);
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setFileName(file.name);
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const text = ev.target?.result as string;
+      const lines = text.split(/\r?\n/).filter(Boolean);
+      if (lines.length < 2) { setRows([]); return; }
+      const headers = lines[0].split(",").map((h) => h.trim().replace(/^"|"$/g, "").toLowerCase());
+      const nameIdx = headers.indexOf("name");
+      const emailIdx = headers.indexOf("email");
+      const mobileIdx = headers.indexOf("mobile");
+      if (nameIdx === -1) {
+        toast({ title: "CSV must have a 'name' column", variant: "destructive" });
+        setRows([]);
+        return;
+      }
+      const parsed = lines.slice(1).map((line) => {
+        const cols = line.split(",").map((c) => c.trim().replace(/^"|"$/g, ""));
+        return {
+          name: cols[nameIdx] ?? "",
+          ...(emailIdx !== -1 && cols[emailIdx] ? { email: cols[emailIdx] } : {}),
+          ...(mobileIdx !== -1 && cols[mobileIdx] ? { mobile: cols[mobileIdx] } : {}),
+        };
+      }).filter((r) => r.name);
+      setRows(parsed);
+    };
+    reader.readAsText(file);
+  };
+
+  const handleImport = () => {
+    if (!rows.length) return;
+    importUsers.mutate({ data: { guests: rows } }, {
+      onSuccess: (data) => {
+        setResult(data);
+        setRows([]);
+        setFileName("");
+        if (fileInputRef.current) fileInputRef.current.value = "";
+        queryClient.invalidateQueries({ queryKey: getListUsersQueryKey() });
+        toast({ title: `Imported: ${data.created} added, ${data.skipped} skipped` });
+      },
+      onError: () => toast({ title: "Import failed", variant: "destructive" }),
+    });
+  };
+
+  return (
+    <Card>
+      <CardHeader className="pb-3">
+        <CardTitle className="text-lg flex items-center gap-2"><Upload className="w-5 h-5" /> Import from CSV</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        <p className="text-sm text-muted-foreground">
+          Upload a CSV with columns: <code className="text-xs bg-secondary px-1 py-0.5 rounded">name</code>,{" "}
+          <code className="text-xs bg-secondary px-1 py-0.5 rounded">email</code> (optional),{" "}
+          <code className="text-xs bg-secondary px-1 py-0.5 rounded">mobile</code> (optional). Header row required.
+        </p>
+        <div className="flex gap-3 items-center flex-wrap">
+          <label className="cursor-pointer inline-flex items-center gap-2 border rounded-md px-3 py-1.5 text-sm hover:bg-secondary transition-colors">
+            <Upload className="w-4 h-4" /> Choose File
+            <input ref={fileInputRef} type="file" accept=".csv,text/csv" className="sr-only" onChange={handleFile} />
+          </label>
+          {fileName && (
+            <span className="text-sm text-muted-foreground">
+              {fileName} — <strong>{rows.length}</strong> guest{rows.length !== 1 ? "s" : ""} ready
+            </span>
+          )}
+          {rows.length > 0 && (
+            <Button onClick={handleImport} disabled={importUsers.isPending} size="sm">
+              {importUsers.isPending ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Check className="w-4 h-4 mr-2" />}
+              Import {rows.length} guest{rows.length !== 1 ? "s" : ""}
+            </Button>
+          )}
+        </div>
+        {result && (
+          <div className="text-sm p-3 bg-secondary/30 rounded-lg space-y-1">
+            <p className="font-medium">Import complete: {result.created} created, {result.skipped} skipped</p>
+            {result.errors.length > 0 && (
+              <ul className="text-destructive space-y-0.5 mt-1">
+                {result.errors.map((e, i) => <li key={i}>• {e}</li>)}
+              </ul>
+            )}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
 // ── Segment member manager (used inside segments tab) ────────────────────────
 function SegmentMemberManager({ segmentId, allUsers }: { segmentId: number; allUsers: any[] }) {
   const { toast } = useToast();
@@ -714,6 +934,9 @@ export function AdminDashboard() {
   const [editingOrderId, setEditingOrderId] = useState<number | null>(null);
 
   const [newUserName, setNewUserName] = useState("");
+  const [newUserEmail, setNewUserEmail] = useState("");
+  const [newUserMobile, setNewUserMobile] = useState("");
+  const [editingUserId, setEditingUserId] = useState<number | null>(null);
   const [filterEventId, setFilterEventId] = useState<string>("all");
 
   if (sessionLoading) return <Layout><div className="flex justify-center p-12"><Loader2 className="animate-spin text-primary" /></div></Layout>;
@@ -771,11 +994,23 @@ export function AdminDashboard() {
   const handleAddUser = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newUserName.trim()) return;
-    createUser.mutate({ data: { name: newUserName } }, {
+    createUser.mutate({
+      data: {
+        name: newUserName.trim(),
+        ...(newUserEmail.trim() ? { email: newUserEmail.trim() } : {}),
+        ...(newUserMobile.trim() ? { mobile: newUserMobile.trim() } : {}),
+      },
+    }, {
       onSuccess: () => {
         toast({ title: "Guest added" });
         setNewUserName("");
+        setNewUserEmail("");
+        setNewUserMobile("");
         queryClient.invalidateQueries({ queryKey: getListUsersQueryKey() });
+      },
+      onError: (err: any) => {
+        const msg = err?.response?.data?.error ?? "Failed to add guest";
+        toast({ title: msg, variant: "destructive" });
       },
     });
   };
@@ -1169,51 +1404,100 @@ export function AdminDashboard() {
 
           {/* GUESTS */}
           <TabsContent value="users" className="pt-4 space-y-4">
+            <CsvUploadCard />
+
             <Card>
-              <CardHeader className="pb-4"><CardTitle className="text-lg">Add Guest</CardTitle></CardHeader>
+              <CardHeader className="pb-4"><CardTitle className="text-lg flex items-center gap-2"><UserPlus className="w-5 h-5" /> Add Guest</CardTitle></CardHeader>
               <CardContent>
-                <form onSubmit={handleAddUser} className="flex gap-4">
-                  <Input
-                    placeholder="Guest name..."
-                    value={newUserName}
-                    onChange={(e) => setNewUserName(e.target.value)}
-                    className="max-w-xs"
-                  />
+                <form onSubmit={handleAddUser} className="space-y-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div className="space-y-1">
+                      <Label className="text-xs">Name *</Label>
+                      <Input placeholder="Guest name..." value={newUserName} onChange={(e) => setNewUserName(e.target.value)} />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs flex items-center gap-1"><Mail className="w-3 h-3" /> Email</Label>
+                      <Input type="email" placeholder="Optional, must be unique" value={newUserEmail} onChange={(e) => setNewUserEmail(e.target.value)} />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs flex items-center gap-1"><Phone className="w-3 h-3" /> Mobile</Label>
+                      <Input type="tel" placeholder="Optional, must be unique" value={newUserMobile} onChange={(e) => setNewUserMobile(e.target.value)} />
+                    </div>
+                  </div>
                   <Button type="submit" disabled={createUser.isPending || !newUserName.trim()}>
-                    <UserPlus className="w-4 h-4 mr-2" /> Add
+                    <UserPlus className="w-4 h-4 mr-2" /> Add Guest
                   </Button>
                 </form>
               </CardContent>
             </Card>
+
             <Card>
               <CardContent className="p-0">
                 <Table>
                   <TableHeader>
                     <TableRow>
                       <TableHead>Name</TableHead>
+                      <TableHead>Email</TableHead>
+                      <TableHead>Mobile</TableHead>
                       <TableHead>Code</TableHead>
                       <TableHead>Active</TableHead>
                       <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {users?.map((user) => (
-                      <TableRow key={user.id} className={!user.active ? "opacity-50" : ""}>
-                        <TableCell className="font-medium">{user.name}</TableCell>
-                        <TableCell className="font-mono tracking-widest">{user.code}</TableCell>
-                        <TableCell>
-                          <Switch checked={user.active} onCheckedChange={(v) => handleToggleUser(user.id, v)} />
-                        </TableCell>
-                        <TableCell className="text-right space-x-2">
-                          <Button variant="ghost" size="icon" onClick={() => regenerateCode.mutate({ id: user.id }, { onSuccess: () => { toast({ title: "Code regenerated" }); queryClient.invalidateQueries({ queryKey: getListUsersQueryKey() }); } })} className="h-8 w-8">
-                            <RefreshCw className="h-4 w-4" />
-                          </Button>
-                          <Button variant="ghost" size="icon" onClick={() => { if (!confirm("Delete this guest?")) return; deleteUser.mutate({ id: user.id }, { onSuccess: () => { toast({ title: "Guest deleted" }); queryClient.invalidateQueries({ queryKey: getListUsersQueryKey() }); } }); }} className="h-8 w-8 text-destructive hover:bg-destructive/10">
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))}
+                    {users?.map((user) => {
+                      const isEditing = editingUserId === user.id;
+                      return (
+                        <>
+                          <TableRow key={user.id} className={!user.active ? "opacity-50" : ""}>
+                            <TableCell className="font-medium">{user.name}</TableCell>
+                            <TableCell className="text-sm text-muted-foreground">
+                              {user.email ? (
+                                <a href={`mailto:${user.email}`} className="hover:text-foreground transition-colors">{user.email}</a>
+                              ) : <span className="text-xs">—</span>}
+                            </TableCell>
+                            <TableCell className="text-sm text-muted-foreground">
+                              {user.mobile ?? <span className="text-xs">—</span>}
+                            </TableCell>
+                            <TableCell className="font-mono tracking-widest">{user.code}</TableCell>
+                            <TableCell>
+                              <Switch checked={user.active} onCheckedChange={(v) => handleToggleUser(user.id, v)} />
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <div className="flex items-center justify-end gap-1">
+                                <Button
+                                  variant="ghost" size="icon"
+                                  className={`h-8 w-8 ${isEditing ? "text-primary bg-primary/10" : ""}`}
+                                  onClick={() => setEditingUserId(isEditing ? null : user.id)}
+                                  title="Edit guest"
+                                >
+                                  <Pencil className="h-4 w-4" />
+                                </Button>
+                                <Button variant="ghost" size="icon" onClick={() => regenerateCode.mutate({ id: user.id }, { onSuccess: () => { toast({ title: "Code regenerated" }); queryClient.invalidateQueries({ queryKey: getListUsersQueryKey() }); } })} className="h-8 w-8" title="Regenerate code">
+                                  <RefreshCw className="h-4 w-4" />
+                                </Button>
+                                <Button variant="ghost" size="icon" onClick={() => { if (!confirm("Delete this guest?")) return; deleteUser.mutate({ id: user.id }, { onSuccess: () => { toast({ title: "Guest deleted" }); queryClient.invalidateQueries({ queryKey: getListUsersQueryKey() }); } }); }} className="h-8 w-8 text-destructive hover:bg-destructive/10" title="Delete guest">
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                          {isEditing && (
+                            <TableRow key={`${user.id}-edit`}>
+                              <TableCell colSpan={6} className="p-0 pb-2">
+                                <div className="px-4">
+                                  <GuestEditPanel
+                                    user={user}
+                                    allSegments={segments ?? []}
+                                    onClose={() => setEditingUserId(null)}
+                                  />
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          )}
+                        </>
+                      );
+                    })}
                   </TableBody>
                 </Table>
               </CardContent>

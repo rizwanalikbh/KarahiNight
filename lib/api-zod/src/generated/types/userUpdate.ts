@@ -9,4 +9,8 @@
 export interface UserUpdate {
   active?: boolean;
   name?: string;
+  /** @nullable */
+  email?: string | null;
+  /** @nullable */
+  mobile?: string | null;
 }

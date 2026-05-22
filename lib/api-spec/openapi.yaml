@@ -305,6 +305,46 @@ paths:
         "204":
           description: Deleted
 
+  /users/import-csv:
+    post:
+      operationId: importUsers
+      tags: [users]
+      summary: Bulk import guests from CSV data (admin only)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserImportInput"
+      responses:
+        "200":
+          description: Import result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserImportResult"
+
+  /users/{id}/segments:
+    get:
+      operationId: listUserSegments
+      tags: [users]
+      summary: List segments a user belongs to (admin only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Segments for user
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Segment"
+
   /users/{id}/regenerate-code:
     post:
       operationId: regenerateCode
@@ -771,6 +811,10 @@ components:
           type: string
         code:
           type: string
+        email:
+          type: ["string", "null"]
+        mobile:
+          type: ["string", "null"]
         active:
           type: boolean
         createdAt:
@@ -783,6 +827,10 @@ components:
       properties:
         name:
           type: string
+        email:
+          type: string
+        mobile:
+          type: string
 
     UserUpdate:
       type: object
@@ -791,6 +839,40 @@ components:
           type: boolean
         name:
           type: string
+        email:
+          type: ["string", "null"]
+        mobile:
+          type: ["string", "null"]
+
+    UserImportInput:
+      type: object
+      required: [guests]
+      properties:
+        guests:
+          type: array
+          items:
+            type: object
+            required: [name]
+            properties:
+              name:
+                type: string
+              email:
+                type: string
+              mobile:
+                type: string
+
+    UserImportResult:
+      type: object
+      required: [created, skipped, errors]
+      properties:
+        created:
+          type: integer
+        skipped:
+          type: integer
+        errors:
+          type: array
+          items:
+            type: string
 
     PizzaItem:
       type: object

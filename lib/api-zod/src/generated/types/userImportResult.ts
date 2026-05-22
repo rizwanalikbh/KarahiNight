@@ -6,8 +6,8 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export interface UserInput {
-  name: string;
-  email?: string;
-  mobile?: string;
+export interface UserImportResult {
+  created: number;
+  skipped: number;
+  errors: string[];
 }

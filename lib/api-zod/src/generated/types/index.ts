@@ -34,5 +34,8 @@ export * from './sessionInfo';
 export * from './sessionInfoRole';
 export * from './slotSummary';
 export * from './user';
+export * from './userImportInput';
+export * from './userImportInputGuestsItem';
+export * from './userImportResult';
 export * from './userInput';
 export * from './userUpdate';
