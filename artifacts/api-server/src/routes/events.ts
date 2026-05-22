@@ -121,6 +121,7 @@ router.post("/events", requireAdmin, async (req, res): Promise<void> => {
       totalCapacity: parsed.data.totalCapacity ?? 10,
       slotCapacity: parsed.data.slotCapacity ?? 3,
       price: parsed.data.price ?? 70,
+      maxPerGuest: parsed.data.maxPerGuest ?? null,
       description: parsed.data.description ?? null,
       orderDeadline: parsed.data.orderDeadline ?? null,
       slots: parsed.data.slots?.length ? parsed.data.slots : DEFAULT_SLOTS,
@@ -145,6 +146,7 @@ router.patch("/events/:id", requireAdmin, async (req, res): Promise<void> => {
   if (parsed.data.totalCapacity !== undefined) updateData.totalCapacity = parsed.data.totalCapacity;
   if (parsed.data.slotCapacity !== undefined) updateData.slotCapacity = parsed.data.slotCapacity;
   if (parsed.data.price !== undefined) updateData.price = parsed.data.price;
+  if ("maxPerGuest" in parsed.data) updateData.maxPerGuest = parsed.data.maxPerGuest ?? null;
   if (parsed.data.description !== undefined) updateData.description = parsed.data.description;
   if ("orderDeadline" in parsed.data) updateData.orderDeadline = parsed.data.orderDeadline ?? null;
   if (parsed.data.slots !== undefined) updateData.slots = parsed.data.slots;
