@@ -295,8 +295,9 @@ export function Home() {
               {multipleEvents && (
                 <button
                   onClick={() => setPickerOpen(true)}
-                  className="text-xs text-muted-foreground/70 hover:text-primary underline underline-offset-2 transition-colors"
+                  className="inline-flex items-center gap-1.5 mt-1 px-3 py-1 rounded-full border border-border/60 bg-secondary/50 hover:bg-primary/10 hover:border-primary/40 hover:text-primary text-sm text-muted-foreground transition-all"
                 >
+                  <CalendarDays className="w-3.5 h-3.5" />
                   change event
                 </button>
               )}
