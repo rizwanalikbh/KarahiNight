@@ -953,7 +953,7 @@ export function AdminDashboard() {
   const activeEventId = summaryEventId ?? events?.[0]?.id;
   const { data: summary } = useGetSummary(
     { eventId: activeEventId },
-    { query: { enabled: !!activeEventId, queryKey: getGetSummaryQueryKey() } }
+    { query: { enabled: !!activeEventId, queryKey: getGetSummaryQueryKey({ eventId: activeEventId }) } }
   );
 
   const updateOrder = useUpdateOrder();

@@ -140,7 +140,7 @@ export function Order() {
 
   const { data: summary, isLoading: summaryLoading } = useGetSummary(
     { eventId: selectedEventId ?? undefined },
-    { query: { enabled: !!selectedEventId, queryKey: getGetSummaryQueryKey() } }
+    { query: { enabled: !!selectedEventId, queryKey: getGetSummaryQueryKey({ eventId: selectedEventId ?? undefined }) } }
   );
 
   const pizzaTypes: string[] = summary?.pizzaTypes ?? [];
