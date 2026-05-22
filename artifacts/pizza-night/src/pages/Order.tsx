@@ -407,7 +407,7 @@ export function Order() {
                     <h2 className="text-xl font-serif font-bold text-foreground">Order Received</h2>
                     <p className="text-sm text-muted-foreground">{myOrder.eventName}</p>
                     <p className="text-sm font-medium text-foreground mt-0.5">
-                      {formatEventDate(myOrder.eventDate)} · {myOrder.pickupSlot}
+                      {formatEventDate(myOrder.eventDate)} · {myOrder.pickupSlot} CET
                     </p>
                     {events.length > 1 && (
                       <button
@@ -682,7 +682,7 @@ export function Order() {
                       <SelectContent>
                         {summary?.slots.map((slot) => (
                           <SelectItem key={slot.slot} value={slot.slot} disabled={slot.available === 0}>
-                            {slot.slot} {slot.available === 0 ? "(Full)" : `(${slot.available} spot${slot.available !== 1 ? "s" : ""} left)`}
+                            {slot.slot} CET {slot.available === 0 ? "(Full)" : `(${slot.available} spot${slot.available !== 1 ? "s" : ""} left)`}
                           </SelectItem>
                         ))}
                       </SelectContent>
