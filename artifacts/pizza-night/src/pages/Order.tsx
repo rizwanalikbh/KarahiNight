@@ -289,20 +289,21 @@ export function Order() {
                   <CheckCircle2 className="w-8 h-8 text-primary shrink-0" />
                   <div>
                     <h2 className="text-xl font-serif font-bold text-foreground">Order Received</h2>
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <p className="text-sm text-muted-foreground">{myOrder.eventName} · {myOrder.pickupSlot}</p>
-                      {events.length > 1 && (
-                        <button
-                          onClick={() => setPickerOpen(true)}
-                          className="text-xs text-muted-foreground/60 hover:text-primary underline underline-offset-2 transition-colors"
-                        >
-                          change event
-                        </button>
-                      )}
-                    </div>
+                    <p className="text-sm text-muted-foreground">{myOrder.eventName}</p>
+                    <p className="text-sm font-medium text-foreground mt-0.5">
+                      {formatEventDate(myOrder.eventDate)} · {myOrder.pickupSlot}
+                    </p>
+                    {events.length > 1 && (
+                      <button
+                        onClick={() => setPickerOpen(true)}
+                        className="text-xs text-muted-foreground/60 hover:text-primary underline underline-offset-2 transition-colors mt-0.5"
+                      >
+                        change event
+                      </button>
+                    )}
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex flex-col items-end gap-1.5">
                   <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium capitalize
                     ${myOrder.status === "confirmed" ? "bg-accent/10 text-accent" :
                       myOrder.status === "completed" ? "bg-gray-100 text-gray-800" :
@@ -310,6 +311,11 @@ export function Order() {
                       "bg-primary/10 text-primary"}`}
                   >
                     {myOrder.status}
+                  </span>
+                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                    ${myOrder.paid ? "bg-green-100 text-green-700" : "bg-orange-100 text-orange-600"}`}
+                  >
+                    {myOrder.paid ? "Paid" : "Not paid"}
                   </span>
                   {!isEditing && myOrder.status !== "completed" && myOrder.status !== "declined" && summary?.orderingOpen && (
                     <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setIsEditing(true)}>

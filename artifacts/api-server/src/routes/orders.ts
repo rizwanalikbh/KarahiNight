@@ -26,12 +26,14 @@ async function enrichOrders(rawOrders: any[]) {
   const userMap = new Map(allUsers.map((u) => [u.id, u.name]));
 
   const allEvents = await db.select().from(eventsTable);
-  const eventMap = new Map(allEvents.map((e) => [e.id, e.name]));
+  const eventNameMap = new Map(allEvents.map((e) => [e.id, e.name]));
+  const eventDateMap = new Map(allEvents.map((e) => [e.id, e.date]));
 
   return rawOrders.map((o) => ({
     ...o,
     userName: userMap.get(o.userId) ?? "Unknown",
-    eventName: o.eventId ? (eventMap.get(o.eventId) ?? "Unknown") : "Unknown",
+    eventName: o.eventId ? (eventNameMap.get(o.eventId) ?? "Unknown") : "Unknown",
+    eventDate: o.eventId ? (eventDateMap.get(o.eventId) ?? "") : "",
     items: Array.isArray(o.pizzaItems) ? o.pizzaItems : [],
     notes: o.notes ?? null,
     createdAt: o.createdAt.toISOString(),

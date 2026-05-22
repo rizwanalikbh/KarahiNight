@@ -14,6 +14,8 @@ export interface Order {
   userName: string;
   eventId: number;
   eventName: string;
+  /** ISO date string (YYYY-MM-DD) of the event */
+  eventDate: string;
   items: PizzaItem[];
   /**
      * @minimum 1

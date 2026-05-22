@@ -281,6 +281,7 @@ export const ListOrdersResponseItem = zod.object({
   "userName": zod.string(),
   "eventId": zod.number(),
   "eventName": zod.string(),
+  "eventDate": zod.string().describe('ISO date string (YYYY-MM-DD) of the event'),
   "items": zod.array(zod.object({
   "pizzaChoice": zod.enum(['Margherita', 'Pepperoni', 'Special']),
   "quantity": zod.number().min(1).max(listOrdersResponseItemsItemQuantityMax)
@@ -349,6 +350,7 @@ export const UpdateOrderResponse = zod.object({
   "userName": zod.string(),
   "eventId": zod.number(),
   "eventName": zod.string(),
+  "eventDate": zod.string().describe('ISO date string (YYYY-MM-DD) of the event'),
   "items": zod.array(zod.object({
   "pizzaChoice": zod.enum(['Margherita', 'Pepperoni', 'Special']),
   "quantity": zod.number().min(1).max(updateOrderResponseItemsItemQuantityMax)

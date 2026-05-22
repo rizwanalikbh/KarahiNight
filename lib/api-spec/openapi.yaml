@@ -849,7 +849,7 @@ components:
 
     Order:
       type: object
-      required: [id, userId, userName, eventId, eventName, items, quantity, pickupSlot, status, paid, createdAt]
+      required: [id, userId, userName, eventId, eventName, eventDate, items, quantity, pickupSlot, status, paid, createdAt]
       properties:
         id:
           type: integer
@@ -861,6 +861,9 @@ components:
           type: integer
         eventName:
           type: string
+        eventDate:
+          type: string
+          description: ISO date string (YYYY-MM-DD) of the event
         items:
           type: array
           items:
