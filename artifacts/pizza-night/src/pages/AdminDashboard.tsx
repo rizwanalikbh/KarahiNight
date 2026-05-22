@@ -495,11 +495,27 @@ function OrderEditPanel({
   );
 }
 
+// ── Segment badges for a single user row ────────────────────────────────────
+function UserSegmentBadges({ userId }: { userId: number }) {
+  const { data } = useListUserSegments(userId, {
+    query: { queryKey: getListUserSegmentsQueryKey(userId) },
+  });
+  if (!data?.length) return <span className="text-xs text-muted-foreground">—</span>;
+  return (
+    <div className="flex flex-wrap gap-1">
+      {data.map((s) => (
+        <Badge key={s.id} variant="secondary" className="text-xs font-normal py-0">
+          {s.name}
+        </Badge>
+      ))}
+    </div>
+  );
+}
+
 // ── Guest inline edit panel ──────────────────────────────────────────────────
 function GuestEditPanel({ user, allSegments, onClose }: { user: any; allSegments: any[]; onClose: () => void }) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [name, setName] = useState(user.name);
   const [email, setEmail] = useState(user.email ?? "");
   const [mobile, setMobile] = useState(user.mobile ?? "");
   const [addSegmentId, setAddSegmentId] = useState("");
@@ -515,10 +531,9 @@ function GuestEditPanel({ user, allSegments, onClose }: { user: any; allSegments
   const availableSegments = allSegments.filter((s) => !userSegmentIds.has(s.id));
 
   const handleSave = () => {
-    if (!name.trim()) return;
     updateUser.mutate({
       id: user.id,
-      data: { name: name.trim(), email: email.trim() || null, mobile: mobile.trim() || null },
+      data: { email: email.trim() || null, mobile: mobile.trim() || null },
     }, {
       onSuccess: () => {
         toast({ title: "Guest updated" });
@@ -534,11 +549,8 @@ function GuestEditPanel({ user, allSegments, onClose }: { user: any; allSegments
 
   return (
     <div className="mt-3 p-4 border rounded-xl bg-secondary/20 space-y-4">
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-        <div className="space-y-1">
-          <Label className="text-xs">Name</Label>
-          <Input value={name} onChange={(e) => setName(e.target.value)} className="h-8 text-sm" />
-        </div>
+      <p className="text-sm font-medium">{user.name}</p>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div className="space-y-1">
           <Label className="text-xs flex items-center gap-1"><Mail className="w-3 h-3" /> Email</Label>
           <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="h-8 text-sm" placeholder="Optional" />
@@ -602,7 +614,7 @@ function GuestEditPanel({ user, allSegments, onClose }: { user: any; allSegments
       </div>
 
       <div className="flex gap-2">
-        <Button size="sm" onClick={handleSave} disabled={updateUser.isPending || !name.trim()}>
+        <Button size="sm" onClick={handleSave} disabled={updateUser.isPending}>
           <Check className="w-3 h-3 mr-1" /> Save
         </Button>
         <Button size="sm" variant="ghost" onClick={onClose}>
@@ -936,6 +948,7 @@ export function AdminDashboard() {
   const [newUserName, setNewUserName] = useState("");
   const [newUserEmail, setNewUserEmail] = useState("");
   const [newUserMobile, setNewUserMobile] = useState("");
+  const [newUserSegmentIds, setNewUserSegmentIds] = useState<number[]>([]);
   const [editingUserId, setEditingUserId] = useState<number | null>(null);
   const [filterEventId, setFilterEventId] = useState<string>("all");
 
@@ -991,6 +1004,8 @@ export function AdminDashboard() {
     });
   };
 
+  const addToSegmentMutation = useAddUserToSegment();
+
   const handleAddUser = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newUserName.trim()) return;
@@ -1001,11 +1016,21 @@ export function AdminDashboard() {
         ...(newUserMobile.trim() ? { mobile: newUserMobile.trim() } : {}),
       },
     }, {
-      onSuccess: () => {
+      onSuccess: (newUser) => {
         toast({ title: "Guest added" });
         setNewUserName("");
         setNewUserEmail("");
         setNewUserMobile("");
+        // Assign to selected segments
+        for (const segId of newUserSegmentIds) {
+          addToSegmentMutation.mutate({ id: segId, data: { userId: newUser.id } }, {
+            onSuccess: () => {
+              queryClient.invalidateQueries({ queryKey: getListSegmentsQueryKey() });
+              queryClient.invalidateQueries({ queryKey: getListUserSegmentsQueryKey(newUser.id) });
+            },
+          });
+        }
+        setNewUserSegmentIds([]);
         queryClient.invalidateQueries({ queryKey: getListUsersQueryKey() });
       },
       onError: (err: any) => {
@@ -1424,6 +1449,35 @@ export function AdminDashboard() {
                       <Input type="tel" placeholder="Optional, must be unique" value={newUserMobile} onChange={(e) => setNewUserMobile(e.target.value)} />
                     </div>
                   </div>
+                  {segments && segments.length > 0 && (
+                    <div className="space-y-1.5">
+                      <Label className="text-xs flex items-center gap-1"><Tag className="w-3 h-3" /> Segments</Label>
+                      <div className="flex flex-wrap gap-2">
+                        {segments.map((seg) => {
+                          const checked = newUserSegmentIds.includes(seg.id);
+                          return (
+                            <button
+                              key={seg.id}
+                              type="button"
+                              onClick={() => setNewUserSegmentIds(
+                                checked
+                                  ? newUserSegmentIds.filter((id) => id !== seg.id)
+                                  : [...newUserSegmentIds, seg.id]
+                              )}
+                              className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs border transition-colors ${
+                                checked
+                                  ? "bg-primary text-primary-foreground border-primary"
+                                  : "bg-background border-border hover:bg-secondary"
+                              }`}
+                            >
+                              <Tag className="w-3 h-3" />
+                              {seg.name}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
                   <Button type="submit" disabled={createUser.isPending || !newUserName.trim()}>
                     <UserPlus className="w-4 h-4 mr-2" /> Add Guest
                   </Button>
@@ -1439,6 +1493,7 @@ export function AdminDashboard() {
                       <TableHead>Name</TableHead>
                       <TableHead>Email</TableHead>
                       <TableHead>Mobile</TableHead>
+                      <TableHead>Segments</TableHead>
                       <TableHead>Code</TableHead>
                       <TableHead>Active</TableHead>
                       <TableHead className="text-right">Actions</TableHead>
@@ -1459,6 +1514,7 @@ export function AdminDashboard() {
                             <TableCell className="text-sm text-muted-foreground">
                               {user.mobile ?? <span className="text-xs">—</span>}
                             </TableCell>
+                            <TableCell><UserSegmentBadges userId={user.id} /></TableCell>
                             <TableCell className="font-mono tracking-widest">{user.code}</TableCell>
                             <TableCell>
                               <Switch checked={user.active} onCheckedChange={(v) => handleToggleUser(user.id, v)} />
@@ -1484,7 +1540,7 @@ export function AdminDashboard() {
                           </TableRow>
                           {isEditing && (
                             <TableRow key={`${user.id}-edit`}>
-                              <TableCell colSpan={6} className="p-0 pb-2">
+                              <TableCell colSpan={7} className="p-0 pb-2">
                                 <div className="px-4">
                                   <GuestEditPanel
                                     user={user}
