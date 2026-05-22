@@ -43,9 +43,14 @@ export function Layout({ children, topbarExtra }: LayoutProps) {
                   Hi, {session.userName || "Admin"}
                 </span>
                 {session.role === "admin" && (
-                  <Link href="/admin/dashboard" className="text-sm font-medium hover:text-primary transition-colors">
-                    Dashboard
-                  </Link>
+                  <>
+                    <Link href="/admin/dashboard" className="text-sm font-medium hover:text-primary transition-colors">
+                      Dashboard
+                    </Link>
+                    <Link href="/kitchen" className="text-sm font-medium hover:text-primary transition-colors">
+                      Kitchen
+                    </Link>
+                  </>
                 )}
                 {session.role === "user" && (
                   <Link href="/order" className="text-sm font-medium hover:text-primary transition-colors">

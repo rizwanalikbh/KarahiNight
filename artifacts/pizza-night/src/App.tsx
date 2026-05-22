@@ -6,6 +6,7 @@ import { Home } from "./pages/Home";
 import { AdminLogin } from "./pages/AdminLogin";
 import { Order } from "./pages/Order";
 import { AdminDashboard } from "./pages/AdminDashboard";
+import { Kitchen } from "./pages/Kitchen";
 import { Receipt } from "./pages/Receipt";
 import NotFound from "@/pages/not-found";
 
@@ -18,6 +19,7 @@ function Router() {
       <Route path="/admin" component={AdminLogin} />
       <Route path="/order" component={Order} />
       <Route path="/admin/dashboard" component={AdminDashboard} />
+      <Route path="/kitchen" component={Kitchen} />
       <Route path="/receipt/:id" component={Receipt} />
       <Route component={NotFound} />
     </Switch>
