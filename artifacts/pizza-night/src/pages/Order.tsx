@@ -39,12 +39,15 @@ export function Order() {
   const { data: events, isLoading: eventsLoading } = useListEvents();
   const { data: orders, isLoading: ordersLoading } = useListOrders({});
   const createOrder = useCreateOrder();
+  const updateOrder = useUpdateOrder();
 
   const [selectedEventId, setSelectedEventId] = useState<number | null>(null);
   const [pickupSlot, setPickupSlot] = useState("");
   const [notes, setNotes] = useState("");
   const [totalQty, setTotalQty] = useState(1);
   const [pizzaItems, setPizzaItems] = useState<PizzaItem[]>([{ pizzaChoice: "", quantity: 1 }]);
+  const [editItems, setEditItems] = useState<PizzaItem[]>([]);
+  const [isEditing, setIsEditing] = useState(false);
 
   useEffect(() => {
     if (events && events.length === 1 && !selectedEventId) {
@@ -89,6 +92,19 @@ export function Order() {
 
   const isLoading = sessionLoading || eventsLoading || ordersLoading;
 
+  // Derive order state unconditionally (safe with undefined events/orders)
+  const activeEventId = selectedEventId ?? (events && events.length > 0 ? events[0].id : undefined);
+  const myOrder = orders?.find((o) => o.userId === session?.userId && o.eventId === activeEventId);
+  const originalCount = myOrder ? (myOrder.items ?? []).length : 0;
+
+  // Sync edit items when order changes (e.g. after save or initial load)
+  useEffect(() => {
+    if (myOrder && !isEditing) {
+      setEditItems((myOrder.items ?? []).map((i) => ({ pizzaChoice: i.pizzaChoice, quantity: i.quantity })));
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [JSON.stringify(myOrder?.items), isEditing]);
+
   useEffect(() => {
     if (!isLoading && (!session?.authenticated || session.role !== "user")) {
       setLocation("/");
@@ -121,25 +137,6 @@ export function Order() {
       </Layout>
     );
   }
-
-  const activeEventId = selectedEventId ?? events[0]?.id;
-  const myOrder = orders?.find((o) => o.userId === session.userId && o.eventId === activeEventId);
-
-  const updateOrder = useUpdateOrder();
-
-  // Edit state for existing order
-  const originalCount = myOrder ? (myOrder.items ?? []).length : 0;
-  const [editItems, setEditItems] = useState<PizzaItem[]>(() =>
-    myOrder ? (myOrder.items ?? []).map((i) => ({ pizzaChoice: i.pizzaChoice, quantity: i.quantity })) : []
-  );
-  const [isEditing, setIsEditing] = useState(false);
-
-  // Sync editItems if myOrder changes (e.g. after save)
-  useEffect(() => {
-    if (myOrder && !isEditing) {
-      setEditItems((myOrder.items ?? []).map((i) => ({ pizzaChoice: i.pizzaChoice, quantity: i.quantity })));
-    }
-  }, [myOrder, isEditing]);
 
   if (myOrder) {
     const displayItems = isEditing ? editItems : (myOrder.items ?? []);
