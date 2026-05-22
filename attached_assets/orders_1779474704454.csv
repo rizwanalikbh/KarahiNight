@@ -1,0 +1,6 @@
+"id","user_id","quantity","pickup_slot","notes","status","created_at","pizza_items","event_id","paid"
+"9","7","2","16:00-16:30",,"confirmed","""2026-05-22T13:08:34.742Z""","[{""quantity"":1,""pizzaChoice"":""Pepperoni""},{""quantity"":1,""pizzaChoice"":""Special""}]","3","false"
+"10","5","2","16:30-17:00",,"confirmed","""2026-05-22T13:09:26.547Z""","[{""quantity"":1,""pizzaChoice"":""Special""},{""quantity"":1,""pizzaChoice"":""Special""}]","3","false"
+"11","9","5","17:00-17:30",,"confirmed","""2026-05-22T13:20:05.007Z""","[{""quantity"":1,""pizzaChoice"":""Margherita""},{""quantity"":1,""pizzaChoice"":""Margherita""},{""quantity"":1,""pizzaChoice"":""Pepperoni""},{""quantity"":1,""pizzaChoice"":""Special""},{""quantity"":1,""pizzaChoice"":""Special""}]","3","true"
+"12","11","2","17:30-18:00",,"confirmed","""2026-05-22T13:21:33.738Z""","[{""quantity"":1,""pizzaChoice"":""Pepperoni""},{""quantity"":1,""pizzaChoice"":""Special""}]","3","false"
+"13","1","2","17:30-18:00",,"confirmed","""2026-05-22T13:22:38.760Z""","[{""quantity"":1,""pizzaChoice"":""Pepperoni""},{""quantity"":1,""pizzaChoice"":""Special""}]","3","false"

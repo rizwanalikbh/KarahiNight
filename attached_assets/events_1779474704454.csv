@@ -1,0 +1,2 @@
+"id","name","date","total_capacity","slot_capacity","active","created_at","price","description","slots","pizza_types","order_deadline","slug"
+"3","Neapolitan Pizza Night","""2026-05-24T00:00:00.000Z""","13","5","true","""2026-05-22T12:55:47.042Z""","70","Collected money will go toward funding a future BBQ gathering.","[""16:00-16:30"",""16:30-17:00"",""17:00-17:30"",""17:30-18:00""]","[""Margherita"",""Pepperoni"",""Special""]","""2026-05-22T12:00:00.000Z""","2B2PED"
