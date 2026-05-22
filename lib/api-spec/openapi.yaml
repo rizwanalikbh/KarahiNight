@@ -478,6 +478,31 @@ paths:
                 $ref: "#/components/schemas/Segment"
 
   /segments/{id}:
+    patch:
+      operationId: updateSegment
+      tags: [segments]
+      summary: Update a segment's description and tags (admin only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SegmentUpdateInput"
+      responses:
+        "200":
+          description: Segment updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Segment"
+        "404":
+          description: Not found
     delete:
       operationId: deleteSegment
       tags: [segments]
@@ -727,6 +752,11 @@ components:
             type: string
         active:
           type: boolean
+        segmentDescriptions:
+          type: array
+          items:
+            type: string
+          description: Descriptions of segments associated with this event
         createdAt:
           type: string
           format: date-time
@@ -963,6 +993,12 @@ components:
           type: integer
         name:
           type: string
+        description:
+          type: ["string", "null"]
+          description: Short description of this audience segment
+        tags:
+          type: ["string", "null"]
+          description: Comma-separated searchable tags
         memberCount:
           type: integer
         createdAt:
@@ -975,6 +1011,18 @@ components:
       properties:
         name:
           type: string
+        description:
+          type: string
+        tags:
+          type: string
+
+    SegmentUpdateInput:
+      type: object
+      properties:
+        description:
+          type: ["string", "null"]
+        tags:
+          type: ["string", "null"]
 
     SegmentUserInput:
       type: object

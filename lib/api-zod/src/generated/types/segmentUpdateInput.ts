@@ -6,8 +6,9 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export interface SegmentInput {
-  name: string;
-  description?: string;
-  tags?: string;
+export interface SegmentUpdateInput {
+  /** @nullable */
+  description?: string | null;
+  /** @nullable */
+  tags?: string | null;
 }

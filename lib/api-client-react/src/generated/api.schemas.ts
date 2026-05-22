@@ -82,6 +82,8 @@ export interface Event {
   slots: string[];
   pizzaTypes: string[];
   active: boolean;
+  /** Descriptions of segments associated with this event */
+  segmentDescriptions?: string[];
   createdAt: string;
 }
 
@@ -241,12 +243,31 @@ export interface OrderUpdate {
 export interface Segment {
   id: number;
   name: string;
+  /**
+     * Short description of this audience segment
+     * @nullable
+     */
+  description?: string | null;
+  /**
+     * Comma-separated searchable tags
+     * @nullable
+     */
+  tags?: string | null;
   memberCount: number;
   createdAt: string;
 }
 
 export interface SegmentInput {
   name: string;
+  description?: string;
+  tags?: string;
+}
+
+export interface SegmentUpdateInput {
+  /** @nullable */
+  description?: string | null;
+  /** @nullable */
+  tags?: string | null;
 }
 
 export interface SegmentUserInput {

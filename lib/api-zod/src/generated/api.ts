@@ -78,6 +78,7 @@ export const ListEventsResponseItem = zod.object({
   "slots": zod.array(zod.string()),
   "pizzaTypes": zod.array(zod.string()),
   "active": zod.boolean(),
+  "segmentDescriptions": zod.array(zod.string()).optional().describe('Descriptions of segments associated with this event'),
   "createdAt": zod.coerce.date()
 })
 export const ListEventsResponse = zod.array(ListEventsResponseItem)
@@ -135,6 +136,7 @@ export const UpdateEventResponse = zod.object({
   "slots": zod.array(zod.string()),
   "pizzaTypes": zod.array(zod.string()),
   "active": zod.boolean(),
+  "segmentDescriptions": zod.array(zod.string()).optional().describe('Descriptions of segments associated with this event'),
   "createdAt": zod.coerce.date()
 })
 
@@ -273,6 +275,8 @@ export const ListUserSegmentsParams = zod.object({
 export const ListUserSegmentsResponseItem = zod.object({
   "id": zod.number(),
   "name": zod.string(),
+  "description": zod.string().nullish().describe('Short description of this audience segment'),
+  "tags": zod.string().nullish().describe('Comma-separated searchable tags'),
   "memberCount": zod.number(),
   "createdAt": zod.coerce.date()
 })
@@ -411,6 +415,8 @@ export const DeleteOrderParams = zod.object({
 export const ListSegmentsResponseItem = zod.object({
   "id": zod.number(),
   "name": zod.string(),
+  "description": zod.string().nullish().describe('Short description of this audience segment'),
+  "tags": zod.string().nullish().describe('Comma-separated searchable tags'),
   "memberCount": zod.number(),
   "createdAt": zod.coerce.date()
 })
@@ -421,7 +427,31 @@ export const ListSegmentsResponse = zod.array(ListSegmentsResponseItem)
  * @summary Create a segment (admin only)
  */
 export const CreateSegmentBody = zod.object({
-  "name": zod.string()
+  "name": zod.string(),
+  "description": zod.string().optional(),
+  "tags": zod.string().optional()
+})
+
+
+/**
+ * @summary Update a segment's description and tags (admin only)
+ */
+export const UpdateSegmentParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const UpdateSegmentBody = zod.object({
+  "description": zod.string().nullish(),
+  "tags": zod.string().nullish()
+})
+
+export const UpdateSegmentResponse = zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "description": zod.string().nullish().describe('Short description of this audience segment'),
+  "tags": zod.string().nullish().describe('Comma-separated searchable tags'),
+  "memberCount": zod.number(),
+  "createdAt": zod.coerce.date()
 })
 
 
@@ -483,6 +513,8 @@ export const ListEventSegmentsParams = zod.object({
 export const ListEventSegmentsResponseItem = zod.object({
   "id": zod.number(),
   "name": zod.string(),
+  "description": zod.string().nullish().describe('Short description of this audience segment'),
+  "tags": zod.string().nullish().describe('Comma-separated searchable tags'),
   "memberCount": zod.number(),
   "createdAt": zod.coerce.date()
 })

@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Clock, Lock, CalendarDays, ArrowRight, Check } from "lucide-react";
+import { Loader2, Clock, Lock, CalendarDays, ArrowRight, Check, Search } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useQueryClient } from "@tanstack/react-query";
 
@@ -78,6 +78,22 @@ interface EventPickerModalProps {
 }
 
 function EventPickerModal({ events, selectedId, open, onSelect, onOpenChange }: EventPickerModalProps) {
+  const [query, setQuery] = useState("");
+
+  const filtered = query.trim()
+    ? events.filter((ev) => {
+        const q = query.toLowerCase();
+        const dateText = formatModalDate(ev.date).toLowerCase();
+        const tags = (ev.segmentDescriptions ?? []).join(" ").toLowerCase();
+        return (
+          ev.name.toLowerCase().includes(q) ||
+          dateText.includes(q) ||
+          tags.includes(q) ||
+          (ev.description ?? "").toLowerCase().includes(q)
+        );
+      })
+    : events;
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-lg p-0 gap-0 overflow-hidden rounded-2xl" aria-describedby={undefined}>
@@ -95,9 +111,30 @@ function EventPickerModal({ events, selectedId, open, onSelect, onOpenChange }: 
           </p>
         </div>
 
-        <div className="p-4 space-y-2.5">
-          {events.map((ev) => {
+        {events.length > 3 && (
+          <div className="px-4 pt-4 pb-0">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
+              <Input
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Search by name, date, or tags…"
+                className="pl-9 h-9 text-sm bg-background"
+              />
+            </div>
+          </div>
+        )}
+
+        <div className="p-4 space-y-2.5 max-h-[50vh] overflow-y-auto">
+          {filtered.length === 0 && (
+            <p className="text-center py-6 text-sm text-muted-foreground">No events match your search.</p>
+          )}
+          {filtered.map((ev) => {
             const isSelected = ev.id === selectedId;
+            const segDescs = (ev.segmentDescriptions ?? []).filter(Boolean);
+            const subtitle = segDescs.length > 0
+              ? segDescs.join(", ")
+              : ev.description ?? null;
             return (
               <button
                 key={ev.id}
@@ -113,12 +150,12 @@ function EventPickerModal({ events, selectedId, open, onSelect, onOpenChange }: 
                     <div className={`font-serif font-bold text-lg leading-tight ${isSelected ? "text-primary" : "text-foreground"}`}>
                       {ev.name}
                     </div>
-                    <div className="text-sm text-muted-foreground mt-0.5 flex items-center gap-1.5">
-                      <span>{formatModalDate(ev.date)}</span>
+                    <div className="text-sm text-muted-foreground mt-0.5">
+                      {formatModalDate(ev.date)}
                     </div>
-                    {ev.description && (
+                    {subtitle && (
                       <div className="text-xs text-muted-foreground/70 mt-1.5 leading-relaxed line-clamp-2">
-                        {ev.description}
+                        {subtitle}
                       </div>
                     )}
                   </div>

@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { db, eventsTable, eventUsersTable, usersTable, userSegmentsTable, eventSegmentsTable } from "@workspace/db";
+import { db, eventsTable, eventUsersTable, usersTable, userSegmentsTable, eventSegmentsTable, segmentsTable } from "@workspace/db";
 import { eq, and, inArray } from "drizzle-orm";
 import {
   CreateEventBody,
@@ -33,17 +33,44 @@ function requireAuth(req: any, res: any, next: any): void {
   next();
 }
 
+async function attachSegmentDescriptions<T extends { id: number }>(
+  events: T[]
+): Promise<(T & { segmentDescriptions: string[] })[]> {
+  if (events.length === 0) return events.map((e) => ({ ...e, segmentDescriptions: [] }));
+
+  const eventIds = events.map((e) => e.id);
+  const rows = await db
+    .select({
+      eventId: eventSegmentsTable.eventId,
+      description: segmentsTable.description,
+    })
+    .from(eventSegmentsTable)
+    .innerJoin(segmentsTable, eq(segmentsTable.id, eventSegmentsTable.segmentId))
+    .where(inArray(eventSegmentsTable.eventId, eventIds));
+
+  const descsByEvent = new Map<number, string[]>();
+  for (const row of rows) {
+    if (!row.description) continue;
+    const list = descsByEvent.get(row.eventId) ?? [];
+    list.push(row.description);
+    descsByEvent.set(row.eventId, list);
+  }
+
+  return events.map((e) => ({ ...e, segmentDescriptions: descsByEvent.get(e.id) ?? [] }));
+}
+
 router.get("/events", async (req, res): Promise<void> => {
   // Unauthenticated: return all active events (needed for home-page event selector)
   if (!req.session?.role) {
     const events = await db.select().from(eventsTable).orderBy(eventsTable.date);
-    res.json(events.filter((e) => e.active));
+    const active = events.filter((e) => e.active);
+    res.json(await attachSegmentDescriptions(active));
     return;
   }
 
   if (req.session.role === "admin") {
     const events = await db.select().from(eventsTable).orderBy(eventsTable.date);
-    res.json(events);
+    res.json(await attachSegmentDescriptions(events));
     return;
   }
 
@@ -76,7 +103,8 @@ router.get("/events", async (req, res): Promise<void> => {
   if (allEventIds.length === 0) { res.json([]); return; }
 
   const events = await db.select().from(eventsTable).orderBy(eventsTable.date);
-  res.json(events.filter((e) => allEventIds.includes(e.id) && e.active));
+  const visible = events.filter((e) => allEventIds.includes(e.id) && e.active);
+  res.json(await attachSegmentDescriptions(visible));
 });
 
 router.post("/events", requireAdmin, async (req, res): Promise<void> => {

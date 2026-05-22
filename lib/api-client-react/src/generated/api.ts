@@ -37,6 +37,7 @@ import type {
   OrderUpdate,
   Segment,
   SegmentInput,
+  SegmentUpdateInput,
   SegmentUserInput,
   SessionInfo,
   User,
@@ -1886,6 +1887,78 @@ export const useCreateSegment = <TError = ErrorType<unknown>,
         TContext
       > => {
       return useMutation(getCreateSegmentMutationOptions(options));
+    }
+
+export const getUpdateSegmentUrl = (id: number,) => {
+
+
+
+
+  return `/api/segments/${id}`
+}
+
+/**
+ * @summary Update a segment's description and tags (admin only)
+ */
+export const updateSegment = async (id: number,
+    segmentUpdateInput: SegmentUpdateInput, options?: RequestInit): Promise<Segment> => {
+
+  return customFetch<Segment>(getUpdateSegmentUrl(id),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      segmentUpdateInput,)
+  }
+);}
+
+
+
+
+export const getUpdateSegmentMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateSegment>>, TError,{id: number;data: BodyType<SegmentUpdateInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateSegment>>, TError,{id: number;data: BodyType<SegmentUpdateInput>}, TContext> => {
+
+const mutationKey = ['updateSegment'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateSegment>>, {id: number;data: BodyType<SegmentUpdateInput>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  updateSegment(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateSegmentMutationResult = NonNullable<Awaited<ReturnType<typeof updateSegment>>>
+    export type UpdateSegmentMutationBody = BodyType<SegmentUpdateInput>
+    export type UpdateSegmentMutationError = ErrorType<void>
+
+    /**
+ * @summary Update a segment's description and tags (admin only)
+ */
+export const useUpdateSegment = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateSegment>>, TError,{id: number;data: BodyType<SegmentUpdateInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateSegment>>,
+        TError,
+        {id: number;data: BodyType<SegmentUpdateInput>},
+        TContext
+      > => {
+      return useMutation(getUpdateSegmentMutationOptions(options));
     }
 
 export const getDeleteSegmentUrl = (id: number,) => {

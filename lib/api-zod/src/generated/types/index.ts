@@ -29,6 +29,7 @@ export * from './pizzaItem';
 export * from './pizzaItemPizzaChoice';
 export * from './segment';
 export * from './segmentInput';
+export * from './segmentUpdateInput';
 export * from './segmentUserInput';
 export * from './sessionInfo';
 export * from './sessionInfoRole';

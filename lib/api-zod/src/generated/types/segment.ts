@@ -9,6 +9,16 @@
 export interface Segment {
   id: number;
   name: string;
+  /**
+     * Short description of this audience segment
+     * @nullable
+     */
+  description?: string | null;
+  /**
+     * Comma-separated searchable tags
+     * @nullable
+     */
+  tags?: string | null;
   memberCount: number;
   createdAt: Date;
 }

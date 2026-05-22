@@ -28,5 +28,7 @@ export interface Event {
   slots: string[];
   pizzaTypes: string[];
   active: boolean;
+  /** Descriptions of segments associated with this event */
+  segmentDescriptions?: string[];
   createdAt: Date;
 }

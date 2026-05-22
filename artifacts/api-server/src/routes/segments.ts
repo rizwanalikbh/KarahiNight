@@ -4,6 +4,8 @@ import { eq, and, sql } from "drizzle-orm";
 import {
   CreateSegmentBody,
   DeleteSegmentParams,
+  UpdateSegmentParams,
+  UpdateSegmentBody,
   ListSegmentUsersParams,
   AddUserToSegmentParams,
   AddUserToSegmentBody,
@@ -29,6 +31,8 @@ router.get("/segments", requireAdmin, async (req, res): Promise<void> => {
     .select({
       id: segmentsTable.id,
       name: segmentsTable.name,
+      description: segmentsTable.description,
+      tags: segmentsTable.tags,
       createdAt: segmentsTable.createdAt,
       memberCount: sql<number>`cast(count(${userSegmentsTable.id}) as int)`,
     })
@@ -45,10 +49,41 @@ router.post("/segments", requireAdmin, async (req, res): Promise<void> => {
 
   const [segment] = await db
     .insert(segmentsTable)
-    .values({ name: parsed.data.name })
+    .values({
+      name: parsed.data.name,
+      description: parsed.data.description ?? null,
+      tags: parsed.data.tags ?? null,
+    })
     .returning();
 
   res.status(201).json({ ...segment, memberCount: 0 });
+});
+
+router.patch("/segments/:id", requireAdmin, async (req, res): Promise<void> => {
+  const params = UpdateSegmentParams.safeParse(req.params);
+  if (!params.success) { res.status(400).json({ error: params.error.message }); return; }
+
+  const parsed = UpdateSegmentBody.safeParse(req.body);
+  if (!parsed.success) { res.status(400).json({ error: parsed.error.message }); return; }
+
+  const updateData: Record<string, unknown> = {};
+  if ("description" in parsed.data) updateData.description = parsed.data.description ?? null;
+  if ("tags" in parsed.data) updateData.tags = parsed.data.tags ?? null;
+
+  const [segment] = await db
+    .update(segmentsTable)
+    .set(updateData)
+    .where(eq(segmentsTable.id, params.data.id))
+    .returning();
+
+  if (!segment) { res.status(404).json({ error: "Segment not found" }); return; }
+
+  const [countRow] = await db
+    .select({ memberCount: sql<number>`cast(count(*) as int)` })
+    .from(userSegmentsTable)
+    .where(eq(userSegmentsTable.segmentId, segment.id));
+
+  res.json({ ...segment, memberCount: countRow?.memberCount ?? 0 });
 });
 
 router.delete("/segments/:id", requireAdmin, async (req, res): Promise<void> => {
@@ -108,6 +143,8 @@ router.get("/events/:id/segments", requireAdmin, async (req, res): Promise<void>
     .select({
       id: segmentsTable.id,
       name: segmentsTable.name,
+      description: segmentsTable.description,
+      tags: segmentsTable.tags,
       createdAt: segmentsTable.createdAt,
       memberCount: sql<number>`cast(count(${userSegmentsTable.id}) as int)`,
     })

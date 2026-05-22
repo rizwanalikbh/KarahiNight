@@ -4,7 +4,7 @@ import {
   useListUsers, useUpdateUser, useDeleteUser, useRegenerateCode, useCreateUser,
   useListEvents, useCreateEvent, useUpdateEvent, useDeleteEvent,
   useListEventUsers, useAddUserToEvent, useRemoveUserFromEvent,
-  useListSegments, useCreateSegment, useDeleteSegment,
+  useListSegments, useCreateSegment, useDeleteSegment, useUpdateSegment,
   useListSegmentUsers, useAddUserToSegment, useRemoveUserFromSegment,
   useListEventSegments, useAddSegmentToEvent, useRemoveSegmentFromEvent,
   useImportUsers, useListUserSegments,
@@ -812,11 +812,102 @@ function SegmentMemberManager({ segmentId, allUsers }: { segmentId: number; allU
   );
 }
 
+// ── Segment detail editor (description + tags inline) ────────────────────────
+function SegmentDetailEditor({ seg }: { seg: any }) {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [editing, setEditing] = useState(false);
+  const [description, setDescription] = useState(seg.description ?? "");
+  const [tags, setTags] = useState(seg.tags ?? "");
+  const updateSegment = useUpdateSegment();
+
+  const handleSave = () => {
+    updateSegment.mutate(
+      { id: seg.id, data: { description: description || null, tags: tags || null } },
+      {
+        onSuccess: () => {
+          toast({ title: "Segment updated" });
+          setEditing(false);
+          queryClient.invalidateQueries({ queryKey: getListSegmentsQueryKey() });
+        },
+        onError: () => toast({ title: "Failed to update segment", variant: "destructive" }),
+      }
+    );
+  };
+
+  const handleCancel = () => {
+    setDescription(seg.description ?? "");
+    setTags(seg.tags ?? "");
+    setEditing(false);
+  };
+
+  if (editing) {
+    return (
+      <div className="mt-3 border rounded-xl p-4 space-y-3 bg-secondary/20">
+        <div className="space-y-1.5">
+          <label className="text-xs font-medium text-muted-foreground">Description</label>
+          <Input
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            placeholder="Short description of this audience…"
+            className="h-8 text-sm"
+          />
+        </div>
+        <div className="space-y-1.5">
+          <label className="text-xs font-medium text-muted-foreground">Search tags <span className="font-normal">(comma-separated)</span></label>
+          <Input
+            value={tags}
+            onChange={(e) => setTags(e.target.value)}
+            placeholder="e.g. vip, early-access, friends"
+            className="h-8 text-sm"
+          />
+        </div>
+        <div className="flex gap-2 justify-end">
+          <Button variant="ghost" size="sm" className="h-7" onClick={handleCancel}>Cancel</Button>
+          <Button size="sm" className="h-7" onClick={handleSave} disabled={updateSegment.isPending}>Save</Button>
+        </div>
+      </div>
+    );
+  }
+
+  const hasDetails = seg.description || seg.tags;
+  return (
+    <div className="mt-2">
+      <button
+        type="button"
+        className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+        onClick={() => setEditing(true)}
+      >
+        <Pencil className="w-3 h-3" />
+        {hasDetails ? "Edit description & tags" : "Add description & tags"}
+      </button>
+      {hasDetails && (
+        <div className="mt-2 space-y-1">
+          {seg.description && (
+            <p className="text-xs text-muted-foreground leading-relaxed">{seg.description}</p>
+          )}
+          {seg.tags && (
+            <div className="flex flex-wrap gap-1 mt-1">
+              {seg.tags.split(",").map((t: string) => t.trim()).filter(Boolean).map((t: string) => (
+                <span key={t} className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-muted text-muted-foreground border border-border/60">
+                  #{t}
+                </span>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── Segments tab ─────────────────────────────────────────────────────────────
 function SegmentsTab({ allUsers }: { allUsers: any[] }) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [newSegmentName, setNewSegmentName] = useState("");
+  const [newSegmentDesc, setNewSegmentDesc] = useState("");
+  const [newSegmentTags, setNewSegmentTags] = useState("");
 
   const { data: segments } = useListSegments({ query: { queryKey: getListSegmentsQueryKey() } });
   const createSegment = useCreateSegment();
@@ -825,10 +916,18 @@ function SegmentsTab({ allUsers }: { allUsers: any[] }) {
   const handleCreate = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newSegmentName.trim()) return;
-    createSegment.mutate({ data: { name: newSegmentName.trim() } }, {
+    createSegment.mutate({
+      data: {
+        name: newSegmentName.trim(),
+        description: newSegmentDesc.trim() || undefined,
+        tags: newSegmentTags.trim() || undefined,
+      }
+    }, {
       onSuccess: () => {
         toast({ title: "Segment created" });
         setNewSegmentName("");
+        setNewSegmentDesc("");
+        setNewSegmentTags("");
         queryClient.invalidateQueries({ queryKey: getListSegmentsQueryKey() });
       },
       onError: () => toast({ title: "Failed to create segment", variant: "destructive" }),
@@ -853,16 +952,32 @@ function SegmentsTab({ allUsers }: { allUsers: any[] }) {
           <CardTitle className="text-lg flex items-center gap-2"><Tag className="w-5 h-5" /> Create Segment</CardTitle>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleCreate} className="flex gap-4">
-            <Input
-              placeholder="Segment name, e.g. Fun Party"
-              value={newSegmentName}
-              onChange={(e) => setNewSegmentName(e.target.value)}
-              className="max-w-xs"
-            />
-            <Button type="submit" disabled={createSegment.isPending || !newSegmentName.trim()}>
-              <Plus className="w-4 h-4 mr-2" /> Create
-            </Button>
+          <form onSubmit={handleCreate} className="space-y-3">
+            <div className="flex gap-3">
+              <Input
+                placeholder="Segment name, e.g. Fun Party"
+                value={newSegmentName}
+                onChange={(e) => setNewSegmentName(e.target.value)}
+                className="max-w-xs"
+              />
+              <Button type="submit" disabled={createSegment.isPending || !newSegmentName.trim()}>
+                <Plus className="w-4 h-4 mr-2" /> Create
+              </Button>
+            </div>
+            <div className="flex gap-3">
+              <Input
+                placeholder="Description (optional)"
+                value={newSegmentDesc}
+                onChange={(e) => setNewSegmentDesc(e.target.value)}
+                className="max-w-xs text-sm"
+              />
+              <Input
+                placeholder="Search tags, e.g. vip, friends (optional)"
+                value={newSegmentTags}
+                onChange={(e) => setNewSegmentTags(e.target.value)}
+                className="max-w-xs text-sm"
+              />
+            </div>
           </form>
         </CardContent>
       </Card>
@@ -874,9 +989,9 @@ function SegmentsTab({ allUsers }: { allUsers: any[] }) {
         {(segments ?? []).map((seg) => (
           <Card key={seg.id}>
             <CardContent className="pt-4 pb-4">
-              <div className="flex items-center justify-between gap-4">
+              <div className="flex items-start justify-between gap-4">
                 <div className="flex items-center gap-3 min-w-0">
-                  <Tag className="w-4 h-4 text-primary shrink-0" />
+                  <Tag className="w-4 h-4 text-primary shrink-0 mt-0.5" />
                   <div>
                     <span className="font-semibold text-foreground">{seg.name}</span>
                     <span className="ml-2 text-sm text-muted-foreground">{seg.memberCount} member{seg.memberCount !== 1 ? "s" : ""}</span>
@@ -890,6 +1005,7 @@ function SegmentsTab({ allUsers }: { allUsers: any[] }) {
                   <Trash2 className="h-4 w-4" />
                 </Button>
               </div>
+              <SegmentDetailEditor seg={seg} />
               <SegmentMemberManager segmentId={seg.id} allUsers={allUsers} />
             </CardContent>
           </Card>
