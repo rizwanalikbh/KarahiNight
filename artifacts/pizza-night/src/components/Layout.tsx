@@ -1,7 +1,8 @@
-import { useGetMe, useLogout } from "@workspace/api-client-react";
+import { useGetMe, useLogout, getGetMeQueryKey } from "@workspace/api-client-react";
 import { Link, useLocation } from "wouter";
 import { Button } from "./ui/button";
 import { LogOut, Pizza } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -12,11 +13,16 @@ export function Layout({ children, topbarExtra }: LayoutProps) {
   const { data: session } = useGetMe();
   const logout = useLogout();
   const [, setLocation] = useLocation();
+  const queryClient = useQueryClient();
 
   const handleLogout = () => {
-    const lastSlug = localStorage.getItem("lastEventSlug");
-    setLocation(lastSlug ? `/?event=${lastSlug}` : "/");
-    logout.mutate(undefined);
+    logout.mutate(undefined, {
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: getGetMeQueryKey() });
+        const lastSlug = localStorage.getItem("lastEventSlug");
+        setLocation(lastSlug ? `/?event=${lastSlug}` : "/");
+      },
+    });
   };
 
   return (
