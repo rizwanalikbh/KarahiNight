@@ -340,7 +340,8 @@ export function Order() {
     const displayItems = isEditing ? editItems : (myOrder.items ?? []);
     const total = displayItems.reduce((s, i) => s + i.quantity, 0);
     const slotAvailableForEdit = (summary?.slots.find((s) => s.slot === myOrder.pickupSlot)?.available ?? 0);
-    const maxTotal = myOrder.quantity + slotAvailableForEdit;
+    const editGuestLimit = summary?.maxPerGuest ?? Infinity;
+    const maxTotal = Math.min(myOrder.quantity + slotAvailableForEdit, editGuestLimit);
     const canAddMore = editItems.length < maxTotal;
 
     const handleSaveEdit = () => {
