@@ -86,6 +86,12 @@ export interface Event {
   slots: string[];
   pizzaTypes: string[];
   active: boolean;
+  /**
+     * Maximum number of pizzas a single guest may order. Null means no limit.
+     * @minimum 1
+     * @nullable
+     */
+  maxPerGuest?: number | null;
   /** Descriptions of segments associated with this event */
   segmentDescriptions?: string[];
   createdAt: string;
@@ -99,6 +105,11 @@ export interface EventInput {
   slotCapacity?: number;
   /** @minimum 0 */
   price?: number;
+  /**
+     * Maximum number of pizzas a single guest may order. Omit for no limit.
+     * @minimum 1
+     */
+  maxPerGuest?: number;
   description?: string;
   /** Cutoff datetime after which no new orders or edits are accepted */
   orderDeadline?: string;
@@ -113,6 +124,12 @@ export interface EventUpdate {
   slotCapacity?: number;
   /** @minimum 0 */
   price?: number;
+  /**
+     * Maximum pizzas per guest. Set to null to remove the limit.
+     * @minimum 1
+     * @nullable
+     */
+  maxPerGuest?: number | null;
   description?: string;
   /**
      * Cutoff datetime after which no new orders or edits are accepted
@@ -331,6 +348,11 @@ export interface EventSummary {
      */
   orderDeadline?: string | null;
   price: number;
+  /**
+     * Maximum pizzas per guest for this event. Null means no per-guest limit.
+     * @nullable
+     */
+  maxPerGuest: number | null;
   /** @nullable */
   description?: string | null;
   pizzaTypes: string[];

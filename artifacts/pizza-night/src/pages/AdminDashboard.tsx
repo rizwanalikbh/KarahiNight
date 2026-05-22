@@ -93,6 +93,7 @@ function EventEditPanel({ event, onClose }: { event: Event; onClose: () => void 
   const [totalCap, setTotalCap] = useState(String(event.totalCapacity));
   const [slotCap, setSlotCap] = useState(String(event.slotCapacity));
   const [price, setPrice] = useState(String(event.price));
+  const [maxPerGuest, setMaxPerGuest] = useState(event.maxPerGuest != null ? String(event.maxPerGuest) : "");
   const [description, setDescription] = useState(event.description ?? "");
   const [orderDeadline, setOrderDeadline] = useState<string>(() => {
     if (!event.orderDeadline) return "";
@@ -113,6 +114,7 @@ function EventEditPanel({ event, onClose }: { event: Event; onClose: () => void 
           totalCapacity: parseInt(totalCap, 10) || 10,
           slotCapacity: parseInt(slotCap, 10) || 3,
           price: Number.isNaN(parseInt(price, 10)) ? 70 : parseInt(price, 10),
+          maxPerGuest: maxPerGuest === "" ? null : (parseInt(maxPerGuest, 10) || null),
           description: description || undefined,
           orderDeadline: orderDeadline || null,
           slots,
@@ -153,6 +155,10 @@ function EventEditPanel({ event, onClose }: { event: Event; onClose: () => void 
         <div className="space-y-1.5">
           <Label className="text-sm">Price per Pizza (DKK)</Label>
           <Input type="number" min={0} value={price} onChange={(e) => setPrice(e.target.value)} />
+        </div>
+        <div className="space-y-1.5">
+          <Label className="text-sm">Max Pizzas per Guest <span className="text-muted-foreground font-normal">(optional)</span></Label>
+          <Input type="number" min={1} placeholder="No limit" value={maxPerGuest} onChange={(e) => setMaxPerGuest(e.target.value)} />
         </div>
         <div className="space-y-1.5">
           <Label className="text-sm">Order Deadline</Label>
@@ -966,6 +972,7 @@ export function AdminDashboard() {
   const [newEventCapacity, setNewEventCapacity] = useState("10");
   const [newEventSlot, setNewEventSlot] = useState("3");
   const [newEventPrice, setNewEventPrice] = useState("70");
+  const [newEventMaxPerGuest, setNewEventMaxPerGuest] = useState("");
   const [newEventDescription, setNewEventDescription] = useState("");
   const [newEventDeadline, setNewEventDeadline] = useState("");
   const [newEventSlots, setNewEventSlots] = useState<string[]>(DEFAULT_SLOTS);
@@ -1086,6 +1093,7 @@ export function AdminDashboard() {
           totalCapacity: parseInt(newEventCapacity, 10) || 10,
           slotCapacity: parseInt(newEventSlot, 10) || 3,
           price: Number.isNaN(parseInt(newEventPrice, 10)) ? 70 : parseInt(newEventPrice, 10),
+          maxPerGuest: newEventMaxPerGuest === "" ? undefined : (parseInt(newEventMaxPerGuest, 10) || undefined),
           description: newEventDescription || undefined,
           orderDeadline: newEventDeadline || undefined,
           slots: newEventSlots,
@@ -1361,6 +1369,10 @@ export function AdminDashboard() {
                       <Input type="number" min={0} value={newEventPrice} onChange={(e) => setNewEventPrice(e.target.value)} />
                     </div>
                     <div className="space-y-1.5">
+                      <Label className="text-sm">Max Pizzas per Guest <span className="text-muted-foreground font-normal">(optional)</span></Label>
+                      <Input type="number" min={1} placeholder="No limit" value={newEventMaxPerGuest} onChange={(e) => setNewEventMaxPerGuest(e.target.value)} />
+                    </div>
+                    <div className="space-y-1.5">
                       <Label className="text-sm">Order Deadline <span className="text-muted-foreground font-normal">(optional)</span></Label>
                       <Input type="datetime-local" value={newEventDeadline} onChange={(e) => setNewEventDeadline(e.target.value)} />
                       <p className="text-xs text-muted-foreground">After this time, no new orders or edits.</p>
@@ -1405,7 +1417,7 @@ export function AdminDashboard() {
                         </div>
                         <div className="flex flex-wrap gap-x-4 gap-y-0.5 mt-1 text-sm text-muted-foreground">
                           <span>{formatEventDate(event.date)}</span>
-                          <span>{event.totalCapacity} pizzas total · {event.slotCapacity}/slot · {event.price} DKK</span>
+                          <span>{event.totalCapacity} pizzas total · {event.slotCapacity}/slot · {event.price} DKK{event.maxPerGuest != null ? ` · max ${event.maxPerGuest}/guest` : ""}</span>
                           {event.orderDeadline && (
                             <span className={new Date() > new Date(event.orderDeadline) ? "text-destructive" : ""}>
                               Orders close {new Date(event.orderDeadline).toLocaleString("en-GB", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}

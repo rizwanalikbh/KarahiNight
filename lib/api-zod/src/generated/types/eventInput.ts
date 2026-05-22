@@ -14,6 +14,11 @@ export interface EventInput {
   slotCapacity?: number;
   /** @minimum 0 */
   price?: number;
+  /**
+     * Maximum number of pizzas a single guest may order. Omit for no limit.
+     * @minimum 1
+     */
+  maxPerGuest?: number;
   description?: string;
   /** Cutoff datetime after which no new orders or edits are accepted */
   orderDeadline?: Date;

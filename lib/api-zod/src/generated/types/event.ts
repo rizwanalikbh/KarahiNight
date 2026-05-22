@@ -30,6 +30,12 @@ export interface Event {
   slots: string[];
   pizzaTypes: string[];
   active: boolean;
+  /**
+     * Maximum number of pizzas a single guest may order. Null means no limit.
+     * @minimum 1
+     * @nullable
+     */
+  maxPerGuest?: number | null;
   /** Descriptions of segments associated with this event */
   segmentDescriptions?: string[];
   createdAt: Date;

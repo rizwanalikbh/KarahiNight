@@ -768,6 +768,10 @@ components:
             type: string
         active:
           type: boolean
+        maxPerGuest:
+          type: ["integer", "null"]
+          minimum: 1
+          description: Maximum number of pizzas a single guest may order. Null means no limit.
         segmentDescriptions:
           type: array
           items:
@@ -796,6 +800,10 @@ components:
           type: integer
           minimum: 0
           default: 70
+        maxPerGuest:
+          type: integer
+          minimum: 1
+          description: Maximum number of pizzas a single guest may order. Omit for no limit.
         description:
           type: string
         orderDeadline:
@@ -825,6 +833,10 @@ components:
         price:
           type: integer
           minimum: 0
+        maxPerGuest:
+          type: ["integer", "null"]
+          minimum: 1
+          description: Maximum pizzas per guest. Set to null to remove the limit.
         description:
           type: string
         orderDeadline:
@@ -1124,7 +1136,7 @@ components:
 
     EventSummary:
       type: object
-      required: [eventId, eventName, eventDate, totalCapacity, totalBooked, totalRemaining, orderingOpen, price, pizzaTypes, slots, guests]
+      required: [eventId, eventName, eventDate, totalCapacity, totalBooked, totalRemaining, orderingOpen, price, pizzaTypes, slots, guests, maxPerGuest]
       properties:
         eventId:
           type: integer
@@ -1146,6 +1158,9 @@ components:
           description: Cutoff datetime after which no new orders or edits are accepted
         price:
           type: integer
+        maxPerGuest:
+          type: ["integer", "null"]
+          description: Maximum pizzas per guest for this event. Null means no per-guest limit.
         description:
           type: ["string", "null"]
         pizzaTypes:

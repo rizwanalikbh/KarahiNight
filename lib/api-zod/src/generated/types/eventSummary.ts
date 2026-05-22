@@ -22,6 +22,11 @@ export interface EventSummary {
      */
   orderDeadline?: Date | null;
   price: number;
+  /**
+     * Maximum pizzas per guest for this event. Null means no per-guest limit.
+     * @nullable
+     */
+  maxPerGuest: number | null;
   /** @nullable */
   description?: string | null;
   pizzaTypes: string[];

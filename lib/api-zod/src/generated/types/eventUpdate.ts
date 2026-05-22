@@ -13,6 +13,12 @@ export interface EventUpdate {
   slotCapacity?: number;
   /** @minimum 0 */
   price?: number;
+  /**
+     * Maximum pizzas per guest. Set to null to remove the limit.
+     * @minimum 1
+     * @nullable
+     */
+  maxPerGuest?: number | null;
   description?: string;
   /**
      * Cutoff datetime after which no new orders or edits are accepted

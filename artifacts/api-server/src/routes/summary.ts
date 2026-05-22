@@ -97,6 +97,7 @@ router.get("/summary", async (req, res): Promise<void> => {
     orderingOpen,
     orderDeadline: event.orderDeadline ? event.orderDeadline.toISOString() : null,
     price: event.price,
+    maxPerGuest: event.maxPerGuest ?? null,
     description: event.description ?? null,
     pizzaTypes: eventPizzaTypes,
     slots,

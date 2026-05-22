@@ -162,7 +162,8 @@ export function Order() {
 
   const selectedSlotData = summary?.slots.find((s) => s.slot === pickupSlot);
   const slotAvailable = selectedSlotData?.available ?? 0;
-  const maxAllowed = Math.min(summary?.totalRemaining ?? 0, slotAvailable);
+  const guestLimit = summary?.maxPerGuest ?? Infinity;
+  const maxAllowed = Math.min(summary?.totalRemaining ?? 0, slotAvailable, guestLimit);
 
   const handleSlotChange = (val: string) => {
     setPickupSlot(val);

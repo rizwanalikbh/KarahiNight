@@ -127,6 +127,11 @@ router.post("/orders", requireAuth, async (req, res): Promise<void> => {
   const typedItems = items as PizzaItem[];
   const totalQuantity = typedItems.reduce((sum: number, item: PizzaItem) => sum + item.quantity, 0);
 
+  if (event.maxPerGuest !== null && event.maxPerGuest !== undefined && totalQuantity > event.maxPerGuest) {
+    res.status(400).json({ error: `You can order at most ${event.maxPerGuest} pizza(s) per guest for this event.` });
+    return;
+  }
+
   const existingOrders = await db
     .select()
     .from(ordersTable)
@@ -254,6 +259,11 @@ router.patch("/orders/:id", requireAuth, async (req, res): Promise<void> => {
 
     const newTotal = newItems.reduce((s, i) => s + i.quantity, 0);
     const existingTotal = existing.quantity;
+
+    if (event.maxPerGuest !== null && event.maxPerGuest !== undefined && newTotal > event.maxPerGuest) {
+      res.status(400).json({ error: `You can order at most ${event.maxPerGuest} pizza(s) per guest for this event.` });
+      return;
+    }
 
     if (newTotal > existingTotal) {
       // Adding more pizzas — check slot and event capacity
