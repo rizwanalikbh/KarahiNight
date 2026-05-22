@@ -694,20 +694,33 @@ export function Order() {
               {pickupSlot && (
                 <div className="space-y-3 animate-in fade-in slide-in-from-top-2">
                   <Label className="text-base font-semibold">How Many Pizzas?</Label>
-                  <Select value={String(totalQty)} onValueChange={(v) => setTotalQty(parseInt(v, 10))}>
-                    <SelectTrigger className="h-12">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {Array.from({ length: maxAllowed }).map((_, i) => (
-                        <SelectItem key={i + 1} value={String(i + 1)}>
-                          {i + 1} pizza{i > 0 ? "s" : ""} — {pricePerPizza * (i + 1)} DKK
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  {maxAllowed < slotAvailable && maxAllowed > 0 && (
-                    <p className="text-xs text-muted-foreground">Quantity limited by remaining slot capacity.</p>
+
+                  {/* Availability callout */}
+                  {maxAllowed === 0 ? (
+                    <div className="flex items-center gap-2 rounded-lg border border-destructive/30 bg-destructive/5 px-3 py-2.5 text-sm text-destructive font-medium">
+                      This slot is now full — pick a different time.
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2 rounded-lg border border-primary/25 bg-primary/5 px-3 py-2.5 text-sm">
+                      <span className="text-muted-foreground">You can order up to</span>
+                      <span className="font-bold text-primary">{maxAllowed} pizza{maxAllowed !== 1 ? "s" : ""}</span>
+                      <span className="text-muted-foreground">in this slot.</span>
+                    </div>
+                  )}
+
+                  {maxAllowed > 0 && (
+                    <Select value={String(totalQty)} onValueChange={(v) => setTotalQty(parseInt(v, 10))}>
+                      <SelectTrigger className="h-12">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {Array.from({ length: maxAllowed }).map((_, i) => (
+                          <SelectItem key={i + 1} value={String(i + 1)}>
+                            {i + 1} pizza{i > 0 ? "s" : ""}{pricePerPizza > 0 ? ` — ${pricePerPizza * (i + 1)} DKK` : ""}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   )}
                 </div>
               )}

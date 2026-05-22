@@ -92,13 +92,16 @@ export const ListEventsResponse = zod.array(ListEventsResponseItem)
 export const createEventBodyTotalCapacityDefault = 10;
 export const createEventBodySlotCapacityDefault = 3;
 export const createEventBodyPriceDefault = 70;
+export const createEventBodyPriceMin = 0;
+
+
 
 export const CreateEventBody = zod.object({
   "name": zod.string(),
   "date": zod.string().describe('ISO date string (YYYY-MM-DD)'),
   "totalCapacity": zod.number().default(createEventBodyTotalCapacityDefault),
   "slotCapacity": zod.number().default(createEventBodySlotCapacityDefault),
-  "price": zod.number().default(createEventBodyPriceDefault),
+  "price": zod.number().min(createEventBodyPriceMin).default(createEventBodyPriceDefault),
   "description": zod.string().optional(),
   "orderDeadline": zod.coerce.date().optional().describe('Cutoff datetime after which no new orders or edits are accepted'),
   "slots": zod.array(zod.string()).optional(),
@@ -113,12 +116,16 @@ export const UpdateEventParams = zod.object({
   "id": zod.coerce.number()
 })
 
+export const updateEventBodyPriceMin = 0;
+
+
+
 export const UpdateEventBody = zod.object({
   "name": zod.string().optional(),
   "date": zod.string().optional(),
   "totalCapacity": zod.number().optional(),
   "slotCapacity": zod.number().optional(),
-  "price": zod.number().optional(),
+  "price": zod.number().min(updateEventBodyPriceMin).optional(),
   "description": zod.string().optional(),
   "orderDeadline": zod.coerce.date().nullish().describe('Cutoff datetime after which no new orders or edits are accepted'),
   "slots": zod.array(zod.string()).optional(),

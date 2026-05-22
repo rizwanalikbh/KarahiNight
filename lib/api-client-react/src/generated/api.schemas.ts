@@ -97,6 +97,7 @@ export interface EventInput {
   date: string;
   totalCapacity?: number;
   slotCapacity?: number;
+  /** @minimum 0 */
   price?: number;
   description?: string;
   /** Cutoff datetime after which no new orders or edits are accepted */
@@ -110,6 +111,7 @@ export interface EventUpdate {
   date?: string;
   totalCapacity?: number;
   slotCapacity?: number;
+  /** @minimum 0 */
   price?: number;
   description?: string;
   /**

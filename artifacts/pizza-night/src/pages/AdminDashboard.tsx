@@ -112,7 +112,7 @@ function EventEditPanel({ event, onClose }: { event: Event; onClose: () => void 
           name, date,
           totalCapacity: parseInt(totalCap, 10) || 10,
           slotCapacity: parseInt(slotCap, 10) || 3,
-          price: parseInt(price, 10) || 70,
+          price: Number.isNaN(parseInt(price, 10)) ? 70 : parseInt(price, 10),
           description: description || undefined,
           orderDeadline: orderDeadline || null,
           slots,
@@ -152,7 +152,7 @@ function EventEditPanel({ event, onClose }: { event: Event; onClose: () => void 
         </div>
         <div className="space-y-1.5">
           <Label className="text-sm">Price per Pizza (DKK)</Label>
-          <Input type="number" min={1} value={price} onChange={(e) => setPrice(e.target.value)} />
+          <Input type="number" min={0} value={price} onChange={(e) => setPrice(e.target.value)} />
         </div>
         <div className="space-y-1.5">
           <Label className="text-sm">Order Deadline</Label>
@@ -1085,7 +1085,7 @@ export function AdminDashboard() {
           date: newEventDate,
           totalCapacity: parseInt(newEventCapacity, 10) || 10,
           slotCapacity: parseInt(newEventSlot, 10) || 3,
-          price: parseInt(newEventPrice, 10) || 70,
+          price: Number.isNaN(parseInt(newEventPrice, 10)) ? 70 : parseInt(newEventPrice, 10),
           description: newEventDescription || undefined,
           orderDeadline: newEventDeadline || undefined,
           slots: newEventSlots,
@@ -1358,7 +1358,7 @@ export function AdminDashboard() {
                     </div>
                     <div className="space-y-1.5">
                       <Label className="text-sm">Price per Pizza (DKK)</Label>
-                      <Input type="number" min={1} value={newEventPrice} onChange={(e) => setNewEventPrice(e.target.value)} />
+                      <Input type="number" min={0} value={newEventPrice} onChange={(e) => setNewEventPrice(e.target.value)} />
                     </div>
                     <div className="space-y-1.5">
                       <Label className="text-sm">Order Deadline <span className="text-muted-foreground font-normal">(optional)</span></Label>

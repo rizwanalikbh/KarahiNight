@@ -11,6 +11,7 @@ export interface EventUpdate {
   date?: string;
   totalCapacity?: number;
   slotCapacity?: number;
+  /** @minimum 0 */
   price?: number;
   description?: string;
   /**

@@ -794,6 +794,7 @@ components:
           default: 3
         price:
           type: integer
+          minimum: 0
           default: 70
         description:
           type: string
@@ -823,6 +824,7 @@ components:
           type: integer
         price:
           type: integer
+          minimum: 0
         description:
           type: string
         orderDeadline:
