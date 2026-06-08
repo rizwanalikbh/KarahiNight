@@ -10,6 +10,7 @@ servers:
 tags:
   - name: health
   - name: auth
+  - name: otp
   - name: events
   - name: users
   - name: orders
@@ -96,6 +97,48 @@ paths:
                 $ref: "#/components/schemas/SessionInfo"
         "401":
           description: Not authenticated
+
+  /otp/send:
+    post:
+      operationId: sendOtp
+      tags: [otp]
+      summary: Send OTP to a mobile number
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OtpSendInput"
+      responses:
+        "200":
+          description: OTP sent successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OtpSendResult"
+        "400":
+          description: Invalid request
+
+  /otp/verify:
+    post:
+      operationId: verifyOtp
+      tags: [otp]
+      summary: Verify OTP code and create session
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OtpVerifyInput"
+      responses:
+        "200":
+          description: OTP verified, session created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LoginResult"
+        "401":
+          description: Invalid or expired OTP
 
   /events:
     get:
@@ -1123,6 +1166,34 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/RecipeIngredient"
+
+    OtpSendInput:
+      type: object
+      required: [mobile, name]
+      properties:
+        mobile:
+          type: string
+          description: Mobile number in E.164 format (e.g. +4512345678)
+        name:
+          type: string
+
+    OtpVerifyInput:
+      type: object
+      required: [mobile, code]
+      properties:
+        mobile:
+          type: string
+        code:
+          type: string
+          minLength: 6
+          maxLength: 6
+
+    OtpSendResult:
+      type: object
+      required: [success]
+      properties:
+        success:
+          type: boolean
 
     EventGuest:
       type: object

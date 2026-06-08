@@ -1,0 +1,110 @@
+import { Router, type IRouter } from "express";
+import { db, usersTable, otpSessionsTable } from "@workspace/db";
+import { eq, and, gt } from "drizzle-orm";
+import { SendOtpBody, VerifyOtpBody } from "@workspace/api-zod";
+import twilio from "twilio";
+
+const router: IRouter = Router();
+
+function generateOtp(): string {
+  return String(Math.floor(100000 + Math.random() * 900000));
+}
+
+function getTwilioClient() {
+  const sid = process.env["TWILIO_ACCOUNT_SID"];
+  const token = process.env["TWILIO_AUTH_TOKEN"];
+  if (!sid || !token) return null;
+  return twilio(sid, token);
+}
+
+router.post("/otp/send", async (req, res): Promise<void> => {
+  const parsed = SendOtpBody.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.message });
+    return;
+  }
+
+  const { mobile, name } = parsed.data;
+  const code = generateOtp();
+  const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
+
+  await db.delete(otpSessionsTable).where(eq(otpSessionsTable.mobile, mobile));
+  await db.insert(otpSessionsTable).values({ mobile, name, code, expiresAt });
+
+  const client = getTwilioClient();
+  if (client) {
+    const from = process.env["TWILIO_PHONE_NUMBER"];
+    try {
+      await client.messages.create({
+        body: `Your Pizza Night code is: ${code}`,
+        from,
+        to: mobile,
+      });
+    } catch (err: any) {
+      req.log.error({ err }, "Failed to send SMS");
+      res.status(500).json({ error: "Failed to send SMS. Please check your number and try again." });
+      return;
+    }
+  } else {
+    req.log.info({ mobile, code }, "OTP (Twilio not configured — test mode)");
+  }
+
+  res.json({ success: true });
+});
+
+router.post("/otp/verify", async (req, res): Promise<void> => {
+  const parsed = VerifyOtpBody.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.message });
+    return;
+  }
+
+  const { mobile, code } = parsed.data;
+
+  const [otpRecord] = await db
+    .select()
+    .from(otpSessionsTable)
+    .where(
+      and(
+        eq(otpSessionsTable.mobile, mobile),
+        eq(otpSessionsTable.used, false),
+        gt(otpSessionsTable.expiresAt, new Date()),
+      ),
+    )
+    .limit(1);
+
+  if (!otpRecord || otpRecord.code !== code) {
+    res.status(401).json({ error: "Invalid or expired code. Please try again." });
+    return;
+  }
+
+  await db
+    .update(otpSessionsTable)
+    .set({ used: true })
+    .where(eq(otpSessionsTable.id, otpRecord.id));
+
+  let [user] = await db
+    .select()
+    .from(usersTable)
+    .where(eq(usersTable.mobile, mobile));
+
+  if (!user) {
+    [user] = await db
+      .insert(usersTable)
+      .values({ name: otpRecord.name, mobile, active: true })
+      .returning();
+  }
+
+  req.session.userId = user.id;
+  req.session.userName = user.name;
+  req.session.role = "user";
+
+  res.json({
+    success: true,
+    userId: user.id,
+    userName: user.name,
+    role: "user" as const,
+  });
+});
+
+export default router;

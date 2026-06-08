@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { db, eventsTable, userSegmentsTable, eventSegmentsTable, segmentsTable } from "@workspace/db";
+import { db, eventsTable, eventSegmentsTable, segmentsTable } from "@workspace/db";
 import { eq, inArray } from "drizzle-orm";
 import {
   CreateEventBody,
@@ -84,28 +84,10 @@ router.get("/events", async (req, res): Promise<void> => {
     return;
   }
 
-  const userId = req.session.userId!;
-
-  // Events via user's segments only
-  const userSegmentRows = await db
-    .select({ segmentId: userSegmentsTable.segmentId })
-    .from(userSegmentsTable)
-    .where(eq(userSegmentsTable.userId, userId));
-  const userSegmentIds = userSegmentRows.map((r) => r.segmentId);
-
-  if (userSegmentIds.length === 0) { res.json([]); return; }
-
-  const segmentEvents = await db
-    .select({ eventId: eventSegmentsTable.eventId })
-    .from(eventSegmentsTable)
-    .where(inArray(eventSegmentsTable.segmentId, userSegmentIds));
-  const eventIds = [...new Set(segmentEvents.map((r) => r.eventId))];
-
-  if (eventIds.length === 0) { res.json([]); return; }
-
+  // Authenticated users (via OTP or legacy code) see all active events
   const events = await db.select().from(eventsTable).orderBy(eventsTable.date);
-  const visible = events.filter((e) => eventIds.includes(e.id) && e.active);
-  res.json(await attachSegmentDescriptions(visible));
+  const active = events.filter((e) => e.active);
+  res.json(await attachSegmentDescriptions(active));
 });
 
 router.post("/events", requireAdmin, async (req, res): Promise<void> => {

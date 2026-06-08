@@ -65,6 +65,40 @@ export const GetMeResponse = zod.object({
 
 
 /**
+ * @summary Send OTP to a mobile number
+ */
+export const SendOtpBody = zod.object({
+  "mobile": zod.string().describe('Mobile number in E.164 format (e.g. +4512345678)'),
+  "name": zod.string()
+})
+
+export const SendOtpResponse = zod.object({
+  "success": zod.boolean()
+})
+
+
+/**
+ * @summary Verify OTP code and create session
+ */
+export const verifyOtpBodyCodeMin = 6;
+export const verifyOtpBodyCodeMax = 6;
+
+
+
+export const VerifyOtpBody = zod.object({
+  "mobile": zod.string(),
+  "code": zod.string().min(verifyOtpBodyCodeMin).max(verifyOtpBodyCodeMax)
+})
+
+export const VerifyOtpResponse = zod.object({
+  "success": zod.boolean(),
+  "role": zod.enum(['user', 'admin']),
+  "userId": zod.number().nullish(),
+  "userName": zod.string().nullish()
+})
+
+
+/**
  * @summary List events (admin sees all, user sees their own)
  */
 

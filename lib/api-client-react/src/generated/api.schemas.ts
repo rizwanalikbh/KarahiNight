@@ -320,6 +320,25 @@ export interface RecipeUpdate {
   ingredients?: RecipeIngredient[];
 }
 
+export interface OtpSendInput {
+  /** Mobile number in E.164 format (e.g. +4512345678) */
+  mobile: string;
+  name: string;
+}
+
+export interface OtpVerifyInput {
+  mobile: string;
+  /**
+     * @minLength 6
+     * @maxLength 6
+     */
+  code: string;
+}
+
+export interface OtpSendResult {
+  success: boolean;
+}
+
 export interface EventGuest {
   id: number;
   name: string;
