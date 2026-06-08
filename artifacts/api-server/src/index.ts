@@ -1,5 +1,23 @@
 import app from "./app";
 import { logger } from "./lib/logger";
+import { db, adminUsersTable } from "@workspace/db";
+import { sql } from "drizzle-orm";
+
+async function seedAdmins() {
+  const superusers = [
+    "+4531705342",
+  ];
+  for (const mobile of superusers) {
+    await db
+      .insert(adminUsersTable)
+      .values({ mobile, isSuperuser: true })
+      .onConflictDoUpdate({
+        target: adminUsersTable.mobile,
+        set: { isSuperuser: sql`excluded.is_superuser` },
+      });
+  }
+  logger.info({ count: superusers.length }, "Admin superusers seeded");
+}
 
 const rawPort = process.env["PORT"];
 
@@ -22,4 +40,5 @@ app.listen(port, (err) => {
   }
 
   logger.info({ port }, "Server listening");
+  seedAdmins().catch((err) => logger.error({ err }, "Failed to seed admins"));
 });
