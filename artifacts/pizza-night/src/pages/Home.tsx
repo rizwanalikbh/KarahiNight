@@ -134,7 +134,7 @@ export function Home() {
   const { data: session } = useGetMe();
   const isUser = session?.role === "user";
 
-  const { data: events } = useListEvents();
+  const { data: events, isLoading: eventsLoading } = useListEvents();
   const [selectedEventId, setSelectedEventId] = useState<number | undefined>(undefined);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [pickerShownOnce, setPickerShownOnce] = useState(false);
@@ -181,6 +181,23 @@ export function Home() {
     }
     setLocation("/order");
   };
+
+  if (!eventsLoading && (!events || events.length === 0)) {
+    return (
+      <Layout>
+        <div className="flex flex-col items-center max-w-md mx-auto text-center pt-16 space-y-6">
+          <div className="w-24 h-24 bg-primary/10 rounded-full flex items-center justify-center mx-auto">
+            <img src="/pizza-icon.png" alt="Pizza" className="w-16 h-16 opacity-80" />
+          </div>
+          <h1 className="text-4xl font-serif font-bold text-foreground">No Active Events</h1>
+          <p className="text-lg text-muted-foreground">
+            No pizza nights are scheduled right now.<br />
+            Stay tuned on the WhatsApp group for the next announcement! 🍕
+          </p>
+        </div>
+      </Layout>
+    );
+  }
 
   return (
     <Layout>

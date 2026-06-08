@@ -191,8 +191,8 @@ export function Order() {
           <Card className="border-card-border shadow-md text-center bg-secondary/20">
             <CardContent className="pt-10 pb-10 flex flex-col items-center">
               <CalendarDays className="w-16 h-16 text-muted-foreground mb-4" />
-              <h2 className="text-2xl font-serif font-bold text-foreground mb-2">No Events Available</h2>
-              <p className="text-muted-foreground">There are no active events right now. Check back soon!</p>
+              <h2 className="text-2xl font-serif font-bold text-foreground mb-2">No Active Events</h2>
+              <p className="text-muted-foreground">Stay tuned on the WhatsApp group for the next pizza night announcement!</p>
             </CardContent>
           </Card>
         </div>
