@@ -24,7 +24,6 @@ import type {
   AdminUserInput,
   Event,
   EventInput,
-  EventSegmentInput,
   EventSummary,
   EventUpdate,
   GetSummaryParams,
@@ -41,10 +40,6 @@ import type {
   Recipe,
   RecipeInput,
   RecipeUpdate,
-  Segment,
-  SegmentInput,
-  SegmentUpdateInput,
-  SegmentUserInput,
   SessionInfo,
   User,
   UserImportInput,
@@ -213,224 +208,6 @@ export const useLogin = <TError = ErrorType<void>,
       return useMutation(getLoginMutationOptions(options));
     }
 
-export const getListAdminUsersUrl = () => {
-
-
-
-
-  return `/api/admin-users`
-}
-
-/**
- * @summary List admin users (admin only)
- */
-export const listAdminUsers = async ( options?: RequestInit): Promise<AdminUser[]> => {
-
-  return customFetch<AdminUser[]>(getListAdminUsersUrl(),
-  {
-    ...options,
-    method: 'GET'
-
-
-  }
-);}
-
-
-
-
-
-export const getListAdminUsersQueryKey = () => {
-    return [
-    `/api/admin-users`
-    ] as const;
-    }
-
-
-export const getListAdminUsersQueryOptions = <TData = Awaited<ReturnType<typeof listAdminUsers>>, TError = ErrorType<void>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listAdminUsers>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
-) => {
-
-const {query: queryOptions, request: requestOptions} = options ?? {};
-
-  const queryKey =  queryOptions?.queryKey ?? getListAdminUsersQueryKey();
-
-
-
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof listAdminUsers>>> = ({ signal }) => listAdminUsers({ signal, ...requestOptions });
-
-
-
-
-
-   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listAdminUsers>>, TError, TData> & { queryKey: QueryKey }
-}
-
-export type ListAdminUsersQueryResult = NonNullable<Awaited<ReturnType<typeof listAdminUsers>>>
-export type ListAdminUsersQueryError = ErrorType<void>
-
-
-/**
- * @summary List admin users (admin only)
- */
-
-export function useListAdminUsers<TData = Awaited<ReturnType<typeof listAdminUsers>>, TError = ErrorType<void>>(
-  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listAdminUsers>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
-
- ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
-
-  const queryOptions = getListAdminUsersQueryOptions(options)
-
-  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
-
-  return { ...query, queryKey: queryOptions.queryKey };
-}
-
-
-
-
-
-
-
-export const getCreateAdminUserUrl = () => {
-
-
-
-
-  return `/api/admin-users`
-}
-
-/**
- * @summary Add an admin user by mobile number (admin only)
- */
-export const createAdminUser = async (adminUserInput: AdminUserInput, options?: RequestInit): Promise<AdminUser> => {
-
-  return customFetch<AdminUser>(getCreateAdminUserUrl(),
-  {
-    ...options,
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...options?.headers },
-    body: JSON.stringify(
-      adminUserInput,)
-  }
-);}
-
-
-
-
-export const getCreateAdminUserMutationOptions = <TError = ErrorType<void>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createAdminUser>>, TError,{data: BodyType<AdminUserInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
-): UseMutationOptions<Awaited<ReturnType<typeof createAdminUser>>, TError,{data: BodyType<AdminUserInput>}, TContext> => {
-
-const mutationKey = ['createAdminUser'];
-const {mutation: mutationOptions, request: requestOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
-
-
-
-
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createAdminUser>>, {data: BodyType<AdminUserInput>}> = (props) => {
-          const {data} = props ?? {};
-
-          return  createAdminUser(data,requestOptions)
-        }
-
-
-
-
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type CreateAdminUserMutationResult = NonNullable<Awaited<ReturnType<typeof createAdminUser>>>
-    export type CreateAdminUserMutationBody = BodyType<AdminUserInput>
-    export type CreateAdminUserMutationError = ErrorType<void>
-
-    /**
- * @summary Add an admin user by mobile number (admin only)
- */
-export const useCreateAdminUser = <TError = ErrorType<void>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createAdminUser>>, TError,{data: BodyType<AdminUserInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
- ): UseMutationResult<
-        Awaited<ReturnType<typeof createAdminUser>>,
-        TError,
-        {data: BodyType<AdminUserInput>},
-        TContext
-      > => {
-      return useMutation(getCreateAdminUserMutationOptions(options));
-    }
-
-export const getDeleteAdminUserUrl = (id: number,) => {
-
-
-
-
-  return `/api/admin-users/${id}`
-}
-
-/**
- * @summary Remove an admin user (admin only, superuser cannot be removed)
- */
-export const deleteAdminUser = async (id: number, options?: RequestInit): Promise<void> => {
-
-  return customFetch<void>(getDeleteAdminUserUrl(id),
-  {
-    ...options,
-    method: 'DELETE'
-
-
-  }
-);}
-
-
-
-
-export const getDeleteAdminUserMutationOptions = <TError = ErrorType<void>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteAdminUser>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
-): UseMutationOptions<Awaited<ReturnType<typeof deleteAdminUser>>, TError,{id: number}, TContext> => {
-
-const mutationKey = ['deleteAdminUser'];
-const {mutation: mutationOptions, request: requestOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
-
-
-
-
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteAdminUser>>, {id: number}> = (props) => {
-          const {id} = props ?? {};
-
-          return  deleteAdminUser(id,requestOptions)
-        }
-
-
-
-
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type DeleteAdminUserMutationResult = NonNullable<Awaited<ReturnType<typeof deleteAdminUser>>>
-
-    export type DeleteAdminUserMutationError = ErrorType<void>
-
-    /**
- * @summary Remove an admin user (admin only, superuser cannot be removed)
- */
-export const useDeleteAdminUser = <TError = ErrorType<void>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteAdminUser>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
- ): UseMutationResult<
-        Awaited<ReturnType<typeof deleteAdminUser>>,
-        TError,
-        {id: number},
-        TContext
-      > => {
-      return useMutation(getDeleteAdminUserMutationOptions(options));
-    }
-
 export const getLogoutUrl = () => {
 
 
@@ -440,7 +217,7 @@ export const getLogoutUrl = () => {
 }
 
 /**
- * @summary Logout current session
+ * @summary Log out
  */
 export const logout = async ( options?: RequestInit): Promise<void> => {
 
@@ -488,7 +265,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type LogoutMutationError = ErrorType<unknown>
 
     /**
- * @summary Logout current session
+ * @summary Log out
  */
 export const useLogout = <TError = ErrorType<unknown>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof logout>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
@@ -534,7 +311,7 @@ export const getGetMeQueryKey = () => {
     }
 
 
-export const getGetMeQueryOptions = <TData = Awaited<ReturnType<typeof getMe>>, TError = ErrorType<void>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getMe>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+export const getGetMeQueryOptions = <TData = Awaited<ReturnType<typeof getMe>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getMe>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
@@ -553,14 +330,14 @@ const {query: queryOptions, request: requestOptions} = options ?? {};
 }
 
 export type GetMeQueryResult = NonNullable<Awaited<ReturnType<typeof getMe>>>
-export type GetMeQueryError = ErrorType<void>
+export type GetMeQueryError = ErrorType<unknown>
 
 
 /**
  * @summary Get current session info
  */
 
-export function useGetMe<TData = Awaited<ReturnType<typeof getMe>>, TError = ErrorType<void>>(
+export function useGetMe<TData = Awaited<ReturnType<typeof getMe>>, TError = ErrorType<unknown>>(
   options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getMe>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
@@ -658,7 +435,7 @@ export const getVerifyOtpUrl = () => {
 }
 
 /**
- * @summary Verify OTP code and create session
+ * @summary Verify OTP and establish session
  */
 export const verifyOtp = async (otpVerifyInput: OtpVerifyInput, options?: RequestInit): Promise<LoginResult> => {
 
@@ -707,7 +484,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type VerifyOtpMutationError = ErrorType<void>
 
     /**
- * @summary Verify OTP code and create session
+ * @summary Verify OTP and establish session
  */
 export const useVerifyOtp = <TError = ErrorType<void>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof verifyOtp>>, TError,{data: BodyType<OtpVerifyInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
@@ -729,7 +506,7 @@ export const getListEventsUrl = () => {
 }
 
 /**
- * @summary List events (admin sees all, user sees their own)
+ * @summary List events (active only for guests, all for admins)
  */
 export const listEvents = async ( options?: RequestInit): Promise<Event[]> => {
 
@@ -776,7 +553,7 @@ export type ListEventsQueryError = ErrorType<unknown>
 
 
 /**
- * @summary List events (admin sees all, user sees their own)
+ * @summary List events (active only for guests, all for admins)
  */
 
 export function useListEvents<TData = Awaited<ReturnType<typeof listEvents>>, TError = ErrorType<unknown>>(
@@ -1096,7 +873,7 @@ export const getCreateUserUrl = () => {
 }
 
 /**
- * @summary Add a new user (admin only)
+ * @summary Create a user (admin only)
  */
 export const createUser = async (userInput: UserInput, options?: RequestInit): Promise<User> => {
 
@@ -1145,7 +922,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type CreateUserMutationError = ErrorType<unknown>
 
     /**
- * @summary Add a new user (admin only)
+ * @summary Create a user (admin only)
  */
 export const useCreateUser = <TError = ErrorType<unknown>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createUser>>, TError,{data: BodyType<UserInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
@@ -1370,83 +1147,6 @@ export const useImportUsers = <TError = ErrorType<unknown>,
       > => {
       return useMutation(getImportUsersMutationOptions(options));
     }
-
-export const getListUserSegmentsUrl = (id: number,) => {
-
-
-
-
-  return `/api/users/${id}/segments`
-}
-
-/**
- * @summary List segments a user belongs to (admin only)
- */
-export const listUserSegments = async (id: number, options?: RequestInit): Promise<Segment[]> => {
-
-  return customFetch<Segment[]>(getListUserSegmentsUrl(id),
-  {
-    ...options,
-    method: 'GET'
-
-
-  }
-);}
-
-
-
-
-
-export const getListUserSegmentsQueryKey = (id: number,) => {
-    return [
-    `/api/users/${id}/segments`
-    ] as const;
-    }
-
-
-export const getListUserSegmentsQueryOptions = <TData = Awaited<ReturnType<typeof listUserSegments>>, TError = ErrorType<unknown>>(id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listUserSegments>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
-) => {
-
-const {query: queryOptions, request: requestOptions} = options ?? {};
-
-  const queryKey =  queryOptions?.queryKey ?? getListUserSegmentsQueryKey(id);
-
-
-
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof listUserSegments>>> = ({ signal }) => listUserSegments(id, { signal, ...requestOptions });
-
-
-
-
-
-   return  { queryKey, queryFn, enabled: !!(id), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listUserSegments>>, TError, TData> & { queryKey: QueryKey }
-}
-
-export type ListUserSegmentsQueryResult = NonNullable<Awaited<ReturnType<typeof listUserSegments>>>
-export type ListUserSegmentsQueryError = ErrorType<unknown>
-
-
-/**
- * @summary List segments a user belongs to (admin only)
- */
-
-export function useListUserSegments<TData = Awaited<ReturnType<typeof listUserSegments>>, TError = ErrorType<unknown>>(
- id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listUserSegments>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
-
- ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
-
-  const queryOptions = getListUserSegmentsQueryOptions(id,options)
-
-  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
-
-  return { ...query, queryKey: queryOptions.queryKey };
-}
-
-
-
-
-
-
 
 export const getRegenerateCodeUrl = (id: number,) => {
 
@@ -1813,738 +1513,6 @@ export const useDeleteOrder = <TError = ErrorType<unknown>,
         TContext
       > => {
       return useMutation(getDeleteOrderMutationOptions(options));
-    }
-
-export const getListSegmentsUrl = () => {
-
-
-
-
-  return `/api/segments`
-}
-
-/**
- * @summary List all segments (admin only)
- */
-export const listSegments = async ( options?: RequestInit): Promise<Segment[]> => {
-
-  return customFetch<Segment[]>(getListSegmentsUrl(),
-  {
-    ...options,
-    method: 'GET'
-
-
-  }
-);}
-
-
-
-
-
-export const getListSegmentsQueryKey = () => {
-    return [
-    `/api/segments`
-    ] as const;
-    }
-
-
-export const getListSegmentsQueryOptions = <TData = Awaited<ReturnType<typeof listSegments>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listSegments>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
-) => {
-
-const {query: queryOptions, request: requestOptions} = options ?? {};
-
-  const queryKey =  queryOptions?.queryKey ?? getListSegmentsQueryKey();
-
-
-
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof listSegments>>> = ({ signal }) => listSegments({ signal, ...requestOptions });
-
-
-
-
-
-   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listSegments>>, TError, TData> & { queryKey: QueryKey }
-}
-
-export type ListSegmentsQueryResult = NonNullable<Awaited<ReturnType<typeof listSegments>>>
-export type ListSegmentsQueryError = ErrorType<unknown>
-
-
-/**
- * @summary List all segments (admin only)
- */
-
-export function useListSegments<TData = Awaited<ReturnType<typeof listSegments>>, TError = ErrorType<unknown>>(
-  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listSegments>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
-
- ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
-
-  const queryOptions = getListSegmentsQueryOptions(options)
-
-  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
-
-  return { ...query, queryKey: queryOptions.queryKey };
-}
-
-
-
-
-
-
-
-export const getCreateSegmentUrl = () => {
-
-
-
-
-  return `/api/segments`
-}
-
-/**
- * @summary Create a segment (admin only)
- */
-export const createSegment = async (segmentInput: SegmentInput, options?: RequestInit): Promise<Segment> => {
-
-  return customFetch<Segment>(getCreateSegmentUrl(),
-  {
-    ...options,
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...options?.headers },
-    body: JSON.stringify(
-      segmentInput,)
-  }
-);}
-
-
-
-
-export const getCreateSegmentMutationOptions = <TError = ErrorType<unknown>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createSegment>>, TError,{data: BodyType<SegmentInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
-): UseMutationOptions<Awaited<ReturnType<typeof createSegment>>, TError,{data: BodyType<SegmentInput>}, TContext> => {
-
-const mutationKey = ['createSegment'];
-const {mutation: mutationOptions, request: requestOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
-
-
-
-
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createSegment>>, {data: BodyType<SegmentInput>}> = (props) => {
-          const {data} = props ?? {};
-
-          return  createSegment(data,requestOptions)
-        }
-
-
-
-
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type CreateSegmentMutationResult = NonNullable<Awaited<ReturnType<typeof createSegment>>>
-    export type CreateSegmentMutationBody = BodyType<SegmentInput>
-    export type CreateSegmentMutationError = ErrorType<unknown>
-
-    /**
- * @summary Create a segment (admin only)
- */
-export const useCreateSegment = <TError = ErrorType<unknown>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createSegment>>, TError,{data: BodyType<SegmentInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
- ): UseMutationResult<
-        Awaited<ReturnType<typeof createSegment>>,
-        TError,
-        {data: BodyType<SegmentInput>},
-        TContext
-      > => {
-      return useMutation(getCreateSegmentMutationOptions(options));
-    }
-
-export const getUpdateSegmentUrl = (id: number,) => {
-
-
-
-
-  return `/api/segments/${id}`
-}
-
-/**
- * @summary Update a segment's description and tags (admin only)
- */
-export const updateSegment = async (id: number,
-    segmentUpdateInput: SegmentUpdateInput, options?: RequestInit): Promise<Segment> => {
-
-  return customFetch<Segment>(getUpdateSegmentUrl(id),
-  {
-    ...options,
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json', ...options?.headers },
-    body: JSON.stringify(
-      segmentUpdateInput,)
-  }
-);}
-
-
-
-
-export const getUpdateSegmentMutationOptions = <TError = ErrorType<void>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateSegment>>, TError,{id: number;data: BodyType<SegmentUpdateInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
-): UseMutationOptions<Awaited<ReturnType<typeof updateSegment>>, TError,{id: number;data: BodyType<SegmentUpdateInput>}, TContext> => {
-
-const mutationKey = ['updateSegment'];
-const {mutation: mutationOptions, request: requestOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
-
-
-
-
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateSegment>>, {id: number;data: BodyType<SegmentUpdateInput>}> = (props) => {
-          const {id,data} = props ?? {};
-
-          return  updateSegment(id,data,requestOptions)
-        }
-
-
-
-
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type UpdateSegmentMutationResult = NonNullable<Awaited<ReturnType<typeof updateSegment>>>
-    export type UpdateSegmentMutationBody = BodyType<SegmentUpdateInput>
-    export type UpdateSegmentMutationError = ErrorType<void>
-
-    /**
- * @summary Update a segment's description and tags (admin only)
- */
-export const useUpdateSegment = <TError = ErrorType<void>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateSegment>>, TError,{id: number;data: BodyType<SegmentUpdateInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
- ): UseMutationResult<
-        Awaited<ReturnType<typeof updateSegment>>,
-        TError,
-        {id: number;data: BodyType<SegmentUpdateInput>},
-        TContext
-      > => {
-      return useMutation(getUpdateSegmentMutationOptions(options));
-    }
-
-export const getDeleteSegmentUrl = (id: number,) => {
-
-
-
-
-  return `/api/segments/${id}`
-}
-
-/**
- * @summary Delete a segment (admin only)
- */
-export const deleteSegment = async (id: number, options?: RequestInit): Promise<void> => {
-
-  return customFetch<void>(getDeleteSegmentUrl(id),
-  {
-    ...options,
-    method: 'DELETE'
-
-
-  }
-);}
-
-
-
-
-export const getDeleteSegmentMutationOptions = <TError = ErrorType<unknown>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteSegment>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
-): UseMutationOptions<Awaited<ReturnType<typeof deleteSegment>>, TError,{id: number}, TContext> => {
-
-const mutationKey = ['deleteSegment'];
-const {mutation: mutationOptions, request: requestOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
-
-
-
-
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteSegment>>, {id: number}> = (props) => {
-          const {id} = props ?? {};
-
-          return  deleteSegment(id,requestOptions)
-        }
-
-
-
-
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type DeleteSegmentMutationResult = NonNullable<Awaited<ReturnType<typeof deleteSegment>>>
-
-    export type DeleteSegmentMutationError = ErrorType<unknown>
-
-    /**
- * @summary Delete a segment (admin only)
- */
-export const useDeleteSegment = <TError = ErrorType<unknown>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteSegment>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
- ): UseMutationResult<
-        Awaited<ReturnType<typeof deleteSegment>>,
-        TError,
-        {id: number},
-        TContext
-      > => {
-      return useMutation(getDeleteSegmentMutationOptions(options));
-    }
-
-export const getListSegmentUsersUrl = (id: number,) => {
-
-
-
-
-  return `/api/segments/${id}/users`
-}
-
-/**
- * @summary List users in a segment (admin only)
- */
-export const listSegmentUsers = async (id: number, options?: RequestInit): Promise<User[]> => {
-
-  return customFetch<User[]>(getListSegmentUsersUrl(id),
-  {
-    ...options,
-    method: 'GET'
-
-
-  }
-);}
-
-
-
-
-
-export const getListSegmentUsersQueryKey = (id: number,) => {
-    return [
-    `/api/segments/${id}/users`
-    ] as const;
-    }
-
-
-export const getListSegmentUsersQueryOptions = <TData = Awaited<ReturnType<typeof listSegmentUsers>>, TError = ErrorType<unknown>>(id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listSegmentUsers>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
-) => {
-
-const {query: queryOptions, request: requestOptions} = options ?? {};
-
-  const queryKey =  queryOptions?.queryKey ?? getListSegmentUsersQueryKey(id);
-
-
-
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof listSegmentUsers>>> = ({ signal }) => listSegmentUsers(id, { signal, ...requestOptions });
-
-
-
-
-
-   return  { queryKey, queryFn, enabled: !!(id), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listSegmentUsers>>, TError, TData> & { queryKey: QueryKey }
-}
-
-export type ListSegmentUsersQueryResult = NonNullable<Awaited<ReturnType<typeof listSegmentUsers>>>
-export type ListSegmentUsersQueryError = ErrorType<unknown>
-
-
-/**
- * @summary List users in a segment (admin only)
- */
-
-export function useListSegmentUsers<TData = Awaited<ReturnType<typeof listSegmentUsers>>, TError = ErrorType<unknown>>(
- id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listSegmentUsers>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
-
- ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
-
-  const queryOptions = getListSegmentUsersQueryOptions(id,options)
-
-  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
-
-  return { ...query, queryKey: queryOptions.queryKey };
-}
-
-
-
-
-
-
-
-export const getAddUserToSegmentUrl = (id: number,) => {
-
-
-
-
-  return `/api/segments/${id}/users`
-}
-
-/**
- * @summary Add a user to a segment (admin only)
- */
-export const addUserToSegment = async (id: number,
-    segmentUserInput: SegmentUserInput, options?: RequestInit): Promise<User> => {
-
-  return customFetch<User>(getAddUserToSegmentUrl(id),
-  {
-    ...options,
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...options?.headers },
-    body: JSON.stringify(
-      segmentUserInput,)
-  }
-);}
-
-
-
-
-export const getAddUserToSegmentMutationOptions = <TError = ErrorType<unknown>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof addUserToSegment>>, TError,{id: number;data: BodyType<SegmentUserInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
-): UseMutationOptions<Awaited<ReturnType<typeof addUserToSegment>>, TError,{id: number;data: BodyType<SegmentUserInput>}, TContext> => {
-
-const mutationKey = ['addUserToSegment'];
-const {mutation: mutationOptions, request: requestOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
-
-
-
-
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof addUserToSegment>>, {id: number;data: BodyType<SegmentUserInput>}> = (props) => {
-          const {id,data} = props ?? {};
-
-          return  addUserToSegment(id,data,requestOptions)
-        }
-
-
-
-
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type AddUserToSegmentMutationResult = NonNullable<Awaited<ReturnType<typeof addUserToSegment>>>
-    export type AddUserToSegmentMutationBody = BodyType<SegmentUserInput>
-    export type AddUserToSegmentMutationError = ErrorType<unknown>
-
-    /**
- * @summary Add a user to a segment (admin only)
- */
-export const useAddUserToSegment = <TError = ErrorType<unknown>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof addUserToSegment>>, TError,{id: number;data: BodyType<SegmentUserInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
- ): UseMutationResult<
-        Awaited<ReturnType<typeof addUserToSegment>>,
-        TError,
-        {id: number;data: BodyType<SegmentUserInput>},
-        TContext
-      > => {
-      return useMutation(getAddUserToSegmentMutationOptions(options));
-    }
-
-export const getRemoveUserFromSegmentUrl = (id: number,
-    userId: number,) => {
-
-
-
-
-  return `/api/segments/${id}/users/${userId}`
-}
-
-/**
- * @summary Remove a user from a segment (admin only)
- */
-export const removeUserFromSegment = async (id: number,
-    userId: number, options?: RequestInit): Promise<void> => {
-
-  return customFetch<void>(getRemoveUserFromSegmentUrl(id,userId),
-  {
-    ...options,
-    method: 'DELETE'
-
-
-  }
-);}
-
-
-
-
-export const getRemoveUserFromSegmentMutationOptions = <TError = ErrorType<unknown>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof removeUserFromSegment>>, TError,{id: number;userId: number}, TContext>, request?: SecondParameter<typeof customFetch>}
-): UseMutationOptions<Awaited<ReturnType<typeof removeUserFromSegment>>, TError,{id: number;userId: number}, TContext> => {
-
-const mutationKey = ['removeUserFromSegment'];
-const {mutation: mutationOptions, request: requestOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
-
-
-
-
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof removeUserFromSegment>>, {id: number;userId: number}> = (props) => {
-          const {id,userId} = props ?? {};
-
-          return  removeUserFromSegment(id,userId,requestOptions)
-        }
-
-
-
-
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type RemoveUserFromSegmentMutationResult = NonNullable<Awaited<ReturnType<typeof removeUserFromSegment>>>
-
-    export type RemoveUserFromSegmentMutationError = ErrorType<unknown>
-
-    /**
- * @summary Remove a user from a segment (admin only)
- */
-export const useRemoveUserFromSegment = <TError = ErrorType<unknown>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof removeUserFromSegment>>, TError,{id: number;userId: number}, TContext>, request?: SecondParameter<typeof customFetch>}
- ): UseMutationResult<
-        Awaited<ReturnType<typeof removeUserFromSegment>>,
-        TError,
-        {id: number;userId: number},
-        TContext
-      > => {
-      return useMutation(getRemoveUserFromSegmentMutationOptions(options));
-    }
-
-export const getListEventSegmentsUrl = (id: number,) => {
-
-
-
-
-  return `/api/events/${id}/segments`
-}
-
-/**
- * @summary List segments assigned to an event (admin only)
- */
-export const listEventSegments = async (id: number, options?: RequestInit): Promise<Segment[]> => {
-
-  return customFetch<Segment[]>(getListEventSegmentsUrl(id),
-  {
-    ...options,
-    method: 'GET'
-
-
-  }
-);}
-
-
-
-
-
-export const getListEventSegmentsQueryKey = (id: number,) => {
-    return [
-    `/api/events/${id}/segments`
-    ] as const;
-    }
-
-
-export const getListEventSegmentsQueryOptions = <TData = Awaited<ReturnType<typeof listEventSegments>>, TError = ErrorType<unknown>>(id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listEventSegments>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
-) => {
-
-const {query: queryOptions, request: requestOptions} = options ?? {};
-
-  const queryKey =  queryOptions?.queryKey ?? getListEventSegmentsQueryKey(id);
-
-
-
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof listEventSegments>>> = ({ signal }) => listEventSegments(id, { signal, ...requestOptions });
-
-
-
-
-
-   return  { queryKey, queryFn, enabled: !!(id), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listEventSegments>>, TError, TData> & { queryKey: QueryKey }
-}
-
-export type ListEventSegmentsQueryResult = NonNullable<Awaited<ReturnType<typeof listEventSegments>>>
-export type ListEventSegmentsQueryError = ErrorType<unknown>
-
-
-/**
- * @summary List segments assigned to an event (admin only)
- */
-
-export function useListEventSegments<TData = Awaited<ReturnType<typeof listEventSegments>>, TError = ErrorType<unknown>>(
- id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listEventSegments>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
-
- ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
-
-  const queryOptions = getListEventSegmentsQueryOptions(id,options)
-
-  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
-
-  return { ...query, queryKey: queryOptions.queryKey };
-}
-
-
-
-
-
-
-
-export const getAddSegmentToEventUrl = (id: number,) => {
-
-
-
-
-  return `/api/events/${id}/segments`
-}
-
-/**
- * @summary Assign a segment to an event (admin only)
- */
-export const addSegmentToEvent = async (id: number,
-    eventSegmentInput: EventSegmentInput, options?: RequestInit): Promise<void> => {
-
-  return customFetch<void>(getAddSegmentToEventUrl(id),
-  {
-    ...options,
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...options?.headers },
-    body: JSON.stringify(
-      eventSegmentInput,)
-  }
-);}
-
-
-
-
-export const getAddSegmentToEventMutationOptions = <TError = ErrorType<unknown>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof addSegmentToEvent>>, TError,{id: number;data: BodyType<EventSegmentInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
-): UseMutationOptions<Awaited<ReturnType<typeof addSegmentToEvent>>, TError,{id: number;data: BodyType<EventSegmentInput>}, TContext> => {
-
-const mutationKey = ['addSegmentToEvent'];
-const {mutation: mutationOptions, request: requestOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
-
-
-
-
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof addSegmentToEvent>>, {id: number;data: BodyType<EventSegmentInput>}> = (props) => {
-          const {id,data} = props ?? {};
-
-          return  addSegmentToEvent(id,data,requestOptions)
-        }
-
-
-
-
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type AddSegmentToEventMutationResult = NonNullable<Awaited<ReturnType<typeof addSegmentToEvent>>>
-    export type AddSegmentToEventMutationBody = BodyType<EventSegmentInput>
-    export type AddSegmentToEventMutationError = ErrorType<unknown>
-
-    /**
- * @summary Assign a segment to an event (admin only)
- */
-export const useAddSegmentToEvent = <TError = ErrorType<unknown>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof addSegmentToEvent>>, TError,{id: number;data: BodyType<EventSegmentInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
- ): UseMutationResult<
-        Awaited<ReturnType<typeof addSegmentToEvent>>,
-        TError,
-        {id: number;data: BodyType<EventSegmentInput>},
-        TContext
-      > => {
-      return useMutation(getAddSegmentToEventMutationOptions(options));
-    }
-
-export const getRemoveSegmentFromEventUrl = (id: number,
-    segmentId: number,) => {
-
-
-
-
-  return `/api/events/${id}/segments/${segmentId}`
-}
-
-/**
- * @summary Remove a segment from an event (admin only)
- */
-export const removeSegmentFromEvent = async (id: number,
-    segmentId: number, options?: RequestInit): Promise<void> => {
-
-  return customFetch<void>(getRemoveSegmentFromEventUrl(id,segmentId),
-  {
-    ...options,
-    method: 'DELETE'
-
-
-  }
-);}
-
-
-
-
-export const getRemoveSegmentFromEventMutationOptions = <TError = ErrorType<unknown>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof removeSegmentFromEvent>>, TError,{id: number;segmentId: number}, TContext>, request?: SecondParameter<typeof customFetch>}
-): UseMutationOptions<Awaited<ReturnType<typeof removeSegmentFromEvent>>, TError,{id: number;segmentId: number}, TContext> => {
-
-const mutationKey = ['removeSegmentFromEvent'];
-const {mutation: mutationOptions, request: requestOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
-
-
-
-
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof removeSegmentFromEvent>>, {id: number;segmentId: number}> = (props) => {
-          const {id,segmentId} = props ?? {};
-
-          return  removeSegmentFromEvent(id,segmentId,requestOptions)
-        }
-
-
-
-
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type RemoveSegmentFromEventMutationResult = NonNullable<Awaited<ReturnType<typeof removeSegmentFromEvent>>>
-
-    export type RemoveSegmentFromEventMutationError = ErrorType<unknown>
-
-    /**
- * @summary Remove a segment from an event (admin only)
- */
-export const useRemoveSegmentFromEvent = <TError = ErrorType<unknown>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof removeSegmentFromEvent>>, TError,{id: number;segmentId: number}, TContext>, request?: SecondParameter<typeof customFetch>}
- ): UseMutationResult<
-        Awaited<ReturnType<typeof removeSegmentFromEvent>>,
-        TError,
-        {id: number;segmentId: number},
-        TContext
-      > => {
-      return useMutation(getRemoveSegmentFromEventMutationOptions(options));
     }
 
 export const getGetSummaryUrl = (params?: GetSummaryParams,) => {
@@ -2919,5 +1887,223 @@ export const useDeleteRecipe = <TError = ErrorType<unknown>,
         TContext
       > => {
       return useMutation(getDeleteRecipeMutationOptions(options));
+    }
+
+export const getListAdminUsersUrl = () => {
+
+
+
+
+  return `/api/admin-users`
+}
+
+/**
+ * @summary List all admin users (superuser only)
+ */
+export const listAdminUsers = async ( options?: RequestInit): Promise<AdminUser[]> => {
+
+  return customFetch<AdminUser[]>(getListAdminUsersUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListAdminUsersQueryKey = () => {
+    return [
+    `/api/admin-users`
+    ] as const;
+    }
+
+
+export const getListAdminUsersQueryOptions = <TData = Awaited<ReturnType<typeof listAdminUsers>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listAdminUsers>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListAdminUsersQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listAdminUsers>>> = ({ signal }) => listAdminUsers({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listAdminUsers>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListAdminUsersQueryResult = NonNullable<Awaited<ReturnType<typeof listAdminUsers>>>
+export type ListAdminUsersQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary List all admin users (superuser only)
+ */
+
+export function useListAdminUsers<TData = Awaited<ReturnType<typeof listAdminUsers>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listAdminUsers>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListAdminUsersQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getCreateAdminUserUrl = () => {
+
+
+
+
+  return `/api/admin-users`
+}
+
+/**
+ * @summary Add an admin user (superuser only)
+ */
+export const createAdminUser = async (adminUserInput: AdminUserInput, options?: RequestInit): Promise<AdminUser> => {
+
+  return customFetch<AdminUser>(getCreateAdminUserUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      adminUserInput,)
+  }
+);}
+
+
+
+
+export const getCreateAdminUserMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createAdminUser>>, TError,{data: BodyType<AdminUserInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createAdminUser>>, TError,{data: BodyType<AdminUserInput>}, TContext> => {
+
+const mutationKey = ['createAdminUser'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createAdminUser>>, {data: BodyType<AdminUserInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  createAdminUser(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateAdminUserMutationResult = NonNullable<Awaited<ReturnType<typeof createAdminUser>>>
+    export type CreateAdminUserMutationBody = BodyType<AdminUserInput>
+    export type CreateAdminUserMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Add an admin user (superuser only)
+ */
+export const useCreateAdminUser = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createAdminUser>>, TError,{data: BodyType<AdminUserInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createAdminUser>>,
+        TError,
+        {data: BodyType<AdminUserInput>},
+        TContext
+      > => {
+      return useMutation(getCreateAdminUserMutationOptions(options));
+    }
+
+export const getDeleteAdminUserUrl = (id: number,) => {
+
+
+
+
+  return `/api/admin-users/${id}`
+}
+
+/**
+ * @summary Remove an admin user (superuser only)
+ */
+export const deleteAdminUser = async (id: number, options?: RequestInit): Promise<void> => {
+
+  return customFetch<void>(getDeleteAdminUserUrl(id),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+export const getDeleteAdminUserMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteAdminUser>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof deleteAdminUser>>, TError,{id: number}, TContext> => {
+
+const mutationKey = ['deleteAdminUser'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteAdminUser>>, {id: number}> = (props) => {
+          const {id} = props ?? {};
+
+          return  deleteAdminUser(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteAdminUserMutationResult = NonNullable<Awaited<ReturnType<typeof deleteAdminUser>>>
+
+    export type DeleteAdminUserMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Remove an admin user (superuser only)
+ */
+export const useDeleteAdminUser = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteAdminUser>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof deleteAdminUser>>,
+        TError,
+        {id: number},
+        TContext
+      > => {
+      return useMutation(getDeleteAdminUserMutationOptions(options));
     }
 

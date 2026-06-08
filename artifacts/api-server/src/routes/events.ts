@@ -1,6 +1,7 @@
 import { Router, type IRouter } from "express";
-import { db, eventsTable, eventSegmentsTable, segmentsTable } from "@workspace/db";
-import { eq, inArray } from "drizzle-orm";
+import { db, eventsTable } from "@workspace/db";
+import type { PizzaType } from "@workspace/db";
+import { eq } from "drizzle-orm";
 import {
   CreateEventBody,
   UpdateEventParams,
@@ -9,7 +10,11 @@ import {
 } from "@workspace/api-zod";
 
 const DEFAULT_SLOTS = ["16:00-16:30","16:30-17:00","17:00-17:30","17:30-18:00","18:00-18:30","18:30-19:00"];
-const DEFAULT_PIZZA_TYPES = ["Margherita","Pepperoni","Special"];
+const DEFAULT_PIZZA_TYPES: PizzaType[] = [
+  { name: "Margherita", price: 70 },
+  { name: "Pepperoni", price: 70 },
+  { name: "Special", price: 70 },
+];
 
 function generateSlug(): string {
   const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
@@ -35,59 +40,17 @@ function requireAdmin(req: any, res: any, next: any): void {
   next();
 }
 
-function requireAuth(req: any, res: any, next: any): void {
-  if (!req.session?.role) {
-    res.status(401).json({ error: "Authentication required" });
-    return;
-  }
-  next();
-}
-
-async function attachSegmentDescriptions<T extends { id: number }>(
-  events: T[]
-): Promise<(T & { segmentDescriptions: string[] })[]> {
-  if (events.length === 0) return events.map((e) => ({ ...e, segmentDescriptions: [] }));
-
-  const eventIds = events.map((e) => e.id);
-  const rows = await db
-    .select({
-      eventId: eventSegmentsTable.eventId,
-      description: segmentsTable.description,
-    })
-    .from(eventSegmentsTable)
-    .innerJoin(segmentsTable, eq(segmentsTable.id, eventSegmentsTable.segmentId))
-    .where(inArray(eventSegmentsTable.eventId, eventIds));
-
-  const descsByEvent = new Map<number, string[]>();
-  for (const row of rows) {
-    if (!row.description) continue;
-    const list = descsByEvent.get(row.eventId) ?? [];
-    list.push(row.description);
-    descsByEvent.set(row.eventId, list);
-  }
-
-  return events.map((e) => ({ ...e, segmentDescriptions: descsByEvent.get(e.id) ?? [] }));
-}
-
 router.get("/events", async (req, res): Promise<void> => {
-  // Unauthenticated: return all active events (needed for home-page event selector)
-  if (!req.session?.role) {
-    const events = await db.select().from(eventsTable).orderBy(eventsTable.date);
-    const active = events.filter((e) => e.active);
-    res.json(await attachSegmentDescriptions(active));
-    return;
-  }
-
-  if (req.session.role === "admin") {
-    const events = await db.select().from(eventsTable).orderBy(eventsTable.date);
-    res.json(await attachSegmentDescriptions(events));
-    return;
-  }
-
-  // Authenticated users (via OTP or legacy code) see all active events
   const events = await db.select().from(eventsTable).orderBy(eventsTable.date);
-  const active = events.filter((e) => e.active);
-  res.json(await attachSegmentDescriptions(active));
+  if (!req.session?.role) {
+    res.json(events.filter((e) => e.active));
+    return;
+  }
+  if (req.session.role === "admin") {
+    res.json(events);
+    return;
+  }
+  res.json(events.filter((e) => e.active));
 });
 
 router.post("/events", requireAdmin, async (req, res): Promise<void> => {
@@ -102,12 +65,11 @@ router.post("/events", requireAdmin, async (req, res): Promise<void> => {
       date: parsed.data.date,
       totalCapacity: parsed.data.totalCapacity ?? 10,
       slotCapacity: parsed.data.slotCapacity ?? 3,
-      price: parsed.data.price ?? 70,
       maxPerGuest: parsed.data.maxPerGuest ?? null,
       description: parsed.data.description ?? null,
       orderDeadline: parsed.data.orderDeadline ?? null,
       slots: parsed.data.slots?.length ? parsed.data.slots : DEFAULT_SLOTS,
-      pizzaTypes: parsed.data.pizzaTypes?.length ? parsed.data.pizzaTypes : DEFAULT_PIZZA_TYPES,
+      pizzaTypes: parsed.data.pizzaTypes?.length ? (parsed.data.pizzaTypes as PizzaType[]) : DEFAULT_PIZZA_TYPES,
       active: true,
     })
     .returning();
@@ -127,7 +89,6 @@ router.patch("/events/:id", requireAdmin, async (req, res): Promise<void> => {
   if (parsed.data.date !== undefined) updateData.date = parsed.data.date;
   if (parsed.data.totalCapacity !== undefined) updateData.totalCapacity = parsed.data.totalCapacity;
   if (parsed.data.slotCapacity !== undefined) updateData.slotCapacity = parsed.data.slotCapacity;
-  if (parsed.data.price !== undefined) updateData.price = parsed.data.price;
   if ("maxPerGuest" in parsed.data) updateData.maxPerGuest = parsed.data.maxPerGuest ?? null;
   if (parsed.data.description !== undefined) updateData.description = parsed.data.description;
   if ("orderDeadline" in parsed.data) updateData.orderDeadline = parsed.data.orderDeadline ?? null;

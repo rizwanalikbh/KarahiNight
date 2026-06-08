@@ -95,7 +95,7 @@ router.post("/orders", requireAuth, async (req, res): Promise<void> => {
     items.length > 0 &&
     items.every(
       (i: any) =>
-        eventPizzaTypes.includes(i.pizzaChoice) &&
+        eventPizzaTypes.some((pt: any) => pt.name === i.pizzaChoice) &&
         typeof i.quantity === "number" &&
         i.quantity >= 1
     );
@@ -232,7 +232,7 @@ router.patch("/orders/:id", requireAuth, async (req, res): Promise<void> => {
     }
 
     const eventPizzaTypes = Array.isArray(event.pizzaTypes) ? event.pizzaTypes : [];
-    const validTypes = newItems.every((i) => eventPizzaTypes.includes(i.pizzaChoice));
+    const validTypes = newItems.every((i) => eventPizzaTypes.some((pt: any) => pt.name === i.pizzaChoice));
     if (!validTypes) {
       res.status(400).json({ error: "Invalid pizza type" });
       return;

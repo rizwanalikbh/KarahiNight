@@ -6,6 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { EventGuest } from './eventGuest';
+import type { PizzaType } from './pizzaType';
 import type { SlotSummary } from './slotSummary';
 
 export interface EventSummary {
@@ -21,7 +22,6 @@ export interface EventSummary {
      * @nullable
      */
   orderDeadline?: Date | null;
-  price: number;
   /**
      * Maximum pizzas per guest for this event. Null means no per-guest limit.
      * @nullable
@@ -29,7 +29,7 @@ export interface EventSummary {
   maxPerGuest: number | null;
   /** @nullable */
   description?: string | null;
-  pizzaTypes: string[];
+  pizzaTypes: PizzaType[];
   slots: SlotSummary[];
   guests: EventGuest[];
 }

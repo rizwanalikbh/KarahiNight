@@ -3,16 +3,11 @@ import {
   useGetMe, useGetSummary, useListOrders, useUpdateOrder, useDeleteOrder,
   useListUsers, useUpdateUser, useDeleteUser, useRegenerateCode, useCreateUser,
   useListEvents, useCreateEvent, useUpdateEvent, useDeleteEvent,
-  useListSegments, useCreateSegment, useDeleteSegment, useUpdateSegment,
-  useListSegmentUsers, useAddUserToSegment, useRemoveUserFromSegment,
-  useListEventSegments, useAddSegmentToEvent, useRemoveSegmentFromEvent,
-  useImportUsers, useListUserSegments,
+  useImportUsers,
   useListAdminUsers, useCreateAdminUser, useDeleteAdminUser,
   getListAdminUsersQueryKey,
   getListOrdersQueryKey, getListUsersQueryKey, getGetSummaryQueryKey,
   getListEventsQueryKey,
-  getListSegmentsQueryKey, getListSegmentUsersQueryKey, getListEventSegmentsQueryKey,
-  getListUserSegmentsQueryKey,
 } from "@workspace/api-client-react";
 import type { Event } from "@workspace/api-client-react";
 import { useLocation } from "wouter";
@@ -30,13 +25,19 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import {
   Loader2, Trash2, RefreshCw, UserPlus, Plus, CalendarDays,
-  Users, ChevronDown, ChevronUp, Pencil, X, Check, FileText, Tag, Upload, Mail, Phone, ShieldCheck,
+  ChevronDown, ChevronUp, Pencil, X, Check, FileText, Upload, Mail, Phone, ShieldCheck,
 } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { OrderUpdateStatus } from "@workspace/api-client-react";
 
+type PizzaType = { name: string; price: number; discountedPrice?: number };
+
 const DEFAULT_SLOTS = ["16:00-16:30","16:30-17:00","17:00-17:30","17:30-18:00","18:00-18:30","18:30-19:00"];
-const DEFAULT_PIZZA_TYPES = ["Margherita","Pepperoni","Special"];
+const DEFAULT_PIZZA_TYPES: PizzaType[] = [
+  { name: "Margherita", price: 70 },
+  { name: "Pepperoni", price: 70 },
+  { name: "Special", price: 70 },
+];
 
 function formatEventDate(dateStr: string): string {
   try {
@@ -45,7 +46,14 @@ function formatEventDate(dateStr: string): string {
   } catch { return dateStr; }
 }
 
-// ── Tag editor for slots / pizza types ──────────────────────────────────────
+function computeOrderTotal(items: { pizzaChoice: string; quantity: number }[], pizzaTypes: PizzaType[]): number {
+  return items.reduce((sum, item) => {
+    const pt = pizzaTypes.find((p) => p.name === item.pizzaChoice);
+    return sum + (pt?.price ?? 70) * item.quantity;
+  }, 0);
+}
+
+// ── Tag editor for slots ──────────────────────────────────────────────────────
 function TagEditor({
   label, tags, onChange, placeholder,
 }: { label: string; tags: string[]; onChange: (tags: string[]) => void; placeholder: string }) {
@@ -76,8 +84,69 @@ function TagEditor({
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); add(); } }}
         />
-        <Button type="button" size="sm" className="h-8 px-3" onClick={add} disabled={!input.trim()}>
-          <Plus className="w-3 h-3" />
+        <Button type="button" size="sm" variant="outline" className="h-8 shrink-0" onClick={add}>Add</Button>
+      </div>
+    </div>
+  );
+}
+
+// ── Pizza type editor with pricing ────────────────────────────────────────────
+function PizzaTypeEditor({
+  pizzaTypes,
+  onChange,
+}: { pizzaTypes: PizzaType[]; onChange: (types: PizzaType[]) => void }) {
+  const [newName, setNewName] = useState("");
+  const [newPrice, setNewPrice] = useState("70");
+  const [newDiscounted, setNewDiscounted] = useState("");
+
+  const add = () => {
+    const name = newName.trim();
+    const price = parseInt(newPrice, 10);
+    if (!name || isNaN(price)) return;
+    const discountedPrice = newDiscounted !== "" ? parseInt(newDiscounted, 10) : undefined;
+    onChange([...pizzaTypes, { name, price, ...(discountedPrice !== undefined && !isNaN(discountedPrice) ? { discountedPrice } : {}) }]);
+    setNewName("");
+    setNewPrice("70");
+    setNewDiscounted("");
+  };
+
+  const remove = (index: number) => onChange(pizzaTypes.filter((_, i) => i !== index));
+
+  return (
+    <div className="space-y-2">
+      <Label className="text-sm">Pizza Types & Prices</Label>
+      <div className="space-y-1.5">
+        {pizzaTypes.map((pt, i) => (
+          <div key={i} className="flex items-center gap-2 px-3 py-2 border rounded-lg bg-background text-sm">
+            <span className="flex-1 font-medium">{pt.name}</span>
+            <span className="text-muted-foreground">{pt.price} DKK</span>
+            {pt.discountedPrice !== undefined && (
+              <span className="text-xs text-accent">({pt.discountedPrice} DKK discounted)</span>
+            )}
+            <button type="button" onClick={() => remove(i)} className="text-muted-foreground hover:text-destructive transition-colors ml-1">×</button>
+          </div>
+        ))}
+        {pizzaTypes.length === 0 && (
+          <p className="text-xs text-muted-foreground py-1">No pizza types yet.</p>
+        )}
+      </div>
+      <div className="flex gap-2 items-end flex-wrap">
+        <div className="flex-1 min-w-[120px] space-y-1">
+          <label className="text-xs text-muted-foreground">Name</label>
+          <Input className="h-8 text-sm" placeholder="e.g. Quattro Stagioni" value={newName}
+            onChange={(e) => setNewName(e.target.value)}
+            onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); add(); } }} />
+        </div>
+        <div className="w-24 space-y-1">
+          <label className="text-xs text-muted-foreground">Price (DKK)</label>
+          <Input type="number" min={0} className="h-8 text-sm" value={newPrice} onChange={(e) => setNewPrice(e.target.value)} />
+        </div>
+        <div className="w-28 space-y-1">
+          <label className="text-xs text-muted-foreground">Discounted (opt.)</label>
+          <Input type="number" min={0} className="h-8 text-sm" placeholder="—" value={newDiscounted} onChange={(e) => setNewDiscounted(e.target.value)} />
+        </div>
+        <Button type="button" size="sm" className="h-8 shrink-0" onClick={add} disabled={!newName.trim()}>
+          <Plus className="w-3 h-3 mr-1" /> Add
         </Button>
       </div>
     </div>
@@ -94,7 +163,6 @@ function EventEditPanel({ event, onClose }: { event: Event; onClose: () => void 
   const [date, setDate] = useState(event.date);
   const [totalCap, setTotalCap] = useState(String(event.totalCapacity));
   const [slotCap, setSlotCap] = useState(String(event.slotCapacity));
-  const [price, setPrice] = useState(String(event.price));
   const [maxPerGuest, setMaxPerGuest] = useState(event.maxPerGuest != null ? String(event.maxPerGuest) : "");
   const [description, setDescription] = useState(event.description ?? "");
   const [orderDeadline, setOrderDeadline] = useState<string>(() => {
@@ -104,7 +172,14 @@ function EventEditPanel({ event, onClose }: { event: Event; onClose: () => void 
     return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
   });
   const [slots, setSlots] = useState<string[]>(event.slots ?? DEFAULT_SLOTS);
-  const [pizzaTypes, setPizzaTypes] = useState<string[]>(event.pizzaTypes ?? DEFAULT_PIZZA_TYPES);
+  const [pizzaTypes, setPizzaTypes] = useState<PizzaType[]>(() => {
+    const raw = event.pizzaTypes ?? [];
+    if (raw.length === 0) return DEFAULT_PIZZA_TYPES;
+    if (typeof raw[0] === "string") {
+      return (raw as unknown as string[]).map((n) => ({ name: n, price: 70 }));
+    }
+    return raw as unknown as PizzaType[];
+  });
 
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
@@ -115,12 +190,11 @@ function EventEditPanel({ event, onClose }: { event: Event; onClose: () => void 
           name, date,
           totalCapacity: parseInt(totalCap, 10) || 10,
           slotCapacity: parseInt(slotCap, 10) || 3,
-          price: Number.isNaN(parseInt(price, 10)) ? 70 : parseInt(price, 10),
           maxPerGuest: maxPerGuest === "" ? null : (parseInt(maxPerGuest, 10) || null),
           description: description || undefined,
           orderDeadline: orderDeadline || null,
           slots,
-          pizzaTypes,
+          pizzaTypes: pizzaTypes as any,
         },
       },
       {
@@ -155,10 +229,6 @@ function EventEditPanel({ event, onClose }: { event: Event; onClose: () => void 
           <Input type="number" min={1} value={slotCap} onChange={(e) => setSlotCap(e.target.value)} />
         </div>
         <div className="space-y-1.5">
-          <Label className="text-sm">Price per Pizza (DKK)</Label>
-          <Input type="number" min={0} value={price} onChange={(e) => setPrice(e.target.value)} />
-        </div>
-        <div className="space-y-1.5">
           <Label className="text-sm">Max Pizzas per Guest <span className="text-muted-foreground font-normal">(optional)</span></Label>
           <Input type="number" min={1} placeholder="No limit" value={maxPerGuest} onChange={(e) => setMaxPerGuest(e.target.value)} />
         </div>
@@ -175,22 +245,12 @@ function EventEditPanel({ event, onClose }: { event: Event; onClose: () => void 
           onChange={(e) => setDescription(e.target.value)}
           className="resize-none"
           rows={2}
-          placeholder="Shown on home &amp; order pages..."
+          placeholder="Shown on home & order pages..."
         />
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <TagEditor
-          label="Pickup Slots"
-          tags={slots}
-          onChange={setSlots}
-          placeholder="e.g. 17:00-17:30"
-        />
-        <TagEditor
-          label="Pizza Types"
-          tags={pizzaTypes}
-          onChange={setPizzaTypes}
-          placeholder="e.g. Quattro Stagioni"
-        />
+        <TagEditor label="Pickup Slots" tags={slots} onChange={setSlots} placeholder="e.g. 17:00-17:30" />
+        <PizzaTypeEditor pizzaTypes={pizzaTypes} onChange={setPizzaTypes} />
       </div>
       <div className="flex gap-2 pt-1">
         <Button type="submit" size="sm" disabled={updateEvent.isPending}>
@@ -204,93 +264,6 @@ function EventEditPanel({ event, onClose }: { event: Event; onClose: () => void 
   );
 }
 
-// ── Segment manager per event ────────────────────────────────────────────────
-function EventSegmentManager({ eventId, allSegments }: { eventId: number; allSegments: any[] }) {
-  const { toast } = useToast();
-  const queryClient = useQueryClient();
-  const [addSegmentId, setAddSegmentId] = useState("");
-  const [expanded, setExpanded] = useState(false);
-
-  const { data: eventSegments } = useListEventSegments(eventId, {
-    query: { enabled: expanded, queryKey: getListEventSegmentsQueryKey(eventId) },
-  });
-  const addSegment = useAddSegmentToEvent();
-  const removeSegment = useRemoveSegmentFromEvent();
-
-  const eventSegmentIds = new Set((eventSegments ?? []).map((s) => s.id));
-  const segmentsNotInEvent = allSegments.filter((s) => !eventSegmentIds.has(s.id));
-
-  const handleAdd = () => {
-    if (!addSegmentId) return;
-    addSegment.mutate({ id: eventId, data: { segmentId: parseInt(addSegmentId, 10) } }, {
-      onSuccess: () => {
-        toast({ title: "Segment assigned" });
-        setAddSegmentId("");
-        queryClient.invalidateQueries({ queryKey: getListEventSegmentsQueryKey(eventId) });
-        queryClient.invalidateQueries({ queryKey: getGetSummaryQueryKey() });
-      },
-    });
-  };
-
-  return (
-    <div className="mt-2">
-      <button
-        type="button"
-        className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
-        onClick={() => setExpanded(!expanded)}
-      >
-        <Tag className="w-4 h-4" />
-        {expanded ? "Hide" : "Manage"} segments
-        {expanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
-      </button>
-
-      {expanded && (
-        <div className="mt-3 border rounded-xl p-4 space-y-3 bg-secondary/20">
-          {(eventSegments ?? []).length === 0 ? (
-            <p className="text-sm text-muted-foreground">No segments assigned yet.</p>
-          ) : (
-            <div className="flex flex-wrap gap-2">
-              {(eventSegments ?? []).map((s) => (
-                <Badge key={s.id} variant="secondary" className="gap-1.5 pr-1">
-                  <Tag className="w-3 h-3" />
-                  {s.name}
-                  <span className="text-muted-foreground text-xs">({s.memberCount})</span>
-                  <button
-                    type="button"
-                    onClick={() => removeSegment.mutate({ id: eventId, segmentId: s.id }, {
-                      onSuccess: () => {
-                        toast({ title: "Segment removed" });
-                        queryClient.invalidateQueries({ queryKey: getListEventSegmentsQueryKey(eventId) });
-                        queryClient.invalidateQueries({ queryKey: getGetSummaryQueryKey() });
-                      },
-                    })}
-                    className="hover:text-destructive transition-colors ml-1"
-                  >×</button>
-                </Badge>
-              ))}
-            </div>
-          )}
-          {segmentsNotInEvent.length > 0 && (
-            <div className="flex gap-2 items-center">
-              <Select value={addSegmentId} onValueChange={setAddSegmentId}>
-                <SelectTrigger className="h-8 text-xs flex-1"><SelectValue placeholder="Assign a segment..." /></SelectTrigger>
-                <SelectContent>
-                  {segmentsNotInEvent.map((s) => (
-                    <SelectItem key={s.id} value={String(s.id)}>{s.name} ({s.memberCount} members)</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Button size="sm" className="h-8" onClick={handleAdd} disabled={!addSegmentId || addSegment.isPending}>
-                <Plus className="w-3 h-3 mr-1" /> Assign
-              </Button>
-            </div>
-          )}
-        </div>
-      )}
-    </div>
-  );
-}
-
 // ── Inline order editor ─────────────────────────────────────────────────────
 function OrderEditPanel({
   order, event, onClose, onSave,
@@ -301,13 +274,16 @@ function OrderEditPanel({
   onSave: (id: number, data: { items?: any[]; pickupSlot?: string; notes?: string; paid?: boolean }) => void;
 }) {
   const slots: string[] = event?.slots ?? [];
-  const pizzaTypes: string[] = event?.pizzaTypes ?? ["Margherita", "Pepperoni", "Special"];
+  const eventPizzaTypes: PizzaType[] = (event?.pizzaTypes ?? []).map((pt: any) =>
+    typeof pt === "string" ? { name: pt, price: 70 } : pt
+  );
+  const pizzaNames = eventPizzaTypes.map((pt) => pt.name);
   const maxPizzas: number = event?.slotCapacity ?? 3;
 
   const [items, setItems] = useState<{ pizzaChoice: string; quantity: number }[]>(
     () => {
       const raw = order.items ?? [];
-      return raw.length > 0 ? raw.map((i: any) => ({ pizzaChoice: i.pizzaChoice, quantity: i.quantity })) : [{ pizzaChoice: pizzaTypes[0] ?? "", quantity: 1 }];
+      return raw.length > 0 ? raw.map((i: any) => ({ pizzaChoice: i.pizzaChoice, quantity: i.quantity })) : [{ pizzaChoice: pizzaNames[0] ?? "", quantity: 1 }];
     }
   );
   const [pickupSlot, setPickupSlot] = useState<string>(order.pickupSlot ?? "");
@@ -319,13 +295,15 @@ function OrderEditPanel({
 
   const addPizza = () => {
     if (items.length >= maxPizzas) return;
-    setItems((prev) => [...prev, { pizzaChoice: pizzaTypes[0] ?? "", quantity: 1 }]);
+    setItems((prev) => [...prev, { pizzaChoice: pizzaNames[0] ?? "", quantity: 1 }]);
   };
 
   const removePizza = (index: number) => {
     if (items.length <= 1) return;
     setItems((prev) => prev.filter((_, i) => i !== index));
   };
+
+  const total = computeOrderTotal(items, eventPizzaTypes);
 
   return (
     <div className="border-t bg-secondary/10 px-4 py-4 space-y-4">
@@ -371,18 +349,19 @@ function OrderEditPanel({
                 <span className="text-xs text-muted-foreground w-5 shrink-0">#{index + 1}</span>
               )}
               <div className="flex flex-wrap gap-1.5 flex-1">
-                {pizzaTypes.map((choice) => (
+                {eventPizzaTypes.map((pt) => (
                   <button
-                    key={choice}
+                    key={pt.name}
                     type="button"
-                    onClick={() => updateChoice(index, choice)}
+                    onClick={() => updateChoice(index, pt.name)}
                     className={`px-2.5 py-1 rounded-lg border text-xs font-medium transition-colors cursor-pointer
-                      ${item.pizzaChoice === choice
+                      ${item.pizzaChoice === pt.name
                         ? "border-primary bg-primary/5 text-primary"
                         : "border-border hover:bg-secondary/50 text-foreground"
                       }`}
                   >
-                    {choice}
+                    {pt.name}
+                    <span className="ml-1 text-muted-foreground">{pt.price} kr</span>
                   </button>
                 ))}
               </div>
@@ -398,6 +377,9 @@ function OrderEditPanel({
             </div>
           ))}
         </div>
+        {total > 0 && (
+          <p className="text-xs text-muted-foreground">Total: <span className="font-semibold text-foreground">{total} DKK</span></p>
+        )}
       </div>
 
       <div className="flex items-center gap-3 pt-1 border-t">
@@ -419,40 +401,14 @@ function OrderEditPanel({
   );
 }
 
-// ── Segment badges for a single user row ────────────────────────────────────
-function UserSegmentBadges({ userId }: { userId: number }) {
-  const { data } = useListUserSegments(userId, {
-    query: { queryKey: getListUserSegmentsQueryKey(userId) },
-  });
-  if (!data?.length) return <span className="text-xs text-muted-foreground">—</span>;
-  return (
-    <div className="flex flex-wrap gap-1">
-      {data.map((s) => (
-        <Badge key={s.id} variant="secondary" className="text-xs font-normal py-0">
-          {s.name}
-        </Badge>
-      ))}
-    </div>
-  );
-}
-
 // ── Guest inline edit panel ──────────────────────────────────────────────────
-function GuestEditPanel({ user, allSegments, onClose }: { user: any; allSegments: any[]; onClose: () => void }) {
+function GuestEditPanel({ user, onClose }: { user: any; onClose: () => void }) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [email, setEmail] = useState(user.email ?? "");
   const [mobile, setMobile] = useState(user.mobile ?? "");
-  const [addSegmentId, setAddSegmentId] = useState("");
 
-  const { data: userSegments, isLoading: segmentsLoading } = useListUserSegments(user.id, {
-    query: { queryKey: getListUserSegmentsQueryKey(user.id) },
-  });
   const updateUser = useUpdateUser();
-  const addToSegment = useAddUserToSegment();
-  const removeFromSegment = useRemoveUserFromSegment();
-
-  const userSegmentIds = new Set((userSegments ?? []).map((s) => s.id));
-  const availableSegments = allSegments.filter((s) => !userSegmentIds.has(s.id));
 
   const handleSave = () => {
     updateUser.mutate({
@@ -484,59 +440,6 @@ function GuestEditPanel({ user, allSegments, onClose }: { user: any; allSegments
           <Input type="tel" value={mobile} onChange={(e) => setMobile(e.target.value)} className="h-8 text-sm" placeholder="Optional" />
         </div>
       </div>
-
-      <div className="space-y-2">
-        <Label className="text-xs flex items-center gap-1"><Tag className="w-3 h-3" /> Segments</Label>
-        <div className="flex flex-wrap gap-2 min-h-[1.75rem] items-center">
-          {segmentsLoading && <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />}
-          {!segmentsLoading && (userSegments ?? []).length === 0 && (
-            <span className="text-xs text-muted-foreground">No segments yet</span>
-          )}
-          {(userSegments ?? []).map((s) => (
-            <Badge key={s.id} variant="secondary" className="gap-1 pr-1">
-              {s.name}
-              <button type="button"
-                onClick={() => removeFromSegment.mutate({ id: s.id, userId: user.id }, {
-                  onSuccess: () => {
-                    queryClient.invalidateQueries({ queryKey: getListUserSegmentsQueryKey(user.id) });
-                    queryClient.invalidateQueries({ queryKey: getListSegmentsQueryKey() });
-                  },
-                })}
-                className="hover:text-destructive transition-colors ml-1"
-              >×</button>
-            </Badge>
-          ))}
-        </div>
-        {availableSegments.length > 0 && (
-          <div className="flex gap-2">
-            <Select value={addSegmentId} onValueChange={setAddSegmentId}>
-              <SelectTrigger className="h-8 text-xs flex-1 max-w-xs">
-                <SelectValue placeholder="Add to segment..." />
-              </SelectTrigger>
-              <SelectContent>
-                {availableSegments.map((s) => (
-                  <SelectItem key={s.id} value={String(s.id)}>{s.name}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Button size="sm" className="h-8" disabled={!addSegmentId || addToSegment.isPending}
-              onClick={() => {
-                if (!addSegmentId) return;
-                addToSegment.mutate({ id: parseInt(addSegmentId, 10), data: { userId: user.id } }, {
-                  onSuccess: () => {
-                    setAddSegmentId("");
-                    queryClient.invalidateQueries({ queryKey: getListUserSegmentsQueryKey(user.id) });
-                    queryClient.invalidateQueries({ queryKey: getListSegmentsQueryKey() });
-                  },
-                });
-              }}
-            >
-              <Plus className="w-3 h-3 mr-1" /> Add
-            </Button>
-          </div>
-        )}
-      </div>
-
       <div className="flex gap-2">
         <Button size="sm" onClick={handleSave} disabled={updateUser.isPending}>
           <Check className="w-3 h-3 mr-1" /> Save
@@ -646,182 +549,6 @@ function CsvUploadCard() {
         )}
       </CardContent>
     </Card>
-  );
-}
-
-// ── Segment member manager (used inside segments tab) ────────────────────────
-function SegmentMemberManager({ segmentId, allUsers }: { segmentId: number; allUsers: any[] }) {
-  const { toast } = useToast();
-  const queryClient = useQueryClient();
-  const [addUserId, setAddUserId] = useState("");
-  const [expanded, setExpanded] = useState(false);
-
-  const { data: members } = useListSegmentUsers(segmentId, {
-    query: { enabled: expanded, queryKey: getListSegmentUsersQueryKey(segmentId) },
-  });
-  const addUser = useAddUserToSegment();
-  const removeUser = useRemoveUserFromSegment();
-
-  const memberIds = new Set((members ?? []).map((u) => u.id));
-  const usersNotInSegment = allUsers.filter((u) => !memberIds.has(u.id));
-
-  const handleAdd = () => {
-    if (!addUserId) return;
-    addUser.mutate({ id: segmentId, data: { userId: parseInt(addUserId, 10) } }, {
-      onSuccess: () => {
-        toast({ title: "Guest added to segment" });
-        setAddUserId("");
-        queryClient.invalidateQueries({ queryKey: getListSegmentUsersQueryKey(segmentId) });
-        queryClient.invalidateQueries({ queryKey: getListSegmentsQueryKey() });
-        queryClient.invalidateQueries({ queryKey: getGetSummaryQueryKey() });
-      },
-    });
-  };
-
-  return (
-    <div className="mt-2">
-      <button
-        type="button"
-        className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
-        onClick={() => setExpanded(!expanded)}
-      >
-        <Users className="w-4 h-4" />
-        {expanded ? "Hide" : "Manage"} members
-        {expanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
-      </button>
-
-      {expanded && (
-        <div className="mt-3 border rounded-xl p-4 space-y-3 bg-secondary/20">
-          {(members ?? []).length === 0 ? (
-            <p className="text-sm text-muted-foreground">No members yet.</p>
-          ) : (
-            <div className="flex flex-wrap gap-2">
-              {(members ?? []).map((u) => (
-                <Badge key={u.id} variant="secondary" className="gap-1.5 pr-1">
-                  {u.name}
-                  <button
-                    type="button"
-                    onClick={() => removeUser.mutate({ id: segmentId, userId: u.id }, {
-                      onSuccess: () => {
-                        toast({ title: "Guest removed from segment" });
-                        queryClient.invalidateQueries({ queryKey: getListSegmentUsersQueryKey(segmentId) });
-                        queryClient.invalidateQueries({ queryKey: getListSegmentsQueryKey() });
-                        queryClient.invalidateQueries({ queryKey: getGetSummaryQueryKey() });
-                      },
-                    })}
-                    className="hover:text-destructive transition-colors ml-1"
-                  >×</button>
-                </Badge>
-              ))}
-            </div>
-          )}
-          {usersNotInSegment.length > 0 && (
-            <div className="flex gap-2 items-center">
-              <Select value={addUserId} onValueChange={setAddUserId}>
-                <SelectTrigger className="h-8 text-xs flex-1"><SelectValue placeholder="Add a guest..." /></SelectTrigger>
-                <SelectContent>
-                  {usersNotInSegment.map((u) => (
-                    <SelectItem key={u.id} value={String(u.id)}>{u.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Button size="sm" className="h-8" onClick={handleAdd} disabled={!addUserId || addUser.isPending}>
-                <Plus className="w-3 h-3 mr-1" /> Add
-              </Button>
-            </div>
-          )}
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ── Segment detail editor (description + tags inline) ────────────────────────
-function SegmentDetailEditor({ seg }: { seg: any }) {
-  const { toast } = useToast();
-  const queryClient = useQueryClient();
-  const [editing, setEditing] = useState(false);
-  const [description, setDescription] = useState(seg.description ?? "");
-  const [tags, setTags] = useState(seg.tags ?? "");
-  const updateSegment = useUpdateSegment();
-
-  const handleSave = () => {
-    updateSegment.mutate(
-      { id: seg.id, data: { description: description || null, tags: tags || null } },
-      {
-        onSuccess: () => {
-          toast({ title: "Segment updated" });
-          setEditing(false);
-          queryClient.invalidateQueries({ queryKey: getListSegmentsQueryKey() });
-        },
-        onError: () => toast({ title: "Failed to update segment", variant: "destructive" }),
-      }
-    );
-  };
-
-  const handleCancel = () => {
-    setDescription(seg.description ?? "");
-    setTags(seg.tags ?? "");
-    setEditing(false);
-  };
-
-  if (editing) {
-    return (
-      <div className="mt-3 border rounded-xl p-4 space-y-3 bg-secondary/20">
-        <div className="space-y-1.5">
-          <label className="text-xs font-medium text-muted-foreground">Description</label>
-          <Input
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            placeholder="Short description of this audience…"
-            className="h-8 text-sm"
-          />
-        </div>
-        <div className="space-y-1.5">
-          <label className="text-xs font-medium text-muted-foreground">Search tags <span className="font-normal">(comma-separated)</span></label>
-          <Input
-            value={tags}
-            onChange={(e) => setTags(e.target.value)}
-            placeholder="e.g. vip, early-access, friends"
-            className="h-8 text-sm"
-          />
-        </div>
-        <div className="flex gap-2 justify-end">
-          <Button variant="ghost" size="sm" className="h-7" onClick={handleCancel}>Cancel</Button>
-          <Button size="sm" className="h-7" onClick={handleSave} disabled={updateSegment.isPending}>Save</Button>
-        </div>
-      </div>
-    );
-  }
-
-  const hasDetails = seg.description || seg.tags;
-  return (
-    <div className="mt-2">
-      <button
-        type="button"
-        className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
-        onClick={() => setEditing(true)}
-      >
-        <Pencil className="w-3 h-3" />
-        {hasDetails ? "Edit description & tags" : "Add description & tags"}
-      </button>
-      {hasDetails && (
-        <div className="mt-2 space-y-1">
-          {seg.description && (
-            <p className="text-xs text-muted-foreground leading-relaxed">{seg.description}</p>
-          )}
-          {seg.tags && (
-            <div className="flex flex-wrap gap-1 mt-1">
-              {seg.tags.split(",").map((t: string) => t.trim()).filter(Boolean).map((t: string) => (
-                <span key={t} className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-muted text-muted-foreground border border-border/60">
-                  #{t}
-                </span>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
-    </div>
   );
 }
 
@@ -951,120 +678,6 @@ function AdminUsersTab() {
   );
 }
 
-// ── Segments tab ─────────────────────────────────────────────────────────────
-function SegmentsTab({ allUsers }: { allUsers: any[] }) {
-  const { toast } = useToast();
-  const queryClient = useQueryClient();
-  const [newSegmentName, setNewSegmentName] = useState("");
-  const [newSegmentDesc, setNewSegmentDesc] = useState("");
-  const [newSegmentTags, setNewSegmentTags] = useState("");
-
-  const { data: segments } = useListSegments({ query: { queryKey: getListSegmentsQueryKey() } });
-  const createSegment = useCreateSegment();
-  const deleteSegment = useDeleteSegment();
-
-  const handleCreate = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newSegmentName.trim()) return;
-    createSegment.mutate({
-      data: {
-        name: newSegmentName.trim(),
-        description: newSegmentDesc.trim() || undefined,
-        tags: newSegmentTags.trim() || undefined,
-      }
-    }, {
-      onSuccess: () => {
-        toast({ title: "Segment created" });
-        setNewSegmentName("");
-        setNewSegmentDesc("");
-        setNewSegmentTags("");
-        queryClient.invalidateQueries({ queryKey: getListSegmentsQueryKey() });
-      },
-      onError: () => toast({ title: "Failed to create segment", variant: "destructive" }),
-    });
-  };
-
-  const handleDelete = (id: number, name: string) => {
-    if (!confirm(`Delete segment "${name}"? Guests will not be deleted.`)) return;
-    deleteSegment.mutate({ id }, {
-      onSuccess: () => {
-        toast({ title: "Segment deleted" });
-        queryClient.invalidateQueries({ queryKey: getListSegmentsQueryKey() });
-        queryClient.invalidateQueries({ queryKey: getGetSummaryQueryKey() });
-      },
-    });
-  };
-
-  return (
-    <>
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-lg flex items-center gap-2"><Tag className="w-5 h-5" /> Create Segment</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleCreate} className="space-y-3">
-            <div className="flex gap-3">
-              <Input
-                placeholder="Segment name, e.g. Fun Party"
-                value={newSegmentName}
-                onChange={(e) => setNewSegmentName(e.target.value)}
-                className="max-w-xs"
-              />
-              <Button type="submit" disabled={createSegment.isPending || !newSegmentName.trim()}>
-                <Plus className="w-4 h-4 mr-2" /> Create
-              </Button>
-            </div>
-            <div className="flex gap-3">
-              <Input
-                placeholder="Description (optional)"
-                value={newSegmentDesc}
-                onChange={(e) => setNewSegmentDesc(e.target.value)}
-                className="max-w-xs text-sm"
-              />
-              <Input
-                placeholder="Search tags, e.g. vip, friends (optional)"
-                value={newSegmentTags}
-                onChange={(e) => setNewSegmentTags(e.target.value)}
-                className="max-w-xs text-sm"
-              />
-            </div>
-          </form>
-        </CardContent>
-      </Card>
-
-      <div className="space-y-3">
-        {(!segments || segments.length === 0) && (
-          <p className="text-center py-8 text-muted-foreground">No segments yet.</p>
-        )}
-        {(segments ?? []).map((seg) => (
-          <Card key={seg.id}>
-            <CardContent className="pt-4 pb-4">
-              <div className="flex items-start justify-between gap-4">
-                <div className="flex items-center gap-3 min-w-0">
-                  <Tag className="w-4 h-4 text-primary shrink-0 mt-0.5" />
-                  <div>
-                    <span className="font-semibold text-foreground">{seg.name}</span>
-                    <span className="ml-2 text-sm text-muted-foreground">{seg.memberCount} member{seg.memberCount !== 1 ? "s" : ""}</span>
-                  </div>
-                </div>
-                <Button
-                  variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:bg-destructive/10 shrink-0"
-                  onClick={() => handleDelete(seg.id, seg.name)}
-                  title="Delete segment"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </div>
-              <SegmentDetailEditor seg={seg} />
-              <SegmentMemberManager segmentId={seg.id} allUsers={allUsers} />
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-    </>
-  );
-}
-
 // ── Main dashboard ───────────────────────────────────────────────────────────
 export function AdminDashboard() {
   const [, setLocation] = useLocation();
@@ -1075,7 +688,6 @@ export function AdminDashboard() {
   const { data: events } = useListEvents();
   const { data: orders } = useListOrders({});
   const { data: users } = useListUsers();
-  const { data: segments } = useListSegments({ query: { queryKey: getListSegmentsQueryKey() } });
 
   const [summaryEventId, setSummaryEventId] = useState<number | undefined>(undefined);
   const activeEventId = summaryEventId ?? events?.[0]?.id;
@@ -1099,12 +711,11 @@ export function AdminDashboard() {
   const [newEventDate, setNewEventDate] = useState("2026-05-24");
   const [newEventCapacity, setNewEventCapacity] = useState("10");
   const [newEventSlot, setNewEventSlot] = useState("3");
-  const [newEventPrice, setNewEventPrice] = useState("70");
   const [newEventMaxPerGuest, setNewEventMaxPerGuest] = useState("");
   const [newEventDescription, setNewEventDescription] = useState("");
   const [newEventDeadline, setNewEventDeadline] = useState("");
   const [newEventSlots, setNewEventSlots] = useState<string[]>(DEFAULT_SLOTS);
-  const [newEventPizzaTypes, setNewEventPizzaTypes] = useState<string[]>(DEFAULT_PIZZA_TYPES);
+  const [newEventPizzaTypes, setNewEventPizzaTypes] = useState<PizzaType[]>(DEFAULT_PIZZA_TYPES);
 
   // Event editing state
   const [editingEventId, setEditingEventId] = useState<number | null>(null);
@@ -1115,7 +726,6 @@ export function AdminDashboard() {
   const [newUserName, setNewUserName] = useState("");
   const [newUserEmail, setNewUserEmail] = useState("");
   const [newUserMobile, setNewUserMobile] = useState("");
-  const [newUserSegmentIds, setNewUserSegmentIds] = useState<number[]>([]);
   const [editingUserId, setEditingUserId] = useState<number | null>(null);
   const [filterEventId, setFilterEventId] = useState<string>("all");
 
@@ -1174,8 +784,6 @@ export function AdminDashboard() {
     });
   };
 
-  const addToSegmentMutation = useAddUserToSegment();
-
   const handleAddUser = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newUserName.trim()) return;
@@ -1186,21 +794,11 @@ export function AdminDashboard() {
         ...(newUserMobile.trim() ? { mobile: newUserMobile.trim() } : {}),
       },
     }, {
-      onSuccess: (newUser) => {
+      onSuccess: () => {
         toast({ title: "Guest added" });
         setNewUserName("");
         setNewUserEmail("");
         setNewUserMobile("");
-        // Assign to selected segments
-        for (const segId of newUserSegmentIds) {
-          addToSegmentMutation.mutate({ id: segId, data: { userId: newUser.id } }, {
-            onSuccess: () => {
-              queryClient.invalidateQueries({ queryKey: getListSegmentsQueryKey() });
-              queryClient.invalidateQueries({ queryKey: getListUserSegmentsQueryKey(newUser.id) });
-            },
-          });
-        }
-        setNewUserSegmentIds([]);
         queryClient.invalidateQueries({ queryKey: getListUsersQueryKey() });
       },
       onError: (err: any) => {
@@ -1220,12 +818,11 @@ export function AdminDashboard() {
           date: newEventDate,
           totalCapacity: parseInt(newEventCapacity, 10) || 10,
           slotCapacity: parseInt(newEventSlot, 10) || 3,
-          price: Number.isNaN(parseInt(newEventPrice, 10)) ? 70 : parseInt(newEventPrice, 10),
           maxPerGuest: newEventMaxPerGuest === "" ? undefined : (parseInt(newEventMaxPerGuest, 10) || undefined),
           description: newEventDescription || undefined,
           orderDeadline: newEventDeadline || undefined,
           slots: newEventSlots,
-          pizzaTypes: newEventPizzaTypes,
+          pizzaTypes: newEventPizzaTypes as any,
         },
       },
       {
@@ -1267,18 +864,16 @@ export function AdminDashboard() {
     : (orders ?? []).filter((o) => o.eventId === parseInt(filterEventId, 10));
 
   return (
-
     <Layout>
       <div className="space-y-6">
         <h1 className="text-3xl font-serif font-bold text-foreground">Kitchen Dashboard</h1>
 
         <Tabs defaultValue="summary" className="w-full">
-          <TabsList className="grid w-full grid-cols-6">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="summary">Summary</TabsTrigger>
             <TabsTrigger value="orders">Orders</TabsTrigger>
             <TabsTrigger value="events">Events</TabsTrigger>
             <TabsTrigger value="users">Guests</TabsTrigger>
-            <TabsTrigger value="segments">Segments</TabsTrigger>
             <TabsTrigger value="admins">Admins</TabsTrigger>
           </TabsList>
 
@@ -1300,18 +895,12 @@ export function AdminDashboard() {
                 </Select>
               </div>
             )}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <Card>
                 <CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-muted-foreground">Total Booked</CardTitle></CardHeader>
                 <CardContent>
                   <div className="text-3xl font-bold font-serif text-primary">{summary?.totalBooked || 0}</div>
                   <p className="text-xs text-muted-foreground mt-1">out of {summary?.totalCapacity ?? "—"}</p>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-muted-foreground">Revenue (Est)</CardTitle></CardHeader>
-                <CardContent>
-                  <div className="text-3xl font-bold font-serif">{(summary?.totalBooked || 0) * (summary?.price ?? 70)} DKK</div>
                 </CardContent>
               </Card>
               <Card>
@@ -1378,6 +967,10 @@ export function AdminDashboard() {
                     )}
                     {filteredOrders.map((order) => {
                       const orderEvent = events?.find((e) => e.id === order.eventId);
+                      const eventPizzaTypes: PizzaType[] = (orderEvent?.pizzaTypes ?? []).map((pt: any) =>
+                        typeof pt === "string" ? { name: pt, price: 70 } : pt
+                      );
+                      const orderTotal = computeOrderTotal(order.items ?? [], eventPizzaTypes);
                       const isEditing = editingOrderId === order.id;
                       return (
                         <>
@@ -1391,9 +984,9 @@ export function AdminDashboard() {
                                 {(order.items ?? []).map((item: any, i: number) => (
                                   <div key={i} className="text-sm">{item.pizzaChoice}</div>
                                 ))}
-                                <div className="text-xs text-muted-foreground">
-                                  {order.quantity * (orderEvent?.price ?? 70)} DKK
-                                </div>
+                                {orderTotal > 0 && (
+                                  <div className="text-xs text-muted-foreground">{orderTotal} DKK</div>
+                                )}
                               </div>
                             </TableCell>
                             <TableCell className="text-sm">{order.pickupSlot}</TableCell>
@@ -1495,10 +1088,6 @@ export function AdminDashboard() {
                       <Input type="number" min={1} value={newEventSlot} onChange={(e) => setNewEventSlot(e.target.value)} />
                     </div>
                     <div className="space-y-1.5">
-                      <Label className="text-sm">Price per Pizza (DKK)</Label>
-                      <Input type="number" min={0} value={newEventPrice} onChange={(e) => setNewEventPrice(e.target.value)} />
-                    </div>
-                    <div className="space-y-1.5">
                       <Label className="text-sm">Max Pizzas per Guest <span className="text-muted-foreground font-normal">(optional)</span></Label>
                       <Input type="number" min={1} placeholder="No limit" value={newEventMaxPerGuest} onChange={(e) => setNewEventMaxPerGuest(e.target.value)} />
                     </div>
@@ -1511,7 +1100,7 @@ export function AdminDashboard() {
                   <div className="space-y-1.5">
                     <Label className="text-sm">Description</Label>
                     <Textarea
-                      placeholder="Shown on home &amp; order pages..."
+                      placeholder="Shown on home & order pages..."
                       value={newEventDescription}
                       onChange={(e) => setNewEventDescription(e.target.value)}
                       className="resize-none"
@@ -1520,7 +1109,7 @@ export function AdminDashboard() {
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <TagEditor label="Pickup Slots" tags={newEventSlots} onChange={setNewEventSlots} placeholder="e.g. 17:00-17:30" />
-                    <TagEditor label="Pizza Types" tags={newEventPizzaTypes} onChange={setNewEventPizzaTypes} placeholder="e.g. Quattro Stagioni" />
+                    <PizzaTypeEditor pizzaTypes={newEventPizzaTypes} onChange={setNewEventPizzaTypes} />
                   </div>
                   <Button type="submit" disabled={createEvent.isPending || !newEventName.trim() || !newEventDate}>
                     <Plus className="w-4 h-4 mr-2" /> Create Event
@@ -1534,76 +1123,76 @@ export function AdminDashboard() {
               {(!events || events.length === 0) && (
                 <p className="text-center py-8 text-muted-foreground">No events yet.</p>
               )}
-              {events?.map((event) => (
-                <Card key={event.id} className={!event.active ? "opacity-60" : ""}>
-                  <CardContent className="pt-4 pb-4">
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <span className="font-semibold text-foreground">{event.name}</span>
-                          <Badge variant={event.active ? "default" : "secondary"} className="text-xs">
-                            {event.active ? "Active" : "Inactive"}
-                          </Badge>
-                        </div>
-                        <div className="flex flex-wrap gap-x-4 gap-y-0.5 mt-1 text-sm text-muted-foreground">
-                          <span>{formatEventDate(event.date)}</span>
-                          <span>{event.totalCapacity} pizzas total · {event.slotCapacity}/slot · {event.price} DKK{event.maxPerGuest != null ? ` · max ${event.maxPerGuest}/guest` : ""}</span>
-                          {event.orderDeadline && (
-                            <span className={new Date() > new Date(event.orderDeadline) ? "text-destructive" : ""}>
-                              Orders close {new Date(event.orderDeadline).toLocaleString("en-GB", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
-                            </span>
+              {events?.map((event) => {
+                const eventPizzaTypes: PizzaType[] = (event.pizzaTypes ?? []).map((pt: any) =>
+                  typeof pt === "string" ? { name: pt, price: 70 } : pt
+                );
+                return (
+                  <Card key={event.id} className={!event.active ? "opacity-60" : ""}>
+                    <CardContent className="pt-4 pb-4">
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="font-semibold text-foreground">{event.name}</span>
+                            <Badge variant={event.active ? "default" : "secondary"} className="text-xs">
+                              {event.active ? "Active" : "Inactive"}
+                            </Badge>
+                          </div>
+                          <div className="flex flex-wrap gap-x-4 gap-y-0.5 mt-1 text-sm text-muted-foreground">
+                            <span>{formatEventDate(event.date)}</span>
+                            <span>{event.totalCapacity} pizzas total · {event.slotCapacity}/slot{event.maxPerGuest != null ? ` · max ${event.maxPerGuest}/guest` : ""}</span>
+                            {event.orderDeadline && (
+                              <span className={new Date() > new Date(event.orderDeadline) ? "text-destructive" : ""}>
+                                Orders close {new Date(event.orderDeadline).toLocaleString("en-GB", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
+                              </span>
+                            )}
+                          </div>
+                          {event.description && (
+                            <p className="text-xs text-muted-foreground mt-1 truncate max-w-md">{event.description}</p>
                           )}
+                          <div className="flex flex-wrap gap-1 mt-2">
+                            {(event.slots ?? []).map((s) => (
+                              <Badge key={s} variant="outline" className="text-xs font-normal">{s}</Badge>
+                            ))}
+                          </div>
+                          <div className="flex flex-wrap gap-1 mt-1">
+                            {eventPizzaTypes.map((pt) => (
+                              <Badge key={pt.name} variant="secondary" className="text-xs font-normal">
+                                {pt.name} · {pt.price} DKK{pt.discountedPrice !== undefined ? ` (${pt.discountedPrice} disc.)` : ""}
+                              </Badge>
+                            ))}
+                          </div>
                         </div>
-                        {event.description && (
-                          <p className="text-xs text-muted-foreground mt-1 truncate max-w-md">{event.description}</p>
-                        )}
-                        <div className="flex flex-wrap gap-1 mt-2">
-                          {(event.slots ?? []).map((s) => (
-                            <Badge key={s} variant="outline" className="text-xs font-normal">{s}</Badge>
-                          ))}
-                        </div>
-                        <div className="flex flex-wrap gap-1 mt-1">
-                          {(event.pizzaTypes ?? []).map((t) => (
-                            <Badge key={t} variant="secondary" className="text-xs font-normal">{t}</Badge>
-                          ))}
+                        <div className="flex items-center gap-2 shrink-0">
+                          <Switch checked={event.active} onCheckedChange={(v) => handleToggleEvent(event.id, v)} />
+                          <Button
+                            variant="ghost" size="icon" className="h-8 w-8"
+                            onClick={() => setEditingEventId(editingEventId === event.id ? null : event.id)}
+                            title="Edit"
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:bg-destructive/10"
+                            onClick={() => handleDeleteEvent(event.id)}
+                            title="Delete"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
                         </div>
                       </div>
-                      <div className="flex items-center gap-2 shrink-0">
-                        <Switch checked={event.active} onCheckedChange={(v) => handleToggleEvent(event.id, v)} />
-                        <Button
-                          variant="ghost" size="icon" className="h-8 w-8"
-                          onClick={() => setEditingEventId(editingEventId === event.id ? null : event.id)}
-                          title="Edit"
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:bg-destructive/10"
-                          onClick={() => handleDeleteEvent(event.id)}
-                          title="Delete"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
 
-                    {editingEventId === event.id && (
-                      <EventEditPanel event={event} onClose={() => setEditingEventId(null)} />
-                    )}
-
-                    <EventSegmentManager eventId={event.id} allSegments={segments ?? []} />
-                  </CardContent>
-                </Card>
-              ))}
+                      {editingEventId === event.id && (
+                        <EventEditPanel event={event} onClose={() => setEditingEventId(null)} />
+                      )}
+                    </CardContent>
+                  </Card>
+                );
+              })}
             </div>
           </TabsContent>
 
-          {/* SEGMENTS */}
-          <TabsContent value="segments" className="pt-4 space-y-4">
-            <SegmentsTab allUsers={users ?? []} />
-          </TabsContent>
-
-          {/* ADMIN USERS */}
+          {/* ADMINS */}
           <TabsContent value="admins" className="pt-4 space-y-4">
             <AdminUsersTab />
           </TabsContent>
@@ -1630,35 +1219,6 @@ export function AdminDashboard() {
                       <Input type="tel" placeholder="Optional, must be unique" value={newUserMobile} onChange={(e) => setNewUserMobile(e.target.value)} />
                     </div>
                   </div>
-                  {segments && segments.length > 0 && (
-                    <div className="space-y-1.5">
-                      <Label className="text-xs flex items-center gap-1"><Tag className="w-3 h-3" /> Segments</Label>
-                      <div className="flex flex-wrap gap-2">
-                        {segments.map((seg) => {
-                          const checked = newUserSegmentIds.includes(seg.id);
-                          return (
-                            <button
-                              key={seg.id}
-                              type="button"
-                              onClick={() => setNewUserSegmentIds(
-                                checked
-                                  ? newUserSegmentIds.filter((id) => id !== seg.id)
-                                  : [...newUserSegmentIds, seg.id]
-                              )}
-                              className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs border transition-colors ${
-                                checked
-                                  ? "bg-primary text-primary-foreground border-primary"
-                                  : "bg-background border-border hover:bg-secondary"
-                              }`}
-                            >
-                              <Tag className="w-3 h-3" />
-                              {seg.name}
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  )}
                   <Button type="submit" disabled={createUser.isPending || !newUserName.trim()}>
                     <UserPlus className="w-4 h-4 mr-2" /> Add Guest
                   </Button>
@@ -1674,7 +1234,6 @@ export function AdminDashboard() {
                       <TableHead>Name</TableHead>
                       <TableHead>Email</TableHead>
                       <TableHead>Mobile</TableHead>
-                      <TableHead>Segments</TableHead>
                       <TableHead>Code</TableHead>
                       <TableHead>Active</TableHead>
                       <TableHead className="text-right">Actions</TableHead>
@@ -1695,7 +1254,6 @@ export function AdminDashboard() {
                             <TableCell className="text-sm text-muted-foreground">
                               {user.mobile ?? <span className="text-xs">—</span>}
                             </TableCell>
-                            <TableCell><UserSegmentBadges userId={user.id} /></TableCell>
                             <TableCell className="font-mono tracking-widest">{user.code}</TableCell>
                             <TableCell>
                               <Switch checked={user.active} onCheckedChange={(v) => handleToggleUser(user.id, v)} />
@@ -1721,11 +1279,10 @@ export function AdminDashboard() {
                           </TableRow>
                           {isEditing && (
                             <TableRow key={`${user.id}-edit`}>
-                              <TableCell colSpan={7} className="p-0 pb-2">
+                              <TableCell colSpan={6} className="p-0 pb-2">
                                 <div className="px-4">
                                   <GuestEditPanel
                                     user={user}
-                                    allSegments={segments ?? []}
                                     onClose={() => setEditingUserId(null)}
                                   />
                                 </div>

@@ -26,8 +26,7 @@ export const loginBodyCodeMax = 4;
 
 export const LoginBody = zod.object({
   "name": zod.string(),
-  "code": zod.string().min(loginBodyCodeMin).max(loginBodyCodeMax),
-  "eventId": zod.number().optional().describe('Event the guest is trying to log in for. If provided, login is rejected when the guest is not a member of this event.')
+  "code": zod.string().min(loginBodyCodeMin).max(loginBodyCodeMax)
 })
 
 export const LoginResponse = zod.object({
@@ -35,34 +34,6 @@ export const LoginResponse = zod.object({
   "role": zod.enum(['user', 'admin']),
   "userId": zod.number().nullish(),
   "userName": zod.string().nullish()
-})
-
-
-/**
- * @summary List admin users (admin only)
- */
-export const ListAdminUsersResponseItem = zod.object({
-  "id": zod.number(),
-  "mobile": zod.string(),
-  "isSuperuser": zod.boolean(),
-  "createdAt": zod.coerce.date()
-})
-export const ListAdminUsersResponse = zod.array(ListAdminUsersResponseItem)
-
-
-/**
- * @summary Add an admin user by mobile number (admin only)
- */
-export const CreateAdminUserBody = zod.object({
-  "mobile": zod.string().describe('8-digit Danish number or E.164 format')
-})
-
-
-/**
- * @summary Remove an admin user (admin only, superuser cannot be removed)
- */
-export const DeleteAdminUserParams = zod.object({
-  "id": zod.coerce.number()
 })
 
 
@@ -93,7 +64,7 @@ export const SendOtpResponse = zod.object({
 
 
 /**
- * @summary Verify OTP code and create session
+ * @summary Verify OTP and establish session
  */
 export const verifyOtpBodyCodeMin = 6;
 export const verifyOtpBodyCodeMax = 6;
@@ -115,8 +86,12 @@ export const VerifyOtpResponse = zod.object({
 
 
 /**
- * @summary List events (admin sees all, user sees their own)
+ * @summary List events (active only for guests, all for admins)
  */
+export const listEventsResponsePizzaTypesItemPriceMin = 0;
+
+export const listEventsResponsePizzaTypesItemDiscountedPriceMin = 0;
+
 
 
 
@@ -127,14 +102,16 @@ export const ListEventsResponseItem = zod.object({
   "date": zod.string().describe('ISO date string (YYYY-MM-DD)'),
   "totalCapacity": zod.number(),
   "slotCapacity": zod.number(),
-  "price": zod.number().describe('Price per pizza in DKK'),
   "description": zod.string().nullish().describe('Event description or fundraising note'),
   "orderDeadline": zod.coerce.date().nullish().describe('Cutoff datetime after which no new orders or edits are accepted'),
   "slots": zod.array(zod.string()),
-  "pizzaTypes": zod.array(zod.string()),
+  "pizzaTypes": zod.array(zod.object({
+  "name": zod.string().describe('Pizza name (e.g. Margherita)'),
+  "price": zod.number().min(listEventsResponsePizzaTypesItemPriceMin).describe('Price in DKK'),
+  "discountedPrice": zod.number().min(listEventsResponsePizzaTypesItemDiscountedPriceMin).optional().describe('Optional discounted price in DKK')
+})),
   "active": zod.boolean(),
   "maxPerGuest": zod.number().min(1).nullish().describe('Maximum number of pizzas a single guest may order. Null means no limit.'),
-  "segmentDescriptions": zod.array(zod.string()).optional().describe('Descriptions of segments associated with this event'),
   "createdAt": zod.coerce.date()
 })
 export const ListEventsResponse = zod.array(ListEventsResponseItem)
@@ -145,9 +122,9 @@ export const ListEventsResponse = zod.array(ListEventsResponseItem)
  */
 export const createEventBodyTotalCapacityDefault = 10;
 export const createEventBodySlotCapacityDefault = 3;
-export const createEventBodyPriceDefault = 70;
-export const createEventBodyPriceMin = 0;
+export const createEventBodyPizzaTypesItemPriceMin = 0;
 
+export const createEventBodyPizzaTypesItemDiscountedPriceMin = 0;
 
 
 
@@ -156,12 +133,15 @@ export const CreateEventBody = zod.object({
   "date": zod.string().describe('ISO date string (YYYY-MM-DD)'),
   "totalCapacity": zod.number().default(createEventBodyTotalCapacityDefault),
   "slotCapacity": zod.number().default(createEventBodySlotCapacityDefault),
-  "price": zod.number().min(createEventBodyPriceMin).default(createEventBodyPriceDefault),
   "maxPerGuest": zod.number().min(1).optional().describe('Maximum number of pizzas a single guest may order. Omit for no limit.'),
   "description": zod.string().optional(),
   "orderDeadline": zod.coerce.date().optional().describe('Cutoff datetime after which no new orders or edits are accepted'),
   "slots": zod.array(zod.string()).optional(),
-  "pizzaTypes": zod.array(zod.string()).optional()
+  "pizzaTypes": zod.array(zod.object({
+  "name": zod.string().describe('Pizza name (e.g. Margherita)'),
+  "price": zod.number().min(createEventBodyPizzaTypesItemPriceMin).describe('Price in DKK'),
+  "discountedPrice": zod.number().min(createEventBodyPizzaTypesItemDiscountedPriceMin).optional().describe('Optional discounted price in DKK')
+})).optional()
 })
 
 
@@ -172,8 +152,10 @@ export const UpdateEventParams = zod.object({
   "id": zod.coerce.number()
 })
 
-export const updateEventBodyPriceMin = 0;
 
+export const updateEventBodyPizzaTypesItemPriceMin = 0;
+
+export const updateEventBodyPizzaTypesItemDiscountedPriceMin = 0;
 
 
 
@@ -182,14 +164,21 @@ export const UpdateEventBody = zod.object({
   "date": zod.string().optional(),
   "totalCapacity": zod.number().optional(),
   "slotCapacity": zod.number().optional(),
-  "price": zod.number().min(updateEventBodyPriceMin).optional(),
   "maxPerGuest": zod.number().min(1).nullish().describe('Maximum pizzas per guest. Set to null to remove the limit.'),
   "description": zod.string().optional(),
   "orderDeadline": zod.coerce.date().nullish().describe('Cutoff datetime after which no new orders or edits are accepted'),
   "slots": zod.array(zod.string()).optional(),
-  "pizzaTypes": zod.array(zod.string()).optional(),
+  "pizzaTypes": zod.array(zod.object({
+  "name": zod.string().describe('Pizza name (e.g. Margherita)'),
+  "price": zod.number().min(updateEventBodyPizzaTypesItemPriceMin).describe('Price in DKK'),
+  "discountedPrice": zod.number().min(updateEventBodyPizzaTypesItemDiscountedPriceMin).optional().describe('Optional discounted price in DKK')
+})).optional(),
   "active": zod.boolean().optional()
 })
+
+export const updateEventResponsePizzaTypesItemPriceMin = 0;
+
+export const updateEventResponsePizzaTypesItemDiscountedPriceMin = 0;
 
 
 
@@ -201,14 +190,16 @@ export const UpdateEventResponse = zod.object({
   "date": zod.string().describe('ISO date string (YYYY-MM-DD)'),
   "totalCapacity": zod.number(),
   "slotCapacity": zod.number(),
-  "price": zod.number().describe('Price per pizza in DKK'),
   "description": zod.string().nullish().describe('Event description or fundraising note'),
   "orderDeadline": zod.coerce.date().nullish().describe('Cutoff datetime after which no new orders or edits are accepted'),
   "slots": zod.array(zod.string()),
-  "pizzaTypes": zod.array(zod.string()),
+  "pizzaTypes": zod.array(zod.object({
+  "name": zod.string().describe('Pizza name (e.g. Margherita)'),
+  "price": zod.number().min(updateEventResponsePizzaTypesItemPriceMin).describe('Price in DKK'),
+  "discountedPrice": zod.number().min(updateEventResponsePizzaTypesItemDiscountedPriceMin).optional().describe('Optional discounted price in DKK')
+})),
   "active": zod.boolean(),
   "maxPerGuest": zod.number().min(1).nullish().describe('Maximum number of pizzas a single guest may order. Null means no limit.'),
-  "segmentDescriptions": zod.array(zod.string()).optional().describe('Descriptions of segments associated with this event'),
   "createdAt": zod.coerce.date()
 })
 
@@ -237,7 +228,7 @@ export const ListUsersResponse = zod.array(ListUsersResponseItem)
 
 
 /**
- * @summary Add a new user (admin only)
+ * @summary Create a user (admin only)
  */
 export const CreateUserBody = zod.object({
   "name": zod.string(),
@@ -295,24 +286,6 @@ export const ImportUsersResponse = zod.object({
   "skipped": zod.number(),
   "errors": zod.array(zod.string())
 })
-
-
-/**
- * @summary List segments a user belongs to (admin only)
- */
-export const ListUserSegmentsParams = zod.object({
-  "id": zod.coerce.number()
-})
-
-export const ListUserSegmentsResponseItem = zod.object({
-  "id": zod.number(),
-  "name": zod.string(),
-  "description": zod.string().nullish().describe('Short description of this audience segment'),
-  "tags": zod.string().nullish().describe('Comma-separated searchable tags'),
-  "memberCount": zod.number(),
-  "createdAt": zod.coerce.date()
-})
-export const ListUserSegmentsResponse = zod.array(ListUserSegmentsResponseItem)
 
 
 /**
@@ -444,144 +417,17 @@ export const DeleteOrderParams = zod.object({
 
 
 /**
- * @summary List all segments (admin only)
- */
-export const ListSegmentsResponseItem = zod.object({
-  "id": zod.number(),
-  "name": zod.string(),
-  "description": zod.string().nullish().describe('Short description of this audience segment'),
-  "tags": zod.string().nullish().describe('Comma-separated searchable tags'),
-  "memberCount": zod.number(),
-  "createdAt": zod.coerce.date()
-})
-export const ListSegmentsResponse = zod.array(ListSegmentsResponseItem)
-
-
-/**
- * @summary Create a segment (admin only)
- */
-export const CreateSegmentBody = zod.object({
-  "name": zod.string(),
-  "description": zod.string().optional(),
-  "tags": zod.string().optional()
-})
-
-
-/**
- * @summary Update a segment's description and tags (admin only)
- */
-export const UpdateSegmentParams = zod.object({
-  "id": zod.coerce.number()
-})
-
-export const UpdateSegmentBody = zod.object({
-  "description": zod.string().nullish(),
-  "tags": zod.string().nullish()
-})
-
-export const UpdateSegmentResponse = zod.object({
-  "id": zod.number(),
-  "name": zod.string(),
-  "description": zod.string().nullish().describe('Short description of this audience segment'),
-  "tags": zod.string().nullish().describe('Comma-separated searchable tags'),
-  "memberCount": zod.number(),
-  "createdAt": zod.coerce.date()
-})
-
-
-/**
- * @summary Delete a segment (admin only)
- */
-export const DeleteSegmentParams = zod.object({
-  "id": zod.coerce.number()
-})
-
-
-/**
- * @summary List users in a segment (admin only)
- */
-export const ListSegmentUsersParams = zod.object({
-  "id": zod.coerce.number()
-})
-
-export const ListSegmentUsersResponseItem = zod.object({
-  "id": zod.number(),
-  "name": zod.string(),
-  "code": zod.string(),
-  "email": zod.string().nullish(),
-  "mobile": zod.string().nullish(),
-  "active": zod.boolean(),
-  "createdAt": zod.coerce.date()
-})
-export const ListSegmentUsersResponse = zod.array(ListSegmentUsersResponseItem)
-
-
-/**
- * @summary Add a user to a segment (admin only)
- */
-export const AddUserToSegmentParams = zod.object({
-  "id": zod.coerce.number()
-})
-
-export const AddUserToSegmentBody = zod.object({
-  "userId": zod.number()
-})
-
-
-/**
- * @summary Remove a user from a segment (admin only)
- */
-export const RemoveUserFromSegmentParams = zod.object({
-  "id": zod.coerce.number(),
-  "userId": zod.coerce.number()
-})
-
-
-/**
- * @summary List segments assigned to an event (admin only)
- */
-export const ListEventSegmentsParams = zod.object({
-  "id": zod.coerce.number()
-})
-
-export const ListEventSegmentsResponseItem = zod.object({
-  "id": zod.number(),
-  "name": zod.string(),
-  "description": zod.string().nullish().describe('Short description of this audience segment'),
-  "tags": zod.string().nullish().describe('Comma-separated searchable tags'),
-  "memberCount": zod.number(),
-  "createdAt": zod.coerce.date()
-})
-export const ListEventSegmentsResponse = zod.array(ListEventSegmentsResponseItem)
-
-
-/**
- * @summary Assign a segment to an event (admin only)
- */
-export const AddSegmentToEventParams = zod.object({
-  "id": zod.coerce.number()
-})
-
-export const AddSegmentToEventBody = zod.object({
-  "segmentId": zod.number()
-})
-
-
-/**
- * @summary Remove a segment from an event (admin only)
- */
-export const RemoveSegmentFromEventParams = zod.object({
-  "id": zod.coerce.number(),
-  "segmentId": zod.coerce.number()
-})
-
-
-/**
  * @summary Get event summary and slot capacities
  */
 export const GetSummaryQueryParams = zod.object({
   "eventId": zod.coerce.number().optional()
 })
+
+export const getSummaryResponsePizzaTypesItemPriceMin = 0;
+
+export const getSummaryResponsePizzaTypesItemDiscountedPriceMin = 0;
+
+
 
 export const GetSummaryResponse = zod.object({
   "eventId": zod.number(),
@@ -592,10 +438,13 @@ export const GetSummaryResponse = zod.object({
   "totalRemaining": zod.number(),
   "orderingOpen": zod.boolean(),
   "orderDeadline": zod.coerce.date().nullish().describe('Cutoff datetime after which no new orders or edits are accepted'),
-  "price": zod.number(),
   "maxPerGuest": zod.number().nullable().describe('Maximum pizzas per guest for this event. Null means no per-guest limit.'),
   "description": zod.string().nullish(),
-  "pizzaTypes": zod.array(zod.string()),
+  "pizzaTypes": zod.array(zod.object({
+  "name": zod.string().describe('Pizza name (e.g. Margherita)'),
+  "price": zod.number().min(getSummaryResponsePizzaTypesItemPriceMin).describe('Price in DKK'),
+  "discountedPrice": zod.number().min(getSummaryResponsePizzaTypesItemDiscountedPriceMin).optional().describe('Optional discounted price in DKK')
+})),
   "slots": zod.array(zod.object({
   "slot": zod.string(),
   "booked": zod.number(),
@@ -670,6 +519,34 @@ export const UpdateRecipeResponse = zod.object({
  * @summary Delete a pizza recipe (admin only)
  */
 export const DeleteRecipeParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+
+/**
+ * @summary List all admin users (superuser only)
+ */
+export const ListAdminUsersResponseItem = zod.object({
+  "id": zod.number(),
+  "mobile": zod.string(),
+  "isSuperuser": zod.boolean(),
+  "createdAt": zod.coerce.date()
+})
+export const ListAdminUsersResponse = zod.array(ListAdminUsersResponseItem)
+
+
+/**
+ * @summary Add an admin user (superuser only)
+ */
+export const CreateAdminUserBody = zod.object({
+  "mobile": zod.string().describe('8-digit Danish number or E.164 format')
+})
+
+
+/**
+ * @summary Remove an admin user (superuser only)
+ */
+export const DeleteAdminUserParams = zod.object({
   "id": zod.coerce.number()
 })
 

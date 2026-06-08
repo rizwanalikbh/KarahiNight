@@ -437,8 +437,12 @@ export function Recipes() {
     );
   }
 
-  const allPizzaTypes = Array.from(
-    new Set(events?.flatMap((e) => e.pizzaTypes ?? []) ?? ["Margherita", "Pepperoni", "Special"])
+  const allPizzaTypes: string[] = Array.from(
+    new Set(
+      events?.flatMap((e) =>
+        (e.pizzaTypes ?? []).map((pt: any) => (typeof pt === "string" ? pt : pt.name))
+      ) ?? ["Margherita", "Pepperoni", "Special"]
+    )
   );
 
   return (

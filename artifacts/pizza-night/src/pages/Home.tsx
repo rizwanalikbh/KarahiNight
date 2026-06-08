@@ -70,8 +70,7 @@ function EventPickerModal({ events, selectedId, open, onSelect, onOpenChange }: 
     ? events.filter((ev) => {
         const q = query.toLowerCase();
         const dateText = formatModalDate(ev.date).toLowerCase();
-        const tags = (ev.segmentDescriptions ?? []).join(" ").toLowerCase();
-        return ev.name.toLowerCase().includes(q) || dateText.includes(q) || tags.includes(q) || (ev.description ?? "").toLowerCase().includes(q);
+        return ev.name.toLowerCase().includes(q) || dateText.includes(q) || (ev.description ?? "").toLowerCase().includes(q);
       })
     : events;
 
@@ -101,8 +100,7 @@ function EventPickerModal({ events, selectedId, open, onSelect, onOpenChange }: 
           {filtered.length === 0 && <p className="text-center py-6 text-sm text-muted-foreground">No events match your search.</p>}
           {filtered.map((ev) => {
             const isSelected = ev.id === selectedId;
-            const segDescs = (ev.segmentDescriptions ?? []).filter(Boolean);
-            const subtitle = segDescs.length > 0 ? segDescs.join(", ") : ev.description ?? null;
+            const subtitle = ev.description ?? null;
             return (
               <button key={ev.id} onClick={() => onSelect(ev.id)} className={`w-full text-left rounded-xl border-2 px-4 py-3.5 transition-all duration-150 group focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 ${isSelected ? "border-primary bg-primary/5 shadow-sm" : "border-border/60 bg-card hover:border-primary/40 hover:bg-primary/3 hover:shadow-sm"}`}>
                 <div className="flex items-center justify-between gap-3">
@@ -233,7 +231,7 @@ export function Home() {
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex flex-col justify-end p-6 text-left">
                 <div className="flex items-end justify-between gap-4">
                   <div>
-                    <div className="text-white font-medium text-lg">{summary.price} DKK per pizza</div>
+                    <div className="text-white font-medium text-lg">{(() => { const pts = summary.pizzaTypes ?? []; if (pts.length === 0) return "70 DKK per pizza"; const prices = pts.map((p: any) => typeof p === "string" ? 70 : p.price); const mn = Math.min(...prices); const mx = Math.max(...prices); return mn === mx ? `${mn} DKK per pizza` : `${mn}–${mx} DKK per pizza`; })()}</div>
                     {summary.description && <div className="text-white/80 text-sm">{summary.description}</div>}
                   </div>
                   {summary.orderingOpen && countdown && (

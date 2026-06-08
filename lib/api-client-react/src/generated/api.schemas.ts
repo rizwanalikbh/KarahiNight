@@ -16,8 +16,6 @@ export interface LoginInput {
      * @maxLength 4
      */
   code: string;
-  /** Event the guest is trying to log in for. If provided, login is rejected when the guest is not a member of this event. */
-  eventId?: number;
 }
 
 export interface AdminUser {
@@ -70,6 +68,21 @@ export interface SessionInfo {
   userName?: string | null;
 }
 
+export interface PizzaType {
+  /** Pizza name (e.g. Margherita) */
+  name: string;
+  /**
+     * Price in DKK
+     * @minimum 0
+     */
+  price: number;
+  /**
+     * Optional discounted price in DKK
+     * @minimum 0
+     */
+  discountedPrice?: number;
+}
+
 export interface Event {
   id: number;
   /** 6-character alphanumeric event code used in shareable URLs */
@@ -79,8 +92,6 @@ export interface Event {
   date: string;
   totalCapacity: number;
   slotCapacity: number;
-  /** Price per pizza in DKK */
-  price: number;
   /**
      * Event description or fundraising note
      * @nullable
@@ -92,7 +103,7 @@ export interface Event {
      */
   orderDeadline?: string | null;
   slots: string[];
-  pizzaTypes: string[];
+  pizzaTypes: PizzaType[];
   active: boolean;
   /**
      * Maximum number of pizzas a single guest may order. Null means no limit.
@@ -100,8 +111,6 @@ export interface Event {
      * @nullable
      */
   maxPerGuest?: number | null;
-  /** Descriptions of segments associated with this event */
-  segmentDescriptions?: string[];
   createdAt: string;
 }
 
@@ -111,8 +120,6 @@ export interface EventInput {
   date: string;
   totalCapacity?: number;
   slotCapacity?: number;
-  /** @minimum 0 */
-  price?: number;
   /**
      * Maximum number of pizzas a single guest may order. Omit for no limit.
      * @minimum 1
@@ -122,7 +129,7 @@ export interface EventInput {
   /** Cutoff datetime after which no new orders or edits are accepted */
   orderDeadline?: string;
   slots?: string[];
-  pizzaTypes?: string[];
+  pizzaTypes?: PizzaType[];
 }
 
 export interface EventUpdate {
@@ -130,8 +137,6 @@ export interface EventUpdate {
   date?: string;
   totalCapacity?: number;
   slotCapacity?: number;
-  /** @minimum 0 */
-  price?: number;
   /**
      * Maximum pizzas per guest. Set to null to remove the limit.
      * @minimum 1
@@ -145,7 +150,7 @@ export interface EventUpdate {
      */
   orderDeadline?: string | null;
   slots?: string[];
-  pizzaTypes?: string[];
+  pizzaTypes?: PizzaType[];
   active?: boolean;
 }
 
@@ -260,44 +265,6 @@ export interface OrderUpdate {
   paid?: boolean;
 }
 
-export interface Segment {
-  id: number;
-  name: string;
-  /**
-     * Short description of this audience segment
-     * @nullable
-     */
-  description?: string | null;
-  /**
-     * Comma-separated searchable tags
-     * @nullable
-     */
-  tags?: string | null;
-  memberCount: number;
-  createdAt: string;
-}
-
-export interface SegmentInput {
-  name: string;
-  description?: string;
-  tags?: string;
-}
-
-export interface SegmentUpdateInput {
-  /** @nullable */
-  description?: string | null;
-  /** @nullable */
-  tags?: string | null;
-}
-
-export interface SegmentUserInput {
-  userId: number;
-}
-
-export interface EventSegmentInput {
-  segmentId: number;
-}
-
 export interface SlotSummary {
   slot: string;
   booked: number;
@@ -371,7 +338,6 @@ export interface EventSummary {
      * @nullable
      */
   orderDeadline?: string | null;
-  price: number;
   /**
      * Maximum pizzas per guest for this event. Null means no per-guest limit.
      * @nullable
@@ -379,7 +345,7 @@ export interface EventSummary {
   maxPerGuest: number | null;
   /** @nullable */
   description?: string | null;
-  pizzaTypes: string[];
+  pizzaTypes: PizzaType[];
   slots: SlotSummary[];
   guests: EventGuest[];
 }

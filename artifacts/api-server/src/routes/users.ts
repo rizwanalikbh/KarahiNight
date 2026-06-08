@@ -1,9 +1,9 @@
 import { Router, type IRouter } from "express";
-import { db, usersTable, segmentsTable, userSegmentsTable } from "@workspace/db";
-import { eq, inArray, sql } from "drizzle-orm";
+import { db, usersTable } from "@workspace/db";
+import { eq } from "drizzle-orm";
 import {
   CreateUserBody, UpdateUserParams, UpdateUserBody, DeleteUserParams,
-  RegenerateCodeParams, ImportUsersBody, ListUserSegmentsParams,
+  RegenerateCodeParams, ImportUsersBody,
 } from "@workspace/api-zod";
 
 const router: IRouter = Router();
@@ -21,7 +21,6 @@ function generateCode(): string {
 }
 
 function isUniqueViolation(err: unknown): boolean {
-  // Check direct code or cause chain (Drizzle wraps the PG error)
   let e: any = err;
   while (e) {
     if (e?.code === "23505") return true;
@@ -145,37 +144,6 @@ router.delete("/users/:id", requireAdmin, async (req, res): Promise<void> => {
   }
   await db.delete(usersTable).where(eq(usersTable.id, params.data.id));
   res.sendStatus(204);
-});
-
-router.get("/users/:id/segments", requireAdmin, async (req, res): Promise<void> => {
-  const params = ListUserSegmentsParams.safeParse(req.params);
-  if (!params.success) {
-    res.status(400).json({ error: params.error.message });
-    return;
-  }
-
-  const memberships = await db
-    .select({ segmentId: userSegmentsTable.segmentId })
-    .from(userSegmentsTable)
-    .where(eq(userSegmentsTable.userId, params.data.id));
-
-  if (memberships.length === 0) { res.json([]); return; }
-
-  const segmentIds = memberships.map((m) => m.segmentId);
-  const rows = await db
-    .select({
-      id: segmentsTable.id,
-      name: segmentsTable.name,
-      createdAt: segmentsTable.createdAt,
-      memberCount: sql<number>`cast(count(${userSegmentsTable.id}) as int)`,
-    })
-    .from(segmentsTable)
-    .leftJoin(userSegmentsTable, eq(userSegmentsTable.segmentId, segmentsTable.id))
-    .where(inArray(segmentsTable.id, segmentIds))
-    .groupBy(segmentsTable.id)
-    .orderBy(segmentsTable.name);
-
-  res.json(rows);
 });
 
 router.post("/users/:id/regenerate-code", requireAdmin, async (req, res): Promise<void> => {

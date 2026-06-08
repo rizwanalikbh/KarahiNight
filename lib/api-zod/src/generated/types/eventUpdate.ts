@@ -5,14 +5,13 @@
  * Private Pizza Night preorder API
  * OpenAPI spec version: 0.1.0
  */
+import type { PizzaType } from './pizzaType';
 
 export interface EventUpdate {
   name?: string;
   date?: string;
   totalCapacity?: number;
   slotCapacity?: number;
-  /** @minimum 0 */
-  price?: number;
   /**
      * Maximum pizzas per guest. Set to null to remove the limit.
      * @minimum 1
@@ -26,6 +25,6 @@ export interface EventUpdate {
      */
   orderDeadline?: Date | null;
   slots?: string[];
-  pizzaTypes?: string[];
+  pizzaTypes?: PizzaType[];
   active?: boolean;
 }

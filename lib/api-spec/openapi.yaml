@@ -15,7 +15,6 @@ tags:
   - name: users
   - name: orders
   - name: summary
-  - name: segments
   - name: recipes
   - name: adminUsers
 
@@ -27,7 +26,7 @@ paths:
       summary: Health check
       responses:
         "200":
-          description: Healthy
+          description: API is up
           content:
             application/json:
               schema:
@@ -46,7 +45,7 @@ paths:
               $ref: "#/components/schemas/LoginInput"
       responses:
         "200":
-          description: Login successful
+          description: Logged in
           content:
             application/json:
               schema:
@@ -54,69 +53,11 @@ paths:
         "401":
           description: Invalid credentials
 
-  /admin-users:
-    get:
-      operationId: listAdminUsers
-      tags: [auth]
-      summary: List admin users (admin only)
-      responses:
-        "200":
-          description: List of admin users
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/AdminUser"
-        "403":
-          description: Admin access required
-
-    post:
-      operationId: createAdminUser
-      tags: [auth]
-      summary: Add an admin user by mobile number (admin only)
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/AdminUserInput"
-      responses:
-        "201":
-          description: Admin user created
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/AdminUser"
-        "400":
-          description: Invalid input or duplicate mobile
-        "403":
-          description: Admin access required
-
-  /admin-users/{id}:
-    delete:
-      operationId: deleteAdminUser
-      tags: [auth]
-      summary: Remove an admin user (admin only, superuser cannot be removed)
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: integer
-      responses:
-        "200":
-          description: Admin user removed
-        "403":
-          description: Admin access required or superuser cannot be removed
-        "404":
-          description: Admin user not found
-
   /auth/logout:
     post:
       operationId: logout
       tags: [auth]
-      summary: Logout current session
+      summary: Log out
       responses:
         "200":
           description: Logged out
@@ -128,13 +69,11 @@ paths:
       summary: Get current session info
       responses:
         "200":
-          description: Current session
+          description: Session info
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/SessionInfo"
-        "401":
-          description: Not authenticated
 
   /otp/send:
     post:
@@ -149,21 +88,19 @@ paths:
               $ref: "#/components/schemas/OtpSendInput"
       responses:
         "200":
-          description: OTP sent successfully
+          description: OTP sent
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/OtpSendResult"
-        "400":
-          description: Invalid request
-        "403":
-          description: No orders found for this mobile number (loginMode only)
+        "404":
+          description: Mobile not found (loginMode or adminMode)
 
   /otp/verify:
     post:
       operationId: verifyOtp
       tags: [otp]
-      summary: Verify OTP code and create session
+      summary: Verify OTP and establish session
       requestBody:
         required: true
         content:
@@ -177,14 +114,14 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/LoginResult"
-        "401":
+        "400":
           description: Invalid or expired OTP
 
   /events:
     get:
       operationId: listEvents
       tags: [events]
-      summary: List events (admin sees all, user sees their own)
+      summary: List events (active only for guests, all for admins)
       responses:
         "200":
           description: List of events
@@ -270,7 +207,7 @@ paths:
     post:
       operationId: createUser
       tags: [users]
-      summary: Add a new user (admin only)
+      summary: Create a user (admin only)
       requestBody:
         required: true
         content:
@@ -342,27 +279,6 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/UserImportResult"
-
-  /users/{id}/segments:
-    get:
-      operationId: listUserSegments
-      tags: [users]
-      summary: List segments a user belongs to (admin only)
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: integer
-      responses:
-        "200":
-          description: Segments for user
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/Segment"
 
   /users/{id}/regenerate-code:
     post:
@@ -463,205 +379,6 @@ paths:
         "204":
           description: Deleted
 
-  /segments:
-    get:
-      operationId: listSegments
-      tags: [segments]
-      summary: List all segments (admin only)
-      responses:
-        "200":
-          description: List of segments
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/Segment"
-
-    post:
-      operationId: createSegment
-      tags: [segments]
-      summary: Create a segment (admin only)
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/SegmentInput"
-      responses:
-        "201":
-          description: Segment created
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Segment"
-
-  /segments/{id}:
-    patch:
-      operationId: updateSegment
-      tags: [segments]
-      summary: Update a segment's description and tags (admin only)
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: integer
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/SegmentUpdateInput"
-      responses:
-        "200":
-          description: Segment updated
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Segment"
-        "404":
-          description: Not found
-    delete:
-      operationId: deleteSegment
-      tags: [segments]
-      summary: Delete a segment (admin only)
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: integer
-      responses:
-        "204":
-          description: Deleted
-
-  /segments/{id}/users:
-    get:
-      operationId: listSegmentUsers
-      tags: [segments]
-      summary: List users in a segment (admin only)
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: integer
-      responses:
-        "200":
-          description: Users in segment
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/User"
-
-    post:
-      operationId: addUserToSegment
-      tags: [segments]
-      summary: Add a user to a segment (admin only)
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: integer
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/SegmentUserInput"
-      responses:
-        "201":
-          description: User added
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/User"
-
-  /segments/{id}/users/{userId}:
-    delete:
-      operationId: removeUserFromSegment
-      tags: [segments]
-      summary: Remove a user from a segment (admin only)
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: integer
-        - name: userId
-          in: path
-          required: true
-          schema:
-            type: integer
-      responses:
-        "204":
-          description: Removed
-
-  /events/{id}/segments:
-    get:
-      operationId: listEventSegments
-      tags: [segments]
-      summary: List segments assigned to an event (admin only)
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: integer
-      responses:
-        "200":
-          description: Segments for event
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/Segment"
-
-    post:
-      operationId: addSegmentToEvent
-      tags: [segments]
-      summary: Assign a segment to an event (admin only)
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: integer
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/EventSegmentInput"
-      responses:
-        "201":
-          description: Segment assigned
-
-  /events/{id}/segments/{segmentId}:
-    delete:
-      operationId: removeSegmentFromEvent
-      tags: [segments]
-      summary: Remove a segment from an event (admin only)
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: integer
-        - name: segmentId
-          in: path
-          required: true
-          schema:
-            type: integer
-      responses:
-        "204":
-          description: Removed
-
   /summary:
     get:
       operationId: getSummary
@@ -755,6 +472,54 @@ paths:
         "204":
           description: Deleted
 
+  /admin-users:
+    get:
+      operationId: listAdminUsers
+      tags: [adminUsers]
+      summary: List all admin users (superuser only)
+      responses:
+        "200":
+          description: List of admin users
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AdminUser"
+
+    post:
+      operationId: createAdminUser
+      tags: [adminUsers]
+      summary: Add an admin user (superuser only)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminUserInput"
+      responses:
+        "201":
+          description: Admin user created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminUser"
+
+  /admin-users/{id}:
+    delete:
+      operationId: deleteAdminUser
+      tags: [adminUsers]
+      summary: Remove an admin user (superuser only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
 components:
   schemas:
     HealthStatus:
@@ -774,9 +539,6 @@ components:
           type: string
           minLength: 4
           maxLength: 4
-        eventId:
-          type: integer
-          description: Event the guest is trying to log in for. If provided, login is rejected when the guest is not a member of this event.
 
     AdminUser:
       type: object
@@ -828,9 +590,25 @@ components:
         userName:
           type: ["string", "null"]
 
+    PizzaType:
+      type: object
+      required: [name, price]
+      properties:
+        name:
+          type: string
+          description: Pizza name (e.g. Margherita)
+        price:
+          type: integer
+          minimum: 0
+          description: Price in DKK
+        discountedPrice:
+          type: integer
+          minimum: 0
+          description: Optional discounted price in DKK
+
     Event:
       type: object
-      required: [id, slug, name, date, totalCapacity, slotCapacity, price, active, slots, pizzaTypes, createdAt]
+      required: [id, slug, name, date, totalCapacity, slotCapacity, active, slots, pizzaTypes, createdAt]
       properties:
         id:
           type: integer
@@ -846,9 +624,6 @@ components:
           type: integer
         slotCapacity:
           type: integer
-        price:
-          type: integer
-          description: Price per pizza in DKK
         description:
           type: ["string", "null"]
           description: Event description or fundraising note
@@ -863,18 +638,13 @@ components:
         pizzaTypes:
           type: array
           items:
-            type: string
+            $ref: "#/components/schemas/PizzaType"
         active:
           type: boolean
         maxPerGuest:
           type: ["integer", "null"]
           minimum: 1
           description: Maximum number of pizzas a single guest may order. Null means no limit.
-        segmentDescriptions:
-          type: array
-          items:
-            type: string
-          description: Descriptions of segments associated with this event
         createdAt:
           type: string
           format: date-time
@@ -894,10 +664,6 @@ components:
         slotCapacity:
           type: integer
           default: 3
-        price:
-          type: integer
-          minimum: 0
-          default: 70
         maxPerGuest:
           type: integer
           minimum: 1
@@ -915,7 +681,7 @@ components:
         pizzaTypes:
           type: array
           items:
-            type: string
+            $ref: "#/components/schemas/PizzaType"
 
     EventUpdate:
       type: object
@@ -928,9 +694,6 @@ components:
           type: integer
         slotCapacity:
           type: integer
-        price:
-          type: integer
-          minimum: 0
         maxPerGuest:
           type: ["integer", "null"]
           minimum: 1
@@ -948,7 +711,7 @@ components:
         pizzaTypes:
           type: array
           items:
-            type: string
+            $ref: "#/components/schemas/PizzaType"
         active:
           type: boolean
 
@@ -1108,59 +871,6 @@ components:
         paid:
           type: boolean
 
-    Segment:
-      type: object
-      required: [id, name, memberCount, createdAt]
-      properties:
-        id:
-          type: integer
-        name:
-          type: string
-        description:
-          type: ["string", "null"]
-          description: Short description of this audience segment
-        tags:
-          type: ["string", "null"]
-          description: Comma-separated searchable tags
-        memberCount:
-          type: integer
-        createdAt:
-          type: string
-          format: date-time
-
-    SegmentInput:
-      type: object
-      required: [name]
-      properties:
-        name:
-          type: string
-        description:
-          type: string
-        tags:
-          type: string
-
-    SegmentUpdateInput:
-      type: object
-      properties:
-        description:
-          type: ["string", "null"]
-        tags:
-          type: ["string", "null"]
-
-    SegmentUserInput:
-      type: object
-      required: [userId]
-      properties:
-        userId:
-          type: integer
-
-    EventSegmentInput:
-      type: object
-      required: [segmentId]
-      properties:
-        segmentId:
-          type: integer
-
     SlotSummary:
       type: object
       required: [slot, booked, capacity, available]
@@ -1270,7 +980,7 @@ components:
 
     EventSummary:
       type: object
-      required: [eventId, eventName, eventDate, totalCapacity, totalBooked, totalRemaining, orderingOpen, price, pizzaTypes, slots, guests, maxPerGuest]
+      required: [eventId, eventName, eventDate, totalCapacity, totalBooked, totalRemaining, orderingOpen, pizzaTypes, slots, guests, maxPerGuest]
       properties:
         eventId:
           type: integer
@@ -1290,8 +1000,6 @@ components:
           type: ["string", "null"]
           format: date-time
           description: Cutoff datetime after which no new orders or edits are accepted
-        price:
-          type: integer
         maxPerGuest:
           type: ["integer", "null"]
           description: Maximum pizzas per guest for this event. Null means no per-guest limit.
@@ -1300,7 +1008,7 @@ components:
         pizzaTypes:
           type: array
           items:
-            type: string
+            $ref: "#/components/schemas/PizzaType"
         slots:
           type: array
           items:

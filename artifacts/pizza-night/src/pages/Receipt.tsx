@@ -3,6 +3,8 @@ import { useListOrders, useListEvents } from "@workspace/api-client-react";
 import { Loader2, Printer } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
+type PizzaType = { name: string; price: number; discountedPrice?: number };
+
 function formatDate(dateStr: string): string {
   try {
     return new Date(dateStr + "T12:00:00").toLocaleDateString("en-GB", {
@@ -16,6 +18,11 @@ function formatNow(): string {
     day: "numeric", month: "long", year: "numeric",
     hour: "2-digit", minute: "2-digit",
   });
+}
+
+function lookupPrice(pizzaChoice: string, pizzaTypes: PizzaType[]): number {
+  const pt = pizzaTypes.find((p) => p.name === pizzaChoice);
+  return pt?.price ?? 70;
 }
 
 export function Receipt() {
@@ -45,9 +52,13 @@ export function Receipt() {
   }
 
   const items = order.items ?? [];
-  const totalQty = items.reduce((s, i) => s + i.quantity, 0);
-  const pricePerPizza = event.price ?? 70;
-  const totalPrice = totalQty * pricePerPizza;
+  const eventPizzaTypes: PizzaType[] = (event.pizzaTypes ?? []).map((pt: any) =>
+    typeof pt === "string" ? { name: pt, price: 70 } : pt
+  );
+
+  const totalPrice = items.reduce((sum, item) => {
+    return sum + lookupPrice(item.pizzaChoice, eventPizzaTypes) * item.quantity;
+  }, 0);
 
   return (
     <>
@@ -95,12 +106,15 @@ export function Receipt() {
           <div className="mb-8">
             <h2 className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-3">Order</h2>
             <div className="border border-gray-200 rounded-lg overflow-hidden">
-              {items.map((item, i) => (
-                <div key={i} className="flex justify-between items-center px-4 py-3 border-b border-gray-100 last:border-0">
-                  <span className="font-medium">{item.pizzaChoice}</span>
-                  <span className="text-gray-500 text-sm">{item.quantity} × {pricePerPizza} DKK</span>
-                </div>
-              ))}
+              {items.map((item, i) => {
+                const unitPrice = lookupPrice(item.pizzaChoice, eventPizzaTypes);
+                return (
+                  <div key={i} className="flex justify-between items-center px-4 py-3 border-b border-gray-100 last:border-0">
+                    <span className="font-medium">{item.pizzaChoice}</span>
+                    <span className="text-gray-500 text-sm">{item.quantity} × {unitPrice} DKK</span>
+                  </div>
+                );
+              })}
             </div>
           </div>
 

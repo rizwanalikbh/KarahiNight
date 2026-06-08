@@ -5,6 +5,7 @@
  * Private Pizza Night preorder API
  * OpenAPI spec version: 0.1.0
  */
+import type { PizzaType } from './pizzaType';
 
 export interface EventInput {
   name: string;
@@ -12,8 +13,6 @@ export interface EventInput {
   date: string;
   totalCapacity?: number;
   slotCapacity?: number;
-  /** @minimum 0 */
-  price?: number;
   /**
      * Maximum number of pizzas a single guest may order. Omit for no limit.
      * @minimum 1
@@ -23,5 +22,5 @@ export interface EventInput {
   /** Cutoff datetime after which no new orders or edits are accepted */
   orderDeadline?: Date;
   slots?: string[];
-  pizzaTypes?: string[];
+  pizzaTypes?: PizzaType[];
 }

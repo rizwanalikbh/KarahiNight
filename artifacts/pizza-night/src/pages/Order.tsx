@@ -23,6 +23,7 @@ import type { PizzaItem as APIPizzaItem } from "@workspace/api-client-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useQueryClient } from "@tanstack/react-query";
 
+interface PizzaType { name: string; price: number; discountedPrice?: number; }
 interface PizzaItem { pizzaChoice: string; quantity: number; }
 
 function formatEventDate(dateStr: string): string {
@@ -37,6 +38,22 @@ function formatModalDate(dateStr: string): string {
     const d = new Date(dateStr + "T12:00:00");
     return d.toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" });
   } catch { return dateStr; }
+}
+
+function computeItemsTotal(items: PizzaItem[], pizzaTypes: PizzaType[]): number {
+  return items.reduce((sum, item) => {
+    const pt = pizzaTypes.find((p) => p.name === item.pizzaChoice);
+    return sum + (pt?.price ?? 70) * item.quantity;
+  }, 0);
+}
+
+function priceLabel(pizzaTypes: PizzaType[]): string {
+  if (pizzaTypes.length === 0) return "70 DKK per pizza";
+  const prices = pizzaTypes.map((p) => p.price);
+  const min = Math.min(...prices);
+  const max = Math.max(...prices);
+  if (min === max) return `${min} DKK per pizza`;
+  return `${min}–${max} DKK per pizza`;
 }
 
 interface EventPickerModalProps {
@@ -63,15 +80,13 @@ function EventPickerModal({ events, selectedId, open, onSelect, onOpenChange }: 
         <div className="p-4 space-y-2.5 max-h-[50vh] overflow-y-auto">
           {events.map((ev) => {
             const isSelected = ev.id === selectedId;
-            const segDescs = (ev.segmentDescriptions ?? []).filter(Boolean);
-            const subtitle = segDescs.length > 0 ? segDescs.join(", ") : ev.description ?? null;
             return (
               <button key={ev.id} onClick={() => onSelect(ev.id)} className={`w-full text-left rounded-xl border-2 px-4 py-3.5 transition-all duration-150 group focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 ${isSelected ? "border-primary bg-primary/5 shadow-sm" : "border-border/60 bg-card hover:border-primary/40 hover:shadow-sm"}`}>
                 <div className="flex items-center justify-between gap-3">
                   <div className="flex-1 min-w-0">
                     <div className={`font-serif font-bold text-lg leading-tight ${isSelected ? "text-primary" : "text-foreground"}`}>{ev.name}</div>
                     <div className="text-sm text-muted-foreground mt-0.5">{formatModalDate(ev.date)}</div>
-                    {subtitle && <div className="text-xs text-muted-foreground/70 mt-1.5 leading-relaxed line-clamp-2">{subtitle}</div>}
+                    {ev.description && <div className="text-xs text-muted-foreground/70 mt-1.5 leading-relaxed line-clamp-2">{ev.description}</div>}
                   </div>
                   <div className={`shrink-0 w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${isSelected ? "border-primary bg-primary" : "border-border group-hover:border-primary/40"}`}>
                     {isSelected && <Check className="w-3.5 h-3.5 text-primary-foreground" />}
@@ -137,19 +152,23 @@ export function Order() {
     { query: { enabled: !!selectedEventId, queryKey: getGetSummaryQueryKey({ eventId: selectedEventId ?? undefined }) } }
   );
 
-  const pizzaTypes: string[] = summary?.pizzaTypes ?? [];
-  const pricePerPizza = summary?.price ?? 70;
+  const pizzaTypes: PizzaType[] = (summary?.pizzaTypes ?? []).map((pt: any) =>
+    typeof pt === "string" ? { name: pt, price: 70 } : pt
+  );
+  const pizzaNames = pizzaTypes.map((pt) => pt.name);
 
   useEffect(() => {
-    if (pizzaTypes.length > 0) {
+    if (pizzaNames.length > 0) {
       setPizzaItems((prev) =>
         Array.from({ length: totalQty }, (_, i) => ({
-          pizzaChoice: prev[i]?.pizzaChoice && pizzaTypes.includes(prev[i].pizzaChoice) ? prev[i].pizzaChoice : pizzaTypes[0],
+          pizzaChoice: prev[i]?.pizzaChoice && pizzaNames.includes(prev[i].pizzaChoice)
+            ? prev[i].pizzaChoice
+            : pizzaNames[0],
           quantity: 1,
         }))
       );
     }
-  }, [pizzaTypes.join(","), totalQty]);
+  }, [pizzaNames.join(","), totalQty]);
 
   const selectedSlotData = summary?.slots.find((s) => s.slot === pickupSlot);
   const slotAvailable = selectedSlotData?.available ?? 0;
@@ -233,7 +252,7 @@ export function Order() {
             {summary && (
               <>
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex flex-col justify-end p-6 text-left">
-                  <div className="text-white font-medium text-lg">{summary.price} DKK per pizza</div>
+                  <div className="text-white font-medium text-lg">{priceLabel(pizzaTypes)}</div>
                   {summary.description && <div className="text-white/80 text-sm">{summary.description}</div>}
                 </div>
                 {!summary.orderingOpen && (
@@ -311,8 +330,10 @@ export function Order() {
 
     const updateEditChoice = (index: number, choice: string) =>
       setEditItems((prev) => prev.map((it, i) => (i === index ? { ...it, pizzaChoice: choice } : it)));
-    const addEditPizza = () => { if (!canAddMore) return; setEditItems((prev) => [...prev, { pizzaChoice: pizzaTypes[0] ?? "", quantity: 1 }]); };
+    const addEditPizza = () => { if (!canAddMore) return; setEditItems((prev) => [...prev, { pizzaChoice: pizzaNames[0] ?? "", quantity: 1 }]); };
     const removeEditPizza = (index: number) => { if (index < originalCount) return; setEditItems((prev) => prev.filter((_, i) => i !== index)); };
+
+    const orderTotal = computeItemsTotal(displayItems, pizzaTypes);
 
     return (
       <Layout>
@@ -370,10 +391,12 @@ export function Order() {
                       <div key={index} className="space-y-1">
                         <div className="flex items-center gap-2">
                           <span className="text-xs text-muted-foreground w-14 shrink-0">Pizza {index + 1}{index < originalCount ? "" : " ✦"}</span>
-                          <div className="flex-1 grid gap-1.5" style={{ gridTemplateColumns: `repeat(${Math.min(pizzaTypes.length, 3)}, minmax(0, 1fr))` }}>
-                            {pizzaTypes.map((choice) => (
-                              <button key={choice} type="button" onClick={() => updateEditChoice(index, choice)} className={`py-2 rounded-lg border text-xs font-medium transition-colors cursor-pointer truncate px-1 ${item.pizzaChoice === choice ? "border-primary bg-primary/5 text-primary" : "border-border hover:bg-secondary/50 text-foreground"}`}>
-                                {choice}
+                          <div className="flex-1 flex flex-wrap gap-1.5">
+                            {pizzaTypes.map((pt) => (
+                              <button key={pt.name} type="button" onClick={() => updateEditChoice(index, pt.name)}
+                                className={`py-2 px-3 rounded-lg border text-xs font-medium transition-colors cursor-pointer ${item.pizzaChoice === pt.name ? "border-primary bg-primary/5 text-primary" : "border-border hover:bg-secondary/50 text-foreground"}`}>
+                                {pt.name}
+                                <span className={`ml-1 ${item.pizzaChoice === pt.name ? "text-primary/60" : "text-muted-foreground"}`}>{pt.price} kr</span>
                               </button>
                             ))}
                           </div>
@@ -393,19 +416,22 @@ export function Order() {
                         acc[item.pizzaChoice] = (acc[item.pizzaChoice] ?? 0) + item.quantity;
                         return acc;
                       }, {})
-                    ).map(([choice, qty]) => (
-                      <div key={choice} className="flex justify-between items-center px-4 py-3">
-                        <span className="font-medium text-foreground">{choice}</span>
-                        <span className="text-sm text-muted-foreground">×{qty}</span>
-                      </div>
-                    ))}
+                    ).map(([choice, qty]) => {
+                      const pt = pizzaTypes.find((p) => p.name === choice);
+                      return (
+                        <div key={choice} className="flex justify-between items-center px-4 py-3">
+                          <span className="font-medium text-foreground">{choice}</span>
+                          <span className="text-sm text-muted-foreground">×{qty}{pt ? ` · ${pt.price * qty} DKK` : ""}</span>
+                        </div>
+                      );
+                    })}
                   </div>
                 )}
               </div>
 
               <div className="bg-secondary/50 p-4 rounded-xl border border-border flex justify-between items-center mb-6">
                 <span className="font-medium text-foreground">Total:</span>
-                <span className="font-serif font-bold text-xl text-primary">{(myOrder.items ?? []).reduce((s, i) => s + i.quantity, 0) * pricePerPizza} DKK</span>
+                <span className="font-serif font-bold text-xl text-primary">{orderTotal} DKK</span>
               </div>
 
               {myOrder.notes && (
@@ -462,6 +488,7 @@ export function Order() {
     );
   }
 
+  const currentTotal = computeItemsTotal(pizzaItems, pizzaTypes);
   const formReady = !!selectedEventId && !!pickupSlot && pizzaItems.every((i) => !!i.pizzaChoice) && maxAllowed > 0;
 
   const handleFormContinue = (e: React.FormEvent) => {
@@ -553,7 +580,7 @@ export function Order() {
                 <div className="text-muted-foreground">{events.find((e) => e.id === selectedEventId)?.name} · {pickupSlot} CET</div>
                 <div className="text-muted-foreground">
                   {Object.entries(pizzaItems.reduce<Record<string, number>>((acc, i) => { acc[i.pizzaChoice] = (acc[i.pizzaChoice] ?? 0) + i.quantity; return acc; }, {})).map(([c, q]) => `${q}× ${c}`).join(", ")}
-                  {pricePerPizza > 0 ? ` — ${totalQty * pricePerPizza} DKK` : ""}
+                  {currentTotal > 0 ? ` — ${currentTotal} DKK` : ""}
                 </div>
               </div>
 
@@ -671,7 +698,7 @@ export function Order() {
           <CardHeader>
             <CardTitle className="font-serif text-2xl">Place Your Order</CardTitle>
             <CardDescription>
-              {pricePerPizza} DKK per pizza.{summary?.description ? ` ${summary.description}` : ""}
+              {priceLabel(pizzaTypes)}{summary?.description ? ` — ${summary.description}` : ""}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -737,7 +764,7 @@ export function Order() {
                       <SelectContent>
                         {Array.from({ length: maxAllowed }).map((_, i) => (
                           <SelectItem key={i + 1} value={String(i + 1)}>
-                            {i + 1} pizza{i > 0 ? "s" : ""}{pricePerPizza > 0 ? ` — ${pricePerPizza * (i + 1)} DKK` : ""}
+                            {i + 1} pizza{i > 0 ? "s" : ""}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -753,10 +780,12 @@ export function Order() {
                     {pizzaItems.map((item, index) => (
                       <div key={index} className="space-y-1.5">
                         {pizzaItems.length > 1 && <span className="text-sm text-muted-foreground">Pizza {index + 1}</span>}
-                        <div className="grid gap-2" style={{ gridTemplateColumns: `repeat(${Math.min(pizzaTypes.length, 3)}, minmax(0, 1fr))` }}>
-                          {pizzaTypes.map((choice) => (
-                            <button key={choice} type="button" onClick={() => updateItemChoice(index, choice)} className={`p-3 rounded-xl border text-sm font-medium transition-colors cursor-pointer truncate ${item.pizzaChoice === choice ? "border-primary bg-primary/5 text-primary" : "border-border hover:bg-secondary/50 text-foreground"}`}>
-                              {choice}
+                        <div className="flex flex-wrap gap-2">
+                          {pizzaTypes.map((pt) => (
+                            <button key={pt.name} type="button" onClick={() => updateItemChoice(index, pt.name)}
+                              className={`px-4 py-3 rounded-xl border text-sm font-medium transition-colors cursor-pointer ${item.pizzaChoice === pt.name ? "border-primary bg-primary/5 text-primary" : "border-border hover:bg-secondary/50 text-foreground"}`}>
+                              <span className="block">{pt.name}</span>
+                              <span className={`block text-xs mt-0.5 ${item.pizzaChoice === pt.name ? "text-primary/60" : "text-muted-foreground"}`}>{pt.price} DKK</span>
                             </button>
                           ))}
                         </div>
@@ -771,10 +800,10 @@ export function Order() {
                 <Textarea id="notes" placeholder="Allergies, preferences, etc." value={notes} onChange={(e) => setNotes(e.target.value)} className="resize-none" />
               </div>
 
-              {totalQty > 0 && pricePerPizza > 0 && (
+              {currentTotal > 0 && pickupSlot && pizzaItems.every((i) => !!i.pizzaChoice) && (
                 <div className="bg-secondary/50 p-4 rounded-xl border border-border flex justify-between items-center">
                   <span className="font-medium text-foreground">Total Price:</span>
-                  <span className="font-serif font-bold text-xl text-primary">{totalQty * pricePerPizza} DKK</span>
+                  <span className="font-serif font-bold text-xl text-primary">{currentTotal} DKK</span>
                 </div>
               )}
 
