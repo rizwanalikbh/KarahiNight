@@ -1,117 +1,201 @@
 import { useState } from "react";
-import { useLogin, useListUsers, useGetMe } from "@workspace/api-client-react";
 import { useLocation } from "wouter";
+import { useSendOtp, useVerifyOtp, getGetMeQueryKey, getListOrdersQueryKey } from "@workspace/api-client-react";
+import { useQueryClient } from "@tanstack/react-query";
 import { Layout } from "../components/Layout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2 } from "lucide-react";
-import { useQueryClient } from "@tanstack/react-query";
-import { getGetMeQueryKey } from "@workspace/api-client-react";
+import { Loader2, Phone, Check, ChevronLeft, AlertCircle } from "lucide-react";
+
+type Step = "mobile" | "otp";
 
 export function Login() {
-  const [name, setName] = useState("");
-  const [code, setCode] = useState("");
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  
-  const { data: users, isLoading: loadingUsers } = useListUsers();
-  const login = useLogin();
-  const { data: session } = useGetMe();
 
-  // If already logged in, redirect
-  if (session?.authenticated) {
-    setLocation(session.role === "admin" ? "/admin/dashboard" : "/order");
-    return null;
-  }
+  const [step, setStep] = useState<Step>("mobile");
+  const [mobile, setMobile] = useState("");
+  const [otpCode, setOtpCode] = useState("");
+  const [noOrdersError, setNoOrdersError] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!name || code.length !== 4) {
-      toast({
-        title: "Error",
-        description: "Please select your name and enter your 4-digit code.",
-        variant: "destructive"
-      });
-      return;
-    }
+  const sendOtpMutation = useSendOtp();
+  const verifyOtpMutation = useVerifyOtp();
 
-    login.mutate({ data: { name, code } }, {
-      onSuccess: (res) => {
-        if (res.success) {
-          queryClient.invalidateQueries({ queryKey: getGetMeQueryKey() });
-          setLocation(res.role === "admin" ? "/admin/dashboard" : "/order");
-        } else {
-          toast({
-            title: "Login failed",
-            description: "Invalid code or user inactive.",
-            variant: "destructive"
-          });
-        }
-      },
-      onError: () => {
-        toast({
-          title: "Error",
-          description: "Could not log in. Please try again.",
-          variant: "destructive"
-        });
+  const handleSendOtp = () => {
+    const trimmed = mobile.trim();
+    if (!trimmed) return;
+    setNoOrdersError(false);
+
+    sendOtpMutation.mutate(
+      { data: { mobile: trimmed, loginMode: true } },
+      {
+        onSuccess: () => {
+          setStep("otp");
+          setOtpCode("");
+          window.scrollTo(0, 0);
+        },
+        onError: (err: any) => {
+          const status = err?.response?.status;
+          if (status === 403) {
+            setNoOrdersError(true);
+          } else {
+            toast({
+              title: "Couldn't send code",
+              description: err?.response?.data?.error ?? "Please check your number and try again.",
+              variant: "destructive",
+            });
+          }
+        },
       }
-    });
+    );
   };
+
+  const handleVerify = () => {
+    if (otpCode.length !== 6) return;
+    verifyOtpMutation.mutate(
+      { data: { mobile: mobile.trim(), code: otpCode } },
+      {
+        onSuccess: async () => {
+          await queryClient.invalidateQueries({ queryKey: getGetMeQueryKey() });
+          await queryClient.invalidateQueries({ queryKey: getListOrdersQueryKey() });
+          setLocation("/order");
+        },
+        onError: (err: any) => {
+          toast({
+            title: "Wrong code",
+            description: err?.response?.data?.error ?? "That code didn't match. Try again.",
+            variant: "destructive",
+          });
+          setOtpCode("");
+        },
+      }
+    );
+  };
+
+  if (step === "otp") {
+    const isVerifying = verifyOtpMutation.isPending;
+    return (
+      <Layout>
+        <div className="max-w-md mx-auto w-full pt-12">
+          <Card className="border-card-border shadow-md">
+            <CardHeader>
+              <div className="flex items-center gap-2 mb-1">
+                <button
+                  onClick={() => { setStep("mobile"); setOtpCode(""); }}
+                  disabled={isVerifying}
+                  className="text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  <ChevronLeft className="w-5 h-5" />
+                </button>
+                <CardTitle className="font-serif text-2xl">Enter Code</CardTitle>
+              </div>
+              <CardDescription>
+                We sent a 6-digit code to{" "}
+                <span className="font-medium text-foreground">{mobile}</span>
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="space-y-2">
+                <Label htmlFor="otpCode" className="text-sm font-semibold">Verification Code</Label>
+                <Input
+                  id="otpCode"
+                  type="text"
+                  inputMode="numeric"
+                  maxLength={6}
+                  value={otpCode}
+                  onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                  placeholder="••••••"
+                  className="h-16 text-center text-3xl tracking-[0.5em] font-mono"
+                  disabled={isVerifying}
+                  autoFocus
+                />
+              </div>
+
+              <Button
+                size="lg"
+                className="w-full h-14 text-lg gap-2"
+                disabled={otpCode.length !== 6 || isVerifying}
+                onClick={handleVerify}
+              >
+                {isVerifying
+                  ? <Loader2 className="w-5 h-5 animate-spin" />
+                  : <><Check className="w-5 h-5" /> View My Order</>}
+              </Button>
+
+              <div className="text-center">
+                <button
+                  onClick={handleSendOtp}
+                  disabled={sendOtpMutation.isPending || isVerifying}
+                  className="text-sm text-muted-foreground hover:text-primary underline underline-offset-2 transition-colors disabled:opacity-50"
+                >
+                  {sendOtpMutation.isPending ? "Sending…" : "Resend code"}
+                </button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </Layout>
+    );
+  }
 
   return (
     <Layout>
       <div className="max-w-md mx-auto w-full pt-12">
         <Card className="border-card-border shadow-md">
-          <CardHeader className="text-center pb-2">
-            <CardTitle className="font-serif text-2xl">Guest Login</CardTitle>
-            <CardDescription>Select your name and enter your 4-digit invite code.</CardDescription>
+          <CardHeader>
+            <div className="w-14 h-14 bg-primary/10 rounded-full flex items-center justify-center mb-4">
+              <Phone className="w-6 h-6 text-primary" />
+            </div>
+            <CardTitle className="font-serif text-2xl">View My Order</CardTitle>
+            <CardDescription>
+              Enter the mobile number you used when placing your order. We'll send you a one-time code to verify.
+            </CardDescription>
           </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-6 mt-4">
-              <div className="space-y-2">
-                <Label htmlFor="name">Who are you?</Label>
-                <Select value={name} onValueChange={setName} disabled={loadingUsers}>
-                  <SelectTrigger id="name" className="h-12">
-                    <SelectValue placeholder={loadingUsers ? "Loading guests..." : "Select your name"} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {users?.filter(u => u.active).map((user) => (
-                      <SelectItem key={user.id} value={user.name}>
-                        {user.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="code">Your 4-Digit Code</Label>
-                <Input 
-                  id="code" 
-                  type="password" 
-                  inputMode="numeric"
-                  pattern="[0-9]*"
-                  maxLength={4}
-                  value={code} 
-                  onChange={(e) => setCode(e.target.value.replace(/[^0-9]/g, ''))}
-                  placeholder="0000"
-                  className="h-12 text-center text-xl tracking-widest"
-                />
-              </div>
+          <CardContent className="space-y-6">
+            <div className="space-y-2">
+              <Label htmlFor="mobile" className="text-sm font-semibold">Mobile Number</Label>
+              <Input
+                id="mobile"
+                type="tel"
+                value={mobile}
+                onChange={(e) => { setMobile(e.target.value); setNoOrdersError(false); }}
+                onKeyDown={(e) => { if (e.key === "Enter") handleSendOtp(); }}
+                placeholder="+45 12 34 56 78"
+                className="h-12"
+                autoFocus
+              />
+              <p className="text-xs text-muted-foreground">Include country code (e.g. +45 for Denmark)</p>
+            </div>
 
-              <Button 
-                type="submit" 
-                className="w-full h-12 text-lg mt-6" 
-                disabled={login.isPending || !name || code.length !== 4}
-              >
-                {login.isPending ? <Loader2 className="w-5 h-5 animate-spin" /> : "Enter"}
-              </Button>
-            </form>
+            {noOrdersError && (
+              <div className="flex items-start gap-3 rounded-xl border border-destructive/30 bg-destructive/5 px-4 py-3.5">
+                <AlertCircle className="w-5 h-5 text-destructive shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-sm font-semibold text-destructive">No orders found</p>
+                  <p className="text-sm text-destructive/80 mt-1">
+                    We don't have an order linked to this number. If you haven't ordered yet,{" "}
+                    <a href="/order" className="underline underline-offset-2 font-medium hover:text-destructive transition-colors">
+                      place your order here
+                    </a>.
+                  </p>
+                </div>
+              </div>
+            )}
+
+            <Button
+              size="lg"
+              className="w-full h-14 text-lg"
+              disabled={!mobile.trim() || sendOtpMutation.isPending}
+              onClick={handleSendOtp}
+            >
+              {sendOtpMutation.isPending
+                ? <Loader2 className="w-5 h-5 animate-spin" />
+                : "Send Verification Code"}
+            </Button>
           </CardContent>
         </Card>
       </div>

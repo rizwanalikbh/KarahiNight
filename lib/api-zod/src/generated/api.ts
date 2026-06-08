@@ -69,7 +69,8 @@ export const GetMeResponse = zod.object({
  */
 export const SendOtpBody = zod.object({
   "mobile": zod.string().describe('Mobile number in E.164 format (e.g. +4512345678)'),
-  "name": zod.string()
+  "name": zod.string().optional(),
+  "loginMode": zod.boolean().optional().describe('If true, only send OTP if mobile has existing orders; does not create a new user')
 })
 
 export const SendOtpResponse = zod.object({

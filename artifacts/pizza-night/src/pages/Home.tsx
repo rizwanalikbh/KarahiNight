@@ -267,11 +267,19 @@ export function Home() {
                 </Button>
               </div>
             ) : (
-              <Button size="lg" className="w-full h-14 text-lg gap-2" onClick={handleOrder} disabled={!summary.orderingOpen && summary.totalRemaining <= 0}>
-                <Pizza className="w-5 h-5" />
-                {summary.orderingOpen ? "Order My Pizza" : summary.totalRemaining <= 0 ? "Fully Booked" : "View My Order"}
-                {summary.orderingOpen && <ArrowRight className="w-4 h-4" />}
-              </Button>
+              <div className="flex flex-col items-center gap-3 w-full">
+                <Button size="lg" className="w-full h-14 text-lg gap-2" onClick={handleOrder} disabled={!summary.orderingOpen && summary.totalRemaining <= 0}>
+                  <Pizza className="w-5 h-5" />
+                  {summary.orderingOpen ? "Order My Pizza" : summary.totalRemaining <= 0 ? "Fully Booked" : "Order My Pizza"}
+                  {summary.orderingOpen && <ArrowRight className="w-4 h-4" />}
+                </Button>
+                <a
+                  href="/login"
+                  className="text-sm text-muted-foreground hover:text-primary underline underline-offset-2 transition-colors"
+                >
+                  Already ordered? View my order
+                </a>
+              </div>
             )}
           </div>
         ) : null}

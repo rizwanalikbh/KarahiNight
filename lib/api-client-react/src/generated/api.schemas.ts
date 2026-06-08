@@ -323,7 +323,9 @@ export interface RecipeUpdate {
 export interface OtpSendInput {
   /** Mobile number in E.164 format (e.g. +4512345678) */
   mobile: string;
-  name: string;
+  name?: string;
+  /** If true, only send OTP if mobile has existing orders; does not create a new user */
+  loginMode?: boolean;
 }
 
 export interface OtpVerifyInput {

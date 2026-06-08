@@ -118,6 +118,8 @@ paths:
                 $ref: "#/components/schemas/OtpSendResult"
         "400":
           description: Invalid request
+        "403":
+          description: No orders found for this mobile number (loginMode only)
 
   /otp/verify:
     post:
@@ -1169,13 +1171,16 @@ components:
 
     OtpSendInput:
       type: object
-      required: [mobile, name]
+      required: [mobile]
       properties:
         mobile:
           type: string
           description: Mobile number in E.164 format (e.g. +4512345678)
         name:
           type: string
+        loginMode:
+          type: boolean
+          description: If true, only send OTP if mobile has existing orders; does not create a new user
 
     OtpVerifyInput:
       type: object

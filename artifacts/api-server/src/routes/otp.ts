@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { db, usersTable, otpSessionsTable } from "@workspace/db";
+import { db, usersTable, otpSessionsTable, ordersTable } from "@workspace/db";
 import { eq, and, gt } from "drizzle-orm";
 import { SendOtpBody, VerifyOtpBody } from "@workspace/api-zod";
 import twilio from "twilio";
@@ -24,12 +24,38 @@ router.post("/otp/send", async (req, res): Promise<void> => {
     return;
   }
 
-  const { mobile, name } = parsed.data;
+  const { mobile, name, loginMode } = parsed.data;
+
+  if (loginMode) {
+    const [existingUser] = await db
+      .select()
+      .from(usersTable)
+      .where(eq(usersTable.mobile, mobile))
+      .limit(1);
+
+    if (!existingUser) {
+      res.status(403).json({ error: "No orders found for this number. Please place an order first." });
+      return;
+    }
+
+    const [existingOrder] = await db
+      .select()
+      .from(ordersTable)
+      .where(eq(ordersTable.userId, existingUser.id))
+      .limit(1);
+
+    if (!existingOrder) {
+      res.status(403).json({ error: "No orders found for this number. Please place an order first." });
+      return;
+    }
+  }
+
+  const resolvedName = name ?? "Guest";
   const code = generateOtp();
   const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
 
   await db.delete(otpSessionsTable).where(eq(otpSessionsTable.mobile, mobile));
-  await db.insert(otpSessionsTable).values({ mobile, name, code, expiresAt });
+  await db.insert(otpSessionsTable).values({ mobile, name: resolvedName, code, expiresAt });
 
   const client = getTwilioClient();
   if (client) {
