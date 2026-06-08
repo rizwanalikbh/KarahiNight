@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Clock, Lock, CalendarDays, ArrowRight, Check, Search, Pizza } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { QRCodeSVG } from "qrcode.react";
 
 function formatEventDate(dateStr: string): string {
   try {
@@ -192,6 +193,18 @@ export function Home() {
             No pizza nights are scheduled right now.<br />
             Stay tuned on the WhatsApp group for the next announcement! 🍕
           </p>
+          <div className="flex flex-col items-center gap-3 pt-2">
+            <div className="p-4 bg-white rounded-2xl shadow-md border border-border">
+              <QRCodeSVG
+                value="https://chat.whatsapp.com/placeholder"
+                size={160}
+                bgColor="#ffffff"
+                fgColor="#1a1a1a"
+                level="M"
+              />
+            </div>
+            <p className="text-sm text-muted-foreground">Scan to join the WhatsApp group</p>
+          </div>
         </div>
       </Layout>
     );
