@@ -7,3 +7,4 @@ export * from "./user_segments";
 export * from "./event_segments";
 export * from "./recipes";
 export * from "./otp_sessions";
+export * from "./admin_users";

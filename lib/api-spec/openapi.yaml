@@ -17,6 +17,7 @@ tags:
   - name: summary
   - name: segments
   - name: recipes
+  - name: adminUsers
 
 paths:
   /healthz:
@@ -53,26 +54,63 @@ paths:
         "401":
           description: Invalid credentials
 
-  /auth/admin-login:
-    post:
-      operationId: adminLogin
+  /admin-users:
+    get:
+      operationId: listAdminUsers
       tags: [auth]
-      summary: Admin login with password
+      summary: List admin users (admin only)
+      responses:
+        "200":
+          description: List of admin users
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AdminUser"
+        "403":
+          description: Admin access required
+
+    post:
+      operationId: createAdminUser
+      tags: [auth]
+      summary: Add an admin user by mobile number (admin only)
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/AdminLoginInput"
+              $ref: "#/components/schemas/AdminUserInput"
       responses:
-        "200":
-          description: Admin login successful
+        "201":
+          description: Admin user created
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/LoginResult"
-        "401":
-          description: Invalid admin password
+                $ref: "#/components/schemas/AdminUser"
+        "400":
+          description: Invalid input or duplicate mobile
+        "403":
+          description: Admin access required
+
+  /admin-users/{id}:
+    delete:
+      operationId: deleteAdminUser
+      tags: [auth]
+      summary: Remove an admin user (admin only, superuser cannot be removed)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Admin user removed
+        "403":
+          description: Admin access required or superuser cannot be removed
+        "404":
+          description: Admin user not found
 
   /auth/logout:
     post:
@@ -740,12 +778,27 @@ components:
           type: integer
           description: Event the guest is trying to log in for. If provided, login is rejected when the guest is not a member of this event.
 
-    AdminLoginInput:
+    AdminUser:
       type: object
-      required: [password]
+      required: [id, mobile, isSuperuser, createdAt]
       properties:
-        password:
+        id:
+          type: integer
+        mobile:
           type: string
+        isSuperuser:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+
+    AdminUserInput:
+      type: object
+      required: [mobile]
+      properties:
+        mobile:
+          type: string
+          description: 8-digit Danish number or E.164 format
 
     LoginResult:
       type: object
@@ -1175,12 +1228,15 @@ components:
       properties:
         mobile:
           type: string
-          description: Mobile number in E.164 format (e.g. +4512345678)
+          description: Mobile number — 8-digit Danish number or E.164. Backend prepends +45 if no country code.
         name:
           type: string
         loginMode:
           type: boolean
           description: If true, only send OTP if mobile has existing orders; does not create a new user
+        adminMode:
+          type: boolean
+          description: If true, only send OTP if mobile is a registered admin user
 
     OtpVerifyInput:
       type: object
@@ -1192,6 +1248,9 @@ components:
           type: string
           minLength: 6
           maxLength: 6
+        adminMode:
+          type: boolean
+          description: If true, verify as admin and create an admin session
 
     OtpSendResult:
       type: object

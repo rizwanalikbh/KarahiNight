@@ -20,8 +20,16 @@ export interface LoginInput {
   eventId?: number;
 }
 
-export interface AdminLoginInput {
-  password: string;
+export interface AdminUser {
+  id: number;
+  mobile: string;
+  isSuperuser: boolean;
+  createdAt: string;
+}
+
+export interface AdminUserInput {
+  /** 8-digit Danish number or E.164 format */
+  mobile: string;
 }
 
 export type LoginResultRole = typeof LoginResultRole[keyof typeof LoginResultRole];
@@ -321,11 +329,13 @@ export interface RecipeUpdate {
 }
 
 export interface OtpSendInput {
-  /** Mobile number in E.164 format (e.g. +4512345678) */
+  /** Mobile number — 8-digit Danish number or E.164. Backend prepends +45 if no country code. */
   mobile: string;
   name?: string;
   /** If true, only send OTP if mobile has existing orders; does not create a new user */
   loginMode?: boolean;
+  /** If true, only send OTP if mobile is a registered admin user */
+  adminMode?: boolean;
 }
 
 export interface OtpVerifyInput {
@@ -335,6 +345,8 @@ export interface OtpVerifyInput {
      * @maxLength 6
      */
   code: string;
+  /** If true, verify as admin and create an admin session */
+  adminMode?: boolean;
 }
 
 export interface OtpSendResult {

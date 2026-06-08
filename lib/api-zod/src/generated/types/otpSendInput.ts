@@ -7,9 +7,11 @@
  */
 
 export interface OtpSendInput {
-  /** Mobile number in E.164 format (e.g. +4512345678) */
+  /** Mobile number — 8-digit Danish number or E.164. Backend prepends +45 if no country code. */
   mobile: string;
   name?: string;
   /** If true, only send OTP if mobile has existing orders; does not create a new user */
   loginMode?: boolean;
+  /** If true, only send OTP if mobile is a registered admin user */
+  adminMode?: boolean;
 }

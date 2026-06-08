@@ -7,6 +7,8 @@ import {
   useListSegmentUsers, useAddUserToSegment, useRemoveUserFromSegment,
   useListEventSegments, useAddSegmentToEvent, useRemoveSegmentFromEvent,
   useImportUsers, useListUserSegments,
+  useListAdminUsers, useCreateAdminUser, useDeleteAdminUser,
+  getListAdminUsersQueryKey,
   getListOrdersQueryKey, getListUsersQueryKey, getGetSummaryQueryKey,
   getListEventsQueryKey,
   getListSegmentsQueryKey, getListSegmentUsersQueryKey, getListEventSegmentsQueryKey,
@@ -28,7 +30,7 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import {
   Loader2, Trash2, RefreshCw, UserPlus, Plus, CalendarDays,
-  Users, ChevronDown, ChevronUp, Pencil, X, Check, FileText, Tag, Upload, Mail, Phone,
+  Users, ChevronDown, ChevronUp, Pencil, X, Check, FileText, Tag, Upload, Mail, Phone, ShieldCheck,
 } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { OrderUpdateStatus } from "@workspace/api-client-react";
@@ -823,6 +825,132 @@ function SegmentDetailEditor({ seg }: { seg: any }) {
   );
 }
 
+// ── Admin Users tab ───────────────────────────────────────────────────────────
+function AdminUsersTab() {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [newMobile, setNewMobile] = useState("");
+
+  const { data: adminUsers, isLoading } = useListAdminUsers();
+  const createAdminUser = useCreateAdminUser();
+  const deleteAdminUser = useDeleteAdminUser();
+
+  const handleAdd = () => {
+    const mobile = newMobile.trim();
+    if (!mobile) return;
+    createAdminUser.mutate(
+      { data: { mobile } },
+      {
+        onSuccess: () => {
+          toast({ title: "Admin added" });
+          setNewMobile("");
+          queryClient.invalidateQueries({ queryKey: getListAdminUsersQueryKey() });
+        },
+        onError: (err: any) => {
+          const msg = err?.response?.data?.error ?? "Could not add admin.";
+          toast({ title: "Error", description: msg, variant: "destructive" });
+        },
+      },
+    );
+  };
+
+  const handleDelete = (id: number) => {
+    if (!confirm("Remove this admin user?")) return;
+    deleteAdminUser.mutate(
+      { id },
+      {
+        onSuccess: () => {
+          toast({ title: "Admin removed" });
+          queryClient.invalidateQueries({ queryKey: getListAdminUsersQueryKey() });
+        },
+        onError: (err: any) => {
+          const msg = err?.response?.data?.error ?? "Could not remove admin.";
+          toast({ title: "Error", description: msg, variant: "destructive" });
+        },
+      },
+    );
+  };
+
+  return (
+    <div className="space-y-4">
+      <Card>
+        <CardHeader className="pb-4">
+          <CardTitle className="text-lg flex items-center gap-2">
+            <ShieldCheck className="w-5 h-5" /> Add Admin
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex gap-2 items-end">
+            <div className="space-y-1 flex-1">
+              <Label className="text-xs">Mobile Number</Label>
+              <div className="flex items-center gap-2">
+                <span className="h-10 px-3 flex items-center rounded-md border border-input bg-muted text-sm font-medium text-muted-foreground shrink-0">+45</span>
+                <Input
+                  type="tel"
+                  inputMode="numeric"
+                  value={newMobile}
+                  onChange={(e) => setNewMobile(e.target.value.replace(/\D/g, "").slice(0, 8))}
+                  onKeyDown={(e) => { if (e.key === "Enter") handleAdd(); }}
+                  placeholder="31 70 53 42"
+                  className="h-10"
+                  maxLength={8}
+                />
+              </div>
+            </div>
+            <Button onClick={handleAdd} disabled={newMobile.length !== 8 || createAdminUser.isPending} className="h-10">
+              <Plus className="w-4 h-4 mr-1" /> Add
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardContent className="p-0">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Mobile</TableHead>
+                <TableHead>Role</TableHead>
+                <TableHead>Added</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {isLoading && (
+                <TableRow><TableCell colSpan={4} className="text-center py-8"><Loader2 className="w-5 h-5 animate-spin mx-auto" /></TableCell></TableRow>
+              )}
+              {adminUsers?.map((admin) => (
+                <TableRow key={admin.id}>
+                  <TableCell className="font-mono">{admin.mobile}</TableCell>
+                  <TableCell>
+                    {admin.isSuperuser
+                      ? <Badge variant="default" className="text-xs">Superuser</Badge>
+                      : <Badge variant="secondary" className="text-xs">Admin</Badge>}
+                  </TableCell>
+                  <TableCell className="text-sm text-muted-foreground">
+                    {new Date(admin.createdAt).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <Button
+                      variant="ghost" size="icon"
+                      className="h-8 w-8 text-destructive hover:bg-destructive/10"
+                      disabled={admin.isSuperuser || deleteAdminUser.isPending}
+                      title={admin.isSuperuser ? "Superuser cannot be removed" : "Remove admin"}
+                      onClick={() => handleDelete(admin.id)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
 // ── Segments tab ─────────────────────────────────────────────────────────────
 function SegmentsTab({ allUsers }: { allUsers: any[] }) {
   const { toast } = useToast();
@@ -1139,17 +1267,19 @@ export function AdminDashboard() {
     : (orders ?? []).filter((o) => o.eventId === parseInt(filterEventId, 10));
 
   return (
+
     <Layout>
       <div className="space-y-6">
         <h1 className="text-3xl font-serif font-bold text-foreground">Kitchen Dashboard</h1>
 
         <Tabs defaultValue="summary" className="w-full">
-          <TabsList className="grid w-full grid-cols-5">
+          <TabsList className="grid w-full grid-cols-6">
             <TabsTrigger value="summary">Summary</TabsTrigger>
             <TabsTrigger value="orders">Orders</TabsTrigger>
             <TabsTrigger value="events">Events</TabsTrigger>
             <TabsTrigger value="users">Guests</TabsTrigger>
             <TabsTrigger value="segments">Segments</TabsTrigger>
+            <TabsTrigger value="admins">Admins</TabsTrigger>
           </TabsList>
 
           {/* SUMMARY */}
@@ -1471,6 +1601,11 @@ export function AdminDashboard() {
           {/* SEGMENTS */}
           <TabsContent value="segments" className="pt-4 space-y-4">
             <SegmentsTab allUsers={users ?? []} />
+          </TabsContent>
+
+          {/* ADMIN USERS */}
+          <TabsContent value="admins" className="pt-4 space-y-4">
+            <AdminUsersTab />
           </TabsContent>
 
           {/* GUESTS */}

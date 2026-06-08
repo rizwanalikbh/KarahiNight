@@ -39,17 +39,30 @@ export const LoginResponse = zod.object({
 
 
 /**
- * @summary Admin login with password
+ * @summary List admin users (admin only)
  */
-export const AdminLoginBody = zod.object({
-  "password": zod.string()
+export const ListAdminUsersResponseItem = zod.object({
+  "id": zod.number(),
+  "mobile": zod.string(),
+  "isSuperuser": zod.boolean(),
+  "createdAt": zod.coerce.date()
+})
+export const ListAdminUsersResponse = zod.array(ListAdminUsersResponseItem)
+
+
+/**
+ * @summary Add an admin user by mobile number (admin only)
+ */
+export const CreateAdminUserBody = zod.object({
+  "mobile": zod.string().describe('8-digit Danish number or E.164 format')
 })
 
-export const AdminLoginResponse = zod.object({
-  "success": zod.boolean(),
-  "role": zod.enum(['user', 'admin']),
-  "userId": zod.number().nullish(),
-  "userName": zod.string().nullish()
+
+/**
+ * @summary Remove an admin user (admin only, superuser cannot be removed)
+ */
+export const DeleteAdminUserParams = zod.object({
+  "id": zod.coerce.number()
 })
 
 
@@ -68,9 +81,10 @@ export const GetMeResponse = zod.object({
  * @summary Send OTP to a mobile number
  */
 export const SendOtpBody = zod.object({
-  "mobile": zod.string().describe('Mobile number in E.164 format (e.g. +4512345678)'),
+  "mobile": zod.string().describe('Mobile number — 8-digit Danish number or E.164. Backend prepends +45 if no country code.'),
   "name": zod.string().optional(),
-  "loginMode": zod.boolean().optional().describe('If true, only send OTP if mobile has existing orders; does not create a new user')
+  "loginMode": zod.boolean().optional().describe('If true, only send OTP if mobile has existing orders; does not create a new user'),
+  "adminMode": zod.boolean().optional().describe('If true, only send OTP if mobile is a registered admin user')
 })
 
 export const SendOtpResponse = zod.object({
@@ -88,7 +102,8 @@ export const verifyOtpBodyCodeMax = 6;
 
 export const VerifyOtpBody = zod.object({
   "mobile": zod.string(),
-  "code": zod.string().min(verifyOtpBodyCodeMin).max(verifyOtpBodyCodeMax)
+  "code": zod.string().min(verifyOtpBodyCodeMin).max(verifyOtpBodyCodeMax),
+  "adminMode": zod.boolean().optional().describe('If true, verify as admin and create an admin session')
 })
 
 export const VerifyOtpResponse = zod.object({

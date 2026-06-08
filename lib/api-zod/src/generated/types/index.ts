@@ -6,7 +6,8 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export * from './adminLoginInput';
+export * from './adminUser';
+export * from './adminUserInput';
 export * from './event';
 export * from './eventGuest';
 export * from './eventInput';

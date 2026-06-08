@@ -6,6 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export interface AdminLoginInput {
-  password: string;
+export interface AdminUserInput {
+  /** 8-digit Danish number or E.164 format */
+  mobile: string;
 }

@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { db, usersTable, otpSessionsTable, ordersTable } from "@workspace/db";
+import { db, usersTable, otpSessionsTable, ordersTable, adminUsersTable } from "@workspace/db";
 import { eq, and, gt } from "drizzle-orm";
 import { SendOtpBody, VerifyOtpBody } from "@workspace/api-zod";
 import twilio from "twilio";
@@ -17,6 +17,10 @@ function getTwilioClient() {
   return twilio(sid, token);
 }
 
+function normaliseMobile(raw: string): string {
+  return raw.startsWith("+") ? raw : `+45${raw}`;
+}
+
 router.post("/otp/send", async (req, res): Promise<void> => {
   const parsed = SendOtpBody.safeParse(req.body);
   if (!parsed.success) {
@@ -24,10 +28,21 @@ router.post("/otp/send", async (req, res): Promise<void> => {
     return;
   }
 
-  const { mobile: rawMobile, name, loginMode } = parsed.data;
-  const mobile = rawMobile.startsWith("+") ? rawMobile : `+45${rawMobile}`;
+  const { mobile: rawMobile, name, loginMode, adminMode } = parsed.data;
+  const mobile = normaliseMobile(rawMobile);
 
-  if (loginMode) {
+  if (adminMode) {
+    const [adminUser] = await db
+      .select()
+      .from(adminUsersTable)
+      .where(eq(adminUsersTable.mobile, mobile))
+      .limit(1);
+
+    if (!adminUser) {
+      res.status(403).json({ error: "This number is not registered as an admin." });
+      return;
+    }
+  } else if (loginMode) {
     const [existingUser] = await db
       .select()
       .from(usersTable)
@@ -86,7 +101,8 @@ router.post("/otp/verify", async (req, res): Promise<void> => {
     return;
   }
 
-  const { mobile, code } = parsed.data;
+  const { mobile: rawMobile, code, adminMode } = parsed.data;
+  const mobile = normaliseMobile(rawMobile);
 
   const [otpRecord] = await db
     .select()
@@ -109,6 +125,26 @@ router.post("/otp/verify", async (req, res): Promise<void> => {
     .update(otpSessionsTable)
     .set({ used: true })
     .where(eq(otpSessionsTable.id, otpRecord.id));
+
+  if (adminMode) {
+    const [adminUser] = await db
+      .select()
+      .from(adminUsersTable)
+      .where(eq(adminUsersTable.mobile, mobile))
+      .limit(1);
+
+    if (!adminUser) {
+      res.status(403).json({ error: "This number is not registered as an admin." });
+      return;
+    }
+
+    req.session.role = "admin";
+    req.session.userId = undefined;
+    req.session.userName = undefined;
+
+    res.json({ success: true, role: "admin" as const, userId: null, userName: null });
+    return;
+  }
 
   let [user] = await db
     .select()

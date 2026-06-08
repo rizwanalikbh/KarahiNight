@@ -1,7 +1,7 @@
 import { Router, type IRouter } from "express";
 import { db, usersTable, userSegmentsTable, eventSegmentsTable } from "@workspace/db";
 import { eq, and, inArray } from "drizzle-orm";
-import { LoginBody, AdminLoginBody } from "@workspace/api-zod";
+import { LoginBody } from "@workspace/api-zod";
 
 declare module "express-session" {
   interface SessionData {
@@ -10,8 +10,6 @@ declare module "express-session" {
     role?: "user" | "admin";
   }
 }
-
-const ADMIN_PASSWORD = "IamAdmin";
 
 const router: IRouter = Router();
 
@@ -67,25 +65,6 @@ router.post("/auth/login", async (req, res): Promise<void> => {
     userId: user.id,
     userName: user.name,
   });
-});
-
-router.post("/auth/admin-login", async (req, res): Promise<void> => {
-  const parsed = AdminLoginBody.safeParse(req.body);
-  if (!parsed.success) {
-    res.status(400).json({ error: parsed.error.message });
-    return;
-  }
-
-  if (parsed.data.password !== ADMIN_PASSWORD) {
-    res.status(401).json({ error: "Invalid admin password" });
-    return;
-  }
-
-  req.session.role = "admin";
-  req.session.userId = undefined;
-  req.session.userName = undefined;
-
-  res.json({ success: true, role: "admin", userId: null, userName: null });
 });
 
 router.post("/auth/logout", (req, res): void => {

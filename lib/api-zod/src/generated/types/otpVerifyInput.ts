@@ -13,4 +13,6 @@ export interface OtpVerifyInput {
      * @maxLength 6
      */
   code: string;
+  /** If true, verify as admin and create an admin session */
+  adminMode?: boolean;
 }
