@@ -231,7 +231,7 @@ export function Home() {
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex flex-col justify-end p-6 text-left">
                 <div className="flex items-end justify-between gap-4">
                   <div>
-                    <div className="text-white font-medium text-lg">{(() => { const pts = summary.pizzaTypes ?? []; if (pts.length === 0) return "70 DKK per pizza"; const prices = pts.map((p: any) => typeof p === "string" ? 70 : p.price); const mn = Math.min(...prices); const mx = Math.max(...prices); return mn === mx ? `${mn} DKK per pizza` : `${mn}–${mx} DKK per pizza`; })()}</div>
+                    <div className="text-white font-medium text-lg">{(() => { const pts = summary.pizzaTypes ?? []; if (pts.length === 0) return "70 DKK per pizza"; const prices = pts.map((p: any) => typeof p === "string" ? 70 : (p.discountedPrice ?? p.price)); const mn = Math.min(...prices); const mx = Math.max(...prices); return mn === mx ? `${mn} DKK per pizza` : `${mn}–${mx} DKK per pizza`; })()}</div>
                     {summary.description && <div className="text-white/80 text-sm">{summary.description}</div>}
                   </div>
                   {summary.orderingOpen && countdown && (

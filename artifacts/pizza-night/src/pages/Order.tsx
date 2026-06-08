@@ -40,16 +40,20 @@ function formatModalDate(dateStr: string): string {
   } catch { return dateStr; }
 }
 
+function effectivePrice(pt: PizzaType): number {
+  return pt.discountedPrice ?? pt.price;
+}
+
 function computeItemsTotal(items: PizzaItem[], pizzaTypes: PizzaType[]): number {
   return items.reduce((sum, item) => {
     const pt = pizzaTypes.find((p) => p.name === item.pizzaChoice);
-    return sum + (pt?.price ?? 70) * item.quantity;
+    return sum + effectivePrice(pt ?? { name: "", price: 70 }) * item.quantity;
   }, 0);
 }
 
 function priceLabel(pizzaTypes: PizzaType[]): string {
   if (pizzaTypes.length === 0) return "70 DKK per pizza";
-  const prices = pizzaTypes.map((p) => p.price);
+  const prices = pizzaTypes.map(effectivePrice);
   const min = Math.min(...prices);
   const max = Math.max(...prices);
   if (min === max) return `${min} DKK per pizza`;
@@ -396,7 +400,9 @@ export function Order() {
                               <button key={pt.name} type="button" onClick={() => updateEditChoice(index, pt.name)}
                                 className={`py-2 px-3 rounded-lg border text-xs font-medium transition-colors cursor-pointer ${item.pizzaChoice === pt.name ? "border-primary bg-primary/5 text-primary" : "border-border hover:bg-secondary/50 text-foreground"}`}>
                                 {pt.name}
-                                <span className={`ml-1 ${item.pizzaChoice === pt.name ? "text-primary/60" : "text-muted-foreground"}`}>{pt.price} kr</span>
+                                <span className={`ml-1 ${item.pizzaChoice === pt.name ? "text-primary/60" : "text-muted-foreground"}`}>
+                                  {pt.discountedPrice !== undefined ? <><s>{pt.price}</s> {pt.discountedPrice}</> : pt.price} kr
+                                </span>
                               </button>
                             ))}
                           </div>
@@ -421,7 +427,7 @@ export function Order() {
                       return (
                         <div key={choice} className="flex justify-between items-center px-4 py-3">
                           <span className="font-medium text-foreground">{choice}</span>
-                          <span className="text-sm text-muted-foreground">×{qty}{pt ? ` · ${pt.price * qty} DKK` : ""}</span>
+                          <span className="text-sm text-muted-foreground">×{qty}{pt ? <> · {effectivePrice(pt) * qty} DKK</> : ""}</span>
                         </div>
                       );
                     })}
@@ -785,7 +791,9 @@ export function Order() {
                             <button key={pt.name} type="button" onClick={() => updateItemChoice(index, pt.name)}
                               className={`px-4 py-3 rounded-xl border text-sm font-medium transition-colors cursor-pointer ${item.pizzaChoice === pt.name ? "border-primary bg-primary/5 text-primary" : "border-border hover:bg-secondary/50 text-foreground"}`}>
                               <span className="block">{pt.name}</span>
-                              <span className={`block text-xs mt-0.5 ${item.pizzaChoice === pt.name ? "text-primary/60" : "text-muted-foreground"}`}>{pt.price} DKK</span>
+                              <span className={`block text-xs mt-0.5 ${item.pizzaChoice === pt.name ? "text-primary/60" : "text-muted-foreground"}`}>
+                                {pt.discountedPrice !== undefined ? <><s>{pt.price}</s> {pt.discountedPrice}</> : pt.price} DKK
+                              </span>
                             </button>
                           ))}
                         </div>

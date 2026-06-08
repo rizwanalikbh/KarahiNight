@@ -22,7 +22,11 @@ function formatNow(): string {
 
 function lookupPrice(pizzaChoice: string, pizzaTypes: PizzaType[]): number {
   const pt = pizzaTypes.find((p) => p.name === pizzaChoice);
-  return pt?.price ?? 70;
+  return pt ? (pt.discountedPrice ?? pt.price) : 70;
+}
+
+function lookupPizzaType(pizzaChoice: string, pizzaTypes: PizzaType[]): PizzaType | undefined {
+  return pizzaTypes.find((p) => p.name === pizzaChoice);
 }
 
 export function Receipt() {
@@ -107,11 +111,18 @@ export function Receipt() {
             <h2 className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-3">Order</h2>
             <div className="border border-gray-200 rounded-lg overflow-hidden">
               {items.map((item, i) => {
+                const pt = lookupPizzaType(item.pizzaChoice, eventPizzaTypes);
                 const unitPrice = lookupPrice(item.pizzaChoice, eventPizzaTypes);
                 return (
                   <div key={i} className="flex justify-between items-center px-4 py-3 border-b border-gray-100 last:border-0">
                     <span className="font-medium">{item.pizzaChoice}</span>
-                    <span className="text-gray-500 text-sm">{item.quantity} × {unitPrice} DKK</span>
+                    <span className="text-gray-500 text-sm">
+                      {item.quantity} ×{" "}
+                      {pt?.discountedPrice !== undefined
+                        ? <><s className="opacity-60">{pt.price}</s> {pt.discountedPrice}</>
+                        : unitPrice}{" "}
+                      DKK
+                    </span>
                   </div>
                 );
               })}
