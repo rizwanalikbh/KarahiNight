@@ -527,7 +527,7 @@ export function Order() {
       {
         onSuccess: () => {
           setCheckoutStep('otp');
-          setOtpCode('');
+          setOtpCode('123456');
           window.scrollTo(0, 0);
         },
         onError: (err: any) => {
@@ -651,6 +651,10 @@ export function Order() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
+              <div className="flex items-center gap-2 rounded-lg bg-amber-50 border border-amber-200 px-3 py-2 text-sm text-amber-800">
+                <span>🔧</span>
+                <span>Test mode — code is <strong className="font-mono tracking-widest">123456</strong></span>
+              </div>
               <div className="space-y-2">
                 <Label htmlFor="otpCode" className="text-sm font-semibold">Verification Code</Label>
                 <Input

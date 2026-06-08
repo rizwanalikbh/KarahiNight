@@ -37,7 +37,7 @@ export function AdminLogin() {
     sendOtp.mutate(
       { data: { mobile, adminMode: true } },
       {
-        onSuccess: () => setStep("otp"),
+        onSuccess: () => { setStep("otp"); setOtp("123456"); },
         onError: (err: any) => {
           const msg = err?.response?.data?.error ?? "Could not send code.";
           toast({ title: "Access Denied", description: msg, variant: "destructive" });
@@ -114,6 +114,10 @@ export function AdminLogin() {
               </>
             ) : (
               <>
+                <div className="flex items-center gap-2 rounded-lg bg-amber-50 border border-amber-200 px-3 py-2 text-sm text-amber-800">
+                  <span>🔧</span>
+                  <span>Test mode — code is <strong className="font-mono tracking-widest">123456</strong></span>
+                </div>
                 <div className="space-y-2">
                   <Label htmlFor="adminOtp" className="text-sm font-semibold">Verification Code</Label>
                   <Input
