@@ -568,15 +568,20 @@ export function Order() {
                   <Label htmlFor="guestMobile" className="text-sm font-semibold flex items-center gap-2">
                     <Phone className="w-4 h-4" /> Mobile Number
                   </Label>
-                  <Input
-                    id="guestMobile"
-                    type="tel"
-                    value={guestMobile}
-                    onChange={(e) => setGuestMobile(e.target.value)}
-                    placeholder="+45 12 34 56 78"
-                    className="h-12"
-                  />
-                  <p className="text-xs text-muted-foreground">Include country code (e.g. +45 for Denmark)</p>
+                  <div className="flex items-center gap-2">
+                    <span className="h-12 px-3 flex items-center rounded-md border border-input bg-muted text-sm font-medium text-muted-foreground shrink-0">+45</span>
+                    <Input
+                      id="guestMobile"
+                      type="tel"
+                      inputMode="numeric"
+                      value={guestMobile}
+                      onChange={(e) => setGuestMobile(e.target.value.replace(/\D/g, "").slice(0, 8))}
+                      placeholder="31 70 53 42"
+                      className="h-12"
+                      maxLength={8}
+                    />
+                  </div>
+                  <p className="text-xs text-muted-foreground">8-digit Danish mobile number</p>
                 </div>
               </div>
 

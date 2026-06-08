@@ -158,17 +158,22 @@ export function Login() {
           <CardContent className="space-y-6">
             <div className="space-y-2">
               <Label htmlFor="mobile" className="text-sm font-semibold">Mobile Number</Label>
-              <Input
-                id="mobile"
-                type="tel"
-                value={mobile}
-                onChange={(e) => { setMobile(e.target.value); setNoOrdersError(false); }}
-                onKeyDown={(e) => { if (e.key === "Enter") handleSendOtp(); }}
-                placeholder="+45 12 34 56 78"
-                className="h-12"
-                autoFocus
-              />
-              <p className="text-xs text-muted-foreground">Include country code (e.g. +45 for Denmark)</p>
+              <div className="flex items-center gap-2">
+                <span className="h-12 px-3 flex items-center rounded-md border border-input bg-muted text-sm font-medium text-muted-foreground shrink-0">+45</span>
+                <Input
+                  id="mobile"
+                  type="tel"
+                  inputMode="numeric"
+                  value={mobile}
+                  onChange={(e) => { setMobile(e.target.value.replace(/\D/g, "").slice(0, 8)); setNoOrdersError(false); }}
+                  onKeyDown={(e) => { if (e.key === "Enter") handleSendOtp(); }}
+                  placeholder="31 70 53 42"
+                  className="h-12"
+                  autoFocus
+                  maxLength={8}
+                />
+              </div>
+              <p className="text-xs text-muted-foreground">8-digit Danish mobile number</p>
             </div>
 
             {noOrdersError && (

@@ -24,7 +24,8 @@ router.post("/otp/send", async (req, res): Promise<void> => {
     return;
   }
 
-  const { mobile, name, loginMode } = parsed.data;
+  const { mobile: rawMobile, name, loginMode } = parsed.data;
+  const mobile = rawMobile.startsWith("+") ? rawMobile : `+45${rawMobile}`;
 
   if (loginMode) {
     const [existingUser] = await db
