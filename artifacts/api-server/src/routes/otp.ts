@@ -2,20 +2,9 @@ import { Router, type IRouter } from "express";
 import { db, usersTable, otpSessionsTable, ordersTable, adminUsersTable } from "@workspace/db";
 import { eq, and, gt } from "drizzle-orm";
 import { SendOtpBody, VerifyOtpBody } from "@workspace/api-zod";
-import twilio from "twilio";
-
 const router: IRouter = Router();
 
-function generateOtp(): string {
-  return String(Math.floor(100000 + Math.random() * 900000));
-}
-
-function getTwilioClient() {
-  const sid = process.env["TWILIO_ACCOUNT_SID"];
-  const token = process.env["TWILIO_AUTH_TOKEN"];
-  if (!sid || !token) return null;
-  return twilio(sid, token);
-}
+const HARDCODED_OTP = "123456";
 
 function normaliseMobile(raw: string): string {
   return raw.startsWith("+") ? raw : `+45${raw}`;
@@ -67,29 +56,12 @@ router.post("/otp/send", async (req, res): Promise<void> => {
   }
 
   const resolvedName = name ?? "Guest";
-  const code = generateOtp();
   const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
 
   await db.delete(otpSessionsTable).where(eq(otpSessionsTable.mobile, mobile));
-  await db.insert(otpSessionsTable).values({ mobile, name: resolvedName, code, expiresAt });
+  await db.insert(otpSessionsTable).values({ mobile, name: resolvedName, code: HARDCODED_OTP, expiresAt });
 
-  const client = getTwilioClient();
-  if (client) {
-    const from = process.env["TWILIO_PHONE_NUMBER"];
-    try {
-      await client.messages.create({
-        body: `Your Pizza Night code is: ${code}`,
-        from,
-        to: mobile,
-      });
-    } catch (err: any) {
-      req.log.error({ err }, "Failed to send SMS");
-      res.status(500).json({ error: "Failed to send SMS. Please check your number and try again." });
-      return;
-    }
-  } else {
-    req.log.info({ mobile, code }, "OTP (Twilio not configured — test mode)");
-  }
+  req.log.info({ mobile }, "OTP sent (hardcoded — use 123456)");
 
   res.json({ success: true });
 });
