@@ -25,7 +25,7 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import {
   Loader2, Trash2, RefreshCw, UserPlus, Plus, CalendarDays,
-  ChevronDown, ChevronUp, Pencil, X, Check, FileText, Upload, Mail, Phone, ShieldCheck,
+  ChevronDown, ChevronUp, Pencil, X, Check, FileText, Upload, Mail, Phone, ShieldCheck, Copy, Link,
 } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { OrderUpdateStatus } from "@workspace/api-client-react";
@@ -719,6 +719,18 @@ export function AdminDashboard() {
 
   // Event editing state
   const [editingEventId, setEditingEventId] = useState<number | null>(null);
+  const [copiedEventId, setCopiedEventId] = useState<number | null>(null);
+
+  const handleCopyEventLink = (event: Event) => {
+    const slug = event.slug ?? String(event.id);
+    const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+    const url = `${window.location.origin}${base}/?event=${slug}`;
+    navigator.clipboard.writeText(url).then(() => {
+      setCopiedEventId(event.id);
+      toast({ title: "Link copied!", description: url });
+      setTimeout(() => setCopiedEventId(null), 2000);
+    });
+  };
 
   // Order editing state
   const [editingOrderId, setEditingOrderId] = useState<number | null>(null);
@@ -1165,6 +1177,16 @@ export function AdminDashboard() {
                         </div>
                         <div className="flex items-center gap-2 shrink-0">
                           <Switch checked={event.active} onCheckedChange={(v) => handleToggleEvent(event.id, v)} />
+                          <Button
+                            variant="ghost" size="icon" className={`h-8 w-8 ${copiedEventId === event.id ? "text-green-600" : ""}`}
+                            onClick={() => handleCopyEventLink(event)}
+                            title="Copy event link"
+                          >
+                            {copiedEventId === event.id
+                              ? <Check className="h-4 w-4" />
+                              : <Link className="h-4 w-4" />
+                            }
+                          </Button>
                           <Button
                             variant="ghost" size="icon" className="h-8 w-8"
                             onClick={() => setEditingEventId(editingEventId === event.id ? null : event.id)}
