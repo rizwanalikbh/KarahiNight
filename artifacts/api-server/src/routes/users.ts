@@ -8,6 +8,22 @@ import {
 
 const router: IRouter = Router();
 
+function normaliseMobile(raw: string): string {
+  return raw.startsWith("+") ? raw : `+45${raw}`;
+}
+
+router.get("/users/check-mobile", async (req, res): Promise<void> => {
+  const raw = String(req.query["mobile"] ?? "").trim();
+  if (!raw) { res.status(400).json({ error: "mobile required" }); return; }
+  const mobile = normaliseMobile(raw);
+  const [user] = await db
+    .select({ id: usersTable.id, name: usersTable.name })
+    .from(usersTable)
+    .where(eq(usersTable.mobile, mobile))
+    .limit(1);
+  res.json({ exists: !!user, name: user?.name ?? null });
+});
+
 function requireAdmin(req: any, res: any, next: any): void {
   if (req.session?.role !== "admin") {
     res.status(403).json({ error: "Admin access required" });

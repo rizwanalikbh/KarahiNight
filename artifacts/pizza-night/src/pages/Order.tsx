@@ -57,7 +57,7 @@ function priceLabel(pizzaTypes: PizzaType[]): string {
   const min = Math.min(...prices);
   const max = Math.max(...prices);
   if (min === max) return `${min} DKK per pizza`;
-  return `${min}–${max} DKK per pizza`;
+  return `from ${min} DKK per pizza`;
 }
 
 interface EventPickerModalProps {
@@ -110,7 +110,7 @@ function EventPickerModal({ events, selectedId, open, onSelect, onOpenChange }: 
   );
 }
 
-type CheckoutStep = 'form' | 'contact' | 'otp';
+type CheckoutStep = 'form' | 'mobile' | 'name' | 'otp';
 
 export function Order() {
   const [, setLocation] = useLocation();
@@ -144,6 +144,8 @@ export function Order() {
   const [guestName, setGuestName] = useState('');
   const [guestMobile, setGuestMobile] = useState('');
   const [otpCode, setOtpCode] = useState('');
+  const [isMobileKnown, setIsMobileKnown] = useState(false);
+  const [checkingMobile, setCheckingMobile] = useState(false);
 
   useEffect(() => {
     if (events && events.length === 1 && !selectedEventId) {
@@ -239,7 +241,7 @@ export function Order() {
             <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mx-auto">
               <img src="/pizza-icon.png" alt="Pizza" className="w-14 h-14 opacity-80" />
             </div>
-            <h1 className="text-3xl sm:text-4xl font-serif font-bold text-foreground">Private Pizza Night</h1>
+            <h1 className="text-3xl sm:text-4xl font-serif font-bold text-foreground">{summary?.eventName ?? "Pizza Night"}</h1>
             {summaryLoading ? <Skeleton className="h-5 w-64 mx-auto" /> : summary ? (
               <div className="flex flex-col items-center gap-1">
                 <p className="text-base font-medium text-primary">{formatEventDate(summary.eventDate)} — {summary.eventName}</p>
@@ -515,15 +517,46 @@ export function Order() {
         }
       );
     } else {
-      setCheckoutStep('contact');
+      setCheckoutStep('mobile');
       window.scrollTo(0, 0);
     }
   };
 
+  const handleCheckMobile = async () => {
+    if (guestMobile.trim().length !== 8) return;
+    setCheckingMobile(true);
+    try {
+      const mobile = encodeURIComponent(`+45${guestMobile.trim()}`);
+      const resp = await fetch(`/api/users/check-mobile?mobile=${mobile}`);
+      const data = await resp.json();
+      const exists = !!data.exists;
+      setIsMobileKnown(exists);
+      if (exists) {
+        sendOtpMutation.mutate(
+          { data: { mobile: guestMobile.trim() } },
+          {
+            onSuccess: () => { setCheckoutStep('otp'); setOtpCode('123456'); window.scrollTo(0, 0); },
+            onError: (err: any) => { toast({ title: "Failed to send code", description: err?.response?.data?.error ?? "Please try again.", variant: "destructive" }); },
+          }
+        );
+      } else {
+        setCheckoutStep('name');
+        window.scrollTo(0, 0);
+      }
+    } catch {
+      toast({ title: "Error", description: "Could not verify mobile number. Please try again.", variant: "destructive" });
+    } finally {
+      setCheckingMobile(false);
+    }
+  };
+
   const handleSendOtp = () => {
-    if (!guestName.trim() || !guestMobile.trim()) return;
+    if (!isMobileKnown && !guestName.trim()) return;
+    const payload = isMobileKnown
+      ? { mobile: guestMobile.trim() }
+      : { mobile: guestMobile.trim(), name: guestName.trim() };
     sendOtpMutation.mutate(
-      { data: { mobile: guestMobile.trim(), name: guestName.trim() } },
+      { data: payload },
       {
         onSuccess: () => {
           setCheckoutStep('otp');
@@ -566,7 +599,8 @@ export function Order() {
     );
   };
 
-  if (checkoutStep === 'contact') {
+  if (checkoutStep === 'mobile') {
+    const isChecking = checkingMobile || sendOtpMutation.isPending;
     return (
       <Layout>
         <div className="max-w-xl mx-auto w-full pt-8">
@@ -576,9 +610,9 @@ export function Order() {
                 <button onClick={() => setCheckoutStep('form')} className="text-muted-foreground hover:text-foreground transition-colors">
                   <ChevronLeft className="w-5 h-5" />
                 </button>
-                <CardTitle className="font-serif text-2xl">Your Details</CardTitle>
+                <CardTitle className="font-serif text-2xl">Your Mobile Number</CardTitle>
               </div>
-              <CardDescription>We'll send a one-time code to verify your number.</CardDescription>
+              <CardDescription>We'll send a one-time code to confirm your order.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="bg-secondary/40 rounded-xl p-4 space-y-2 text-sm">
@@ -589,39 +623,78 @@ export function Order() {
                   {currentTotal > 0 ? ` — ${currentTotal} DKK` : ""}
                 </div>
               </div>
-
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="guestName" className="text-sm font-semibold flex items-center gap-2">
-                    <User className="w-4 h-4" /> Your Name
-                  </Label>
-                  <Input id="guestName" value={guestName} onChange={(e) => setGuestName(e.target.value)} placeholder="Full name" className="h-12" />
+              <div className="space-y-2">
+                <Label htmlFor="guestMobile" className="text-sm font-semibold flex items-center gap-2">
+                  <Phone className="w-4 h-4" /> Mobile Number
+                </Label>
+                <div className="flex items-center gap-2">
+                  <span className="h-12 px-3 flex items-center rounded-md border border-input bg-muted text-sm font-medium text-muted-foreground shrink-0">+45</span>
+                  <Input
+                    id="guestMobile"
+                    type="tel"
+                    inputMode="numeric"
+                    value={guestMobile}
+                    onChange={(e) => setGuestMobile(e.target.value.replace(/\D/g, "").slice(0, 8))}
+                    onKeyDown={(e) => { if (e.key === "Enter" && guestMobile.length === 8) handleCheckMobile(); }}
+                    placeholder="31 70 53 42"
+                    className="h-12"
+                    autoFocus
+                    maxLength={8}
+                  />
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="guestMobile" className="text-sm font-semibold flex items-center gap-2">
-                    <Phone className="w-4 h-4" /> Mobile Number
-                  </Label>
-                  <div className="flex items-center gap-2">
-                    <span className="h-12 px-3 flex items-center rounded-md border border-input bg-muted text-sm font-medium text-muted-foreground shrink-0">+45</span>
-                    <Input
-                      id="guestMobile"
-                      type="tel"
-                      inputMode="numeric"
-                      value={guestMobile}
-                      onChange={(e) => setGuestMobile(e.target.value.replace(/\D/g, "").slice(0, 8))}
-                      placeholder="31 70 53 42"
-                      className="h-12"
-                      maxLength={8}
-                    />
-                  </div>
-                  <p className="text-xs text-muted-foreground">8-digit Danish mobile number</p>
-                </div>
+                <p className="text-xs text-muted-foreground">8-digit Danish mobile number</p>
               </div>
-
               <Button
                 size="lg"
                 className="w-full h-14 text-lg gap-2"
-                disabled={!guestName.trim() || !guestMobile.trim() || sendOtpMutation.isPending}
+                disabled={guestMobile.length !== 8 || isChecking}
+                onClick={handleCheckMobile}
+              >
+                {isChecking ? <Loader2 className="w-5 h-5 animate-spin" /> : <>Continue <ArrowRight className="w-4 h-4" /></>}
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      </Layout>
+    );
+  }
+
+  if (checkoutStep === 'name') {
+    return (
+      <Layout>
+        <div className="max-w-xl mx-auto w-full pt-8">
+          <Card className="border-card-border shadow-md">
+            <CardHeader>
+              <div className="flex items-center gap-2 mb-1">
+                <button onClick={() => setCheckoutStep('mobile')} className="text-muted-foreground hover:text-foreground transition-colors">
+                  <ChevronLeft className="w-5 h-5" />
+                </button>
+                <CardTitle className="font-serif text-2xl">Your Name</CardTitle>
+              </div>
+              <CardDescription>
+                First time here — just tell us your name and we'll send a code to{" "}
+                <span className="font-medium text-foreground">+45 {guestMobile}</span>.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="space-y-2">
+                <Label htmlFor="guestName" className="text-sm font-semibold flex items-center gap-2">
+                  <User className="w-4 h-4" /> Your Name
+                </Label>
+                <Input
+                  id="guestName"
+                  value={guestName}
+                  onChange={(e) => setGuestName(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === "Enter" && guestName.trim()) handleSendOtp(); }}
+                  placeholder="Full name"
+                  className="h-12"
+                  autoFocus
+                />
+              </div>
+              <Button
+                size="lg"
+                className="w-full h-14 text-lg gap-2"
+                disabled={!guestName.trim() || sendOtpMutation.isPending}
                 onClick={handleSendOtp}
               >
                 {sendOtpMutation.isPending ? <Loader2 className="w-5 h-5 animate-spin" /> : <>Send Code <ArrowRight className="w-4 h-4" /></>}
@@ -641,7 +714,7 @@ export function Order() {
           <Card className="border-card-border shadow-md">
             <CardHeader>
               <div className="flex items-center gap-2 mb-1">
-                <button onClick={() => setCheckoutStep('contact')} className="text-muted-foreground hover:text-foreground transition-colors" disabled={isPlacing}>
+                <button onClick={() => setCheckoutStep(isMobileKnown ? 'mobile' : 'name')} className="text-muted-foreground hover:text-foreground transition-colors" disabled={isPlacing}>
                   <ChevronLeft className="w-5 h-5" />
                 </button>
                 <CardTitle className="font-serif text-2xl">Enter Code</CardTitle>

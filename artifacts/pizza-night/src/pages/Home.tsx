@@ -221,7 +221,9 @@ export function Home() {
           <div className="w-24 h-24 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-6">
             <img src="/pizza-icon.png" alt="Pizza" className="w-16 h-16 opacity-80" />
           </div>
-          <h1 className="text-4xl sm:text-5xl font-serif font-bold text-foreground">Private Pizza Night</h1>
+          <h1 className="text-4xl sm:text-5xl font-serif font-bold text-foreground">
+            {isLoading ? "Pizza Night" : (summary?.eventName ?? "Pizza Night")}
+          </h1>
           {!isLoading && summary && (
             <div className="flex flex-col items-center gap-1">
               <p className="text-base font-medium text-primary">{formatEventDate(summary.eventDate)} — {summary.eventName}</p>
@@ -232,9 +234,9 @@ export function Home() {
               )}
             </div>
           )}
-          <p className="text-lg text-muted-foreground max-w-lg mx-auto">
-            You are invited to a private evening of handmade Neapolitan pizza. Limited spots available, pre-order only.
-          </p>
+          {!isLoading && summary?.description && (
+            <p className="text-lg text-muted-foreground max-w-lg mx-auto">{summary.description}</p>
+          )}
         </div>
 
         <div className="w-full aspect-video md:aspect-[21/9] rounded-2xl overflow-hidden shadow-lg border relative">
@@ -244,7 +246,7 @@ export function Home() {
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex flex-col justify-end p-6 text-left">
                 <div className="flex items-end justify-between gap-4">
                   <div>
-                    <div className="text-white font-medium text-lg">{(() => { const pts = summary.pizzaTypes ?? []; if (pts.length === 0) return "70 DKK per pizza"; const prices = pts.map((p: any) => typeof p === "string" ? 70 : (p.discountedPrice ?? p.price)); const mn = Math.min(...prices); const mx = Math.max(...prices); return mn === mx ? `${mn} DKK per pizza` : `${mn}–${mx} DKK per pizza`; })()}</div>
+                    <div className="text-white font-medium text-lg">{(() => { const pts = summary.pizzaTypes ?? []; if (pts.length === 0) return "70 DKK per pizza"; const prices = pts.map((p: any) => typeof p === "string" ? 70 : (p.discountedPrice ?? p.price)); const mn = Math.min(...prices); const mx = Math.max(...prices); return mn === mx ? `${mn} DKK per pizza` : `from ${mn} DKK per pizza`; })()}</div>
                     {summary.description && <div className="text-white/80 text-sm">{summary.description}</div>}
                   </div>
                   {summary.orderingOpen && countdown && (
