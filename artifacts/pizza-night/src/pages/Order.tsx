@@ -151,11 +151,23 @@ export function Order() {
   const [consentText, setConsentText] = useState(
     "Your mobile number and name are stored solely to organise this event — for example to confirm your order or contact you on the day. Your data will never be used for marketing purposes. It will be permanently deleted after one year."
   );
+  const [termsAccepted, setTermsAccepted] = useState(false);
+  const [termsOpen, setTermsOpen] = useState(false);
+  const [orderTermsText, setOrderTermsText] = useState(
+    "By placing this order you confirm that you will collect your pizza(s) at the selected pickup slot, that payment of 70 DKK per pizza is due at pickup, and that orders can only be cancelled by messaging the organiser before the event."
+  );
 
   useEffect(() => {
     fetch("/api/settings/consent-text")
       .then((r) => r.json())
       .then((d: { value?: string }) => { if (typeof d.value === "string") setConsentText(d.value); })
+      .catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    fetch("/api/settings/order-terms")
+      .then((r) => r.json())
+      .then((d: { value?: string }) => { if (typeof d.value === "string") setOrderTermsText(d.value); })
       .catch(() => {});
   }, []);
 
@@ -573,14 +585,14 @@ export function Order() {
   }
 
   const currentTotal = computeItemsTotal(pizzaItems, pizzaTypes);
-  const formReady = !!selectedEventId && !!pickupSlot && pizzaItems.every((i) => !!i.pizzaChoice) && maxAllowed > 0;
+  const formReady = !!selectedEventId && !!pickupSlot && pizzaItems.every((i) => !!i.pizzaChoice) && maxAllowed > 0 && termsAccepted;
 
   const handleFormContinue = (e: React.FormEvent) => {
     e.preventDefault();
     if (!formReady) return;
     if (isAuthenticated) {
       createOrder.mutate(
-        { data: { eventId: selectedEventId!, items: pizzaItems as APIPizzaItem[], pickupSlot, notes: notes || undefined } },
+        { data: { eventId: selectedEventId!, items: pizzaItems as APIPizzaItem[], pickupSlot, notes: notes || undefined, termsText: orderTermsText } },
         {
           onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: getListOrdersQueryKey() });
@@ -657,7 +669,7 @@ export function Order() {
         onSuccess: async () => {
           await queryClient.invalidateQueries({ queryKey: getGetMeQueryKey() });
           createOrder.mutate(
-            { data: { eventId: selectedEventId!, items: pizzaItems as APIPizzaItem[], pickupSlot, notes: notes || undefined } },
+            { data: { eventId: selectedEventId!, items: pizzaItems as APIPizzaItem[], pickupSlot, notes: notes || undefined, termsText: orderTermsText } },
             {
               onSuccess: () => {
                 queryClient.invalidateQueries({ queryKey: getListOrdersQueryKey() });
@@ -866,6 +878,15 @@ export function Order() {
 
   return (
     <Layout>
+      <Dialog open={termsOpen} onOpenChange={setTermsOpen}>
+        <DialogContent className="max-w-lg max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Order Terms &amp; Conditions</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-foreground leading-relaxed whitespace-pre-line pt-1">{orderTermsText}</p>
+        </DialogContent>
+      </Dialog>
+
       {events.length > 1 && (
         <EventPickerModal events={events} selectedId={selectedEventId} open={pickerOpen}
           onSelect={(id) => { setSelectedEventId(id); setPickupSlot(""); setTotalQty(1); setEventPreview(true); }}
@@ -987,6 +1008,40 @@ export function Order() {
                 <Label htmlFor="notes" className="text-base font-semibold">Notes (Optional)</Label>
                 <Textarea id="notes" placeholder="Allergies, preferences, etc." value={notes} onChange={(e) => setNotes(e.target.value)} className="resize-none" />
               </div>
+
+              {(() => {
+                const PREVIEW_LIMIT = 220;
+                const isLong = orderTermsText.length > PREVIEW_LIMIT;
+                const preview = isLong ? orderTermsText.slice(0, PREVIEW_LIMIT).trimEnd() : orderTermsText;
+                return (
+                  <div className="space-y-3 rounded-xl border border-border bg-secondary/30 p-4">
+                    <p className="text-sm font-semibold text-foreground">Order Terms &amp; Conditions</p>
+                    <p className="text-sm text-muted-foreground leading-relaxed whitespace-pre-line">
+                      {preview}{isLong && "…"}
+                      {isLong && (
+                        <button
+                          type="button"
+                          onClick={() => setTermsOpen(true)}
+                          className="ml-1 text-primary underline underline-offset-2 hover:text-primary/80 transition-colors"
+                        >
+                          Read full terms
+                        </button>
+                      )}
+                    </p>
+                    <label className="flex items-start gap-3 cursor-pointer group">
+                      <input
+                        type="checkbox"
+                        checked={termsAccepted}
+                        onChange={(e) => setTermsAccepted(e.target.checked)}
+                        className="mt-0.5 h-4 w-4 rounded border-border accent-primary cursor-pointer shrink-0"
+                      />
+                      <span className="text-sm text-foreground leading-snug group-hover:text-primary transition-colors">
+                        I have read and accept the order terms &amp; conditions
+                      </span>
+                    </label>
+                  </div>
+                );
+              })()}
 
               {currentTotal > 0 && pickupSlot && pizzaItems.every((i) => !!i.pizzaChoice) && (
                 <div className="bg-secondary/50 p-4 rounded-xl border border-border flex justify-between items-center">

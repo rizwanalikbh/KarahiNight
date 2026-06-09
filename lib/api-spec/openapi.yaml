@@ -520,6 +520,66 @@ paths:
         "204":
           description: Deleted
 
+  /settings/consent-text:
+    get:
+      operationId: getConsentText
+      tags: [settings]
+      summary: Get current GDPR consent text
+      responses:
+        "200":
+          description: Consent text value
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SettingValue"
+    patch:
+      operationId: updateConsentText
+      tags: [settings]
+      summary: Update GDPR consent text (admin only)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SettingValue"
+      responses:
+        "200":
+          description: Updated value
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SettingValue"
+
+  /settings/order-terms:
+    get:
+      operationId: getOrderTerms
+      tags: [settings]
+      summary: Get current order terms and conditions text
+      responses:
+        "200":
+          description: Order terms value
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SettingValue"
+    patch:
+      operationId: updateOrderTerms
+      tags: [settings]
+      summary: Update order terms and conditions text (admin only)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SettingValue"
+      responses:
+        "200":
+          description: Updated value
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SettingValue"
+
 components:
   schemas:
     HealthStatus:
@@ -840,6 +900,13 @@ components:
           enum: [pending, confirmed, declined, completed]
         paid:
           type: boolean
+        termsAcceptedAt:
+          type: ["string", "null"]
+          format: date-time
+          description: When the guest accepted the order terms and conditions
+        termsText:
+          type: ["string", "null"]
+          description: Exact T&C text the guest accepted at order time
         createdAt:
           type: string
           format: date-time
@@ -858,6 +925,16 @@ components:
         pickupSlot:
           type: string
         notes:
+          type: string
+        termsText:
+          type: string
+          description: The T&C text shown to and accepted by the guest
+
+    SettingValue:
+      type: object
+      required: [value]
+      properties:
+        value:
           type: string
 
     OrderUpdate:

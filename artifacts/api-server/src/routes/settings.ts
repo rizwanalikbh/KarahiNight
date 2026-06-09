@@ -5,6 +5,14 @@ import { eq } from "drizzle-orm";
 export const DEFAULT_CONSENT_TEXT =
   "Your mobile number and name are stored solely to organise this event — for example to confirm your order or contact you on the day. Your data will never be used for marketing purposes. It will be permanently deleted after one year.";
 
+export const DEFAULT_ORDER_TERMS =
+  "By placing this order you confirm that:\n\n" +
+  "1. You will collect your pizza(s) at the selected pickup slot.\n" +
+  "2. Payment of 70 DKK per pizza is due at pickup — cash or MobilePay accepted.\n" +
+  "3. Orders can only be cancelled by messaging the organiser before the event.\n" +
+  "4. Uncollected and unpaid orders may affect your invitation to future events.\n" +
+  "5. Your name, contact details, and order information are stored solely to manage this event and will be permanently deleted within one year.";
+
 export async function seedConsentText(): Promise<void> {
   const [existing] = await db
     .select()
@@ -13,6 +21,17 @@ export async function seedConsentText(): Promise<void> {
     .limit(1);
   if (!existing) {
     await db.insert(appSettingsTable).values({ key: "consent_text", value: DEFAULT_CONSENT_TEXT });
+  }
+}
+
+export async function seedOrderTerms(): Promise<void> {
+  const [existing] = await db
+    .select()
+    .from(appSettingsTable)
+    .where(eq(appSettingsTable.key, "order_terms"))
+    .limit(1);
+  if (!existing) {
+    await db.insert(appSettingsTable).values({ key: "order_terms", value: DEFAULT_ORDER_TERMS });
   }
 }
 
@@ -40,6 +59,35 @@ router.patch("/settings/consent-text", async (req, res): Promise<void> => {
   await db
     .insert(appSettingsTable)
     .values({ key: "consent_text", value: value.trim() })
+    .onConflictDoUpdate({
+      target: appSettingsTable.key,
+      set: { value: value.trim(), updatedAt: new Date() },
+    });
+  res.json({ value: value.trim() });
+});
+
+router.get("/settings/order-terms", async (req, res): Promise<void> => {
+  const [setting] = await db
+    .select()
+    .from(appSettingsTable)
+    .where(eq(appSettingsTable.key, "order_terms"))
+    .limit(1);
+  res.json({ value: setting?.value ?? DEFAULT_ORDER_TERMS });
+});
+
+router.patch("/settings/order-terms", async (req, res): Promise<void> => {
+  if (req.session?.role !== "admin") {
+    res.status(403).json({ error: "Admin access required" });
+    return;
+  }
+  const { value } = req.body as { value?: unknown };
+  if (!value || typeof value !== "string" || !value.trim()) {
+    res.status(400).json({ error: "value is required" });
+    return;
+  }
+  await db
+    .insert(appSettingsTable)
+    .values({ key: "order_terms", value: value.trim() })
     .onConflictDoUpdate({
       target: appSettingsTable.key,
       set: { value: value.trim(), updatedAt: new Date() },

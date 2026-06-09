@@ -41,6 +41,7 @@ import type {
   RecipeInput,
   RecipeUpdate,
   SessionInfo,
+  SettingValue,
   User,
   UserImportInput,
   UserImportResult,
@@ -2105,5 +2106,301 @@ export const useDeleteAdminUser = <TError = ErrorType<unknown>,
         TContext
       > => {
       return useMutation(getDeleteAdminUserMutationOptions(options));
+    }
+
+export const getGetConsentTextUrl = () => {
+
+
+
+
+  return `/api/settings/consent-text`
+}
+
+/**
+ * @summary Get current GDPR consent text
+ */
+export const getConsentText = async ( options?: RequestInit): Promise<SettingValue> => {
+
+  return customFetch<SettingValue>(getGetConsentTextUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetConsentTextQueryKey = () => {
+    return [
+    `/api/settings/consent-text`
+    ] as const;
+    }
+
+
+export const getGetConsentTextQueryOptions = <TData = Awaited<ReturnType<typeof getConsentText>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getConsentText>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetConsentTextQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getConsentText>>> = ({ signal }) => getConsentText({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getConsentText>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetConsentTextQueryResult = NonNullable<Awaited<ReturnType<typeof getConsentText>>>
+export type GetConsentTextQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Get current GDPR consent text
+ */
+
+export function useGetConsentText<TData = Awaited<ReturnType<typeof getConsentText>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getConsentText>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetConsentTextQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getUpdateConsentTextUrl = () => {
+
+
+
+
+  return `/api/settings/consent-text`
+}
+
+/**
+ * @summary Update GDPR consent text (admin only)
+ */
+export const updateConsentText = async (settingValue: SettingValue, options?: RequestInit): Promise<SettingValue> => {
+
+  return customFetch<SettingValue>(getUpdateConsentTextUrl(),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      settingValue,)
+  }
+);}
+
+
+
+
+export const getUpdateConsentTextMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateConsentText>>, TError,{data: BodyType<SettingValue>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateConsentText>>, TError,{data: BodyType<SettingValue>}, TContext> => {
+
+const mutationKey = ['updateConsentText'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateConsentText>>, {data: BodyType<SettingValue>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  updateConsentText(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateConsentTextMutationResult = NonNullable<Awaited<ReturnType<typeof updateConsentText>>>
+    export type UpdateConsentTextMutationBody = BodyType<SettingValue>
+    export type UpdateConsentTextMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Update GDPR consent text (admin only)
+ */
+export const useUpdateConsentText = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateConsentText>>, TError,{data: BodyType<SettingValue>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateConsentText>>,
+        TError,
+        {data: BodyType<SettingValue>},
+        TContext
+      > => {
+      return useMutation(getUpdateConsentTextMutationOptions(options));
+    }
+
+export const getGetOrderTermsUrl = () => {
+
+
+
+
+  return `/api/settings/order-terms`
+}
+
+/**
+ * @summary Get current order terms and conditions text
+ */
+export const getOrderTerms = async ( options?: RequestInit): Promise<SettingValue> => {
+
+  return customFetch<SettingValue>(getGetOrderTermsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetOrderTermsQueryKey = () => {
+    return [
+    `/api/settings/order-terms`
+    ] as const;
+    }
+
+
+export const getGetOrderTermsQueryOptions = <TData = Awaited<ReturnType<typeof getOrderTerms>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getOrderTerms>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetOrderTermsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getOrderTerms>>> = ({ signal }) => getOrderTerms({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getOrderTerms>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetOrderTermsQueryResult = NonNullable<Awaited<ReturnType<typeof getOrderTerms>>>
+export type GetOrderTermsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Get current order terms and conditions text
+ */
+
+export function useGetOrderTerms<TData = Awaited<ReturnType<typeof getOrderTerms>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getOrderTerms>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetOrderTermsQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getUpdateOrderTermsUrl = () => {
+
+
+
+
+  return `/api/settings/order-terms`
+}
+
+/**
+ * @summary Update order terms and conditions text (admin only)
+ */
+export const updateOrderTerms = async (settingValue: SettingValue, options?: RequestInit): Promise<SettingValue> => {
+
+  return customFetch<SettingValue>(getUpdateOrderTermsUrl(),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      settingValue,)
+  }
+);}
+
+
+
+
+export const getUpdateOrderTermsMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateOrderTerms>>, TError,{data: BodyType<SettingValue>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateOrderTerms>>, TError,{data: BodyType<SettingValue>}, TContext> => {
+
+const mutationKey = ['updateOrderTerms'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateOrderTerms>>, {data: BodyType<SettingValue>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  updateOrderTerms(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateOrderTermsMutationResult = NonNullable<Awaited<ReturnType<typeof updateOrderTerms>>>
+    export type UpdateOrderTermsMutationBody = BodyType<SettingValue>
+    export type UpdateOrderTermsMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Update order terms and conditions text (admin only)
+ */
+export const useUpdateOrderTerms = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateOrderTerms>>, TError,{data: BodyType<SettingValue>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateOrderTerms>>,
+        TError,
+        {data: BodyType<SettingValue>},
+        TContext
+      > => {
+      return useMutation(getUpdateOrderTermsMutationOptions(options));
     }
 

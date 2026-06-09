@@ -641,6 +641,9 @@ export function AdminDashboard() {
   const [consentTextDraft, setConsentTextDraft] = useState("");
   const [consentTextOriginal, setConsentTextOriginal] = useState("");
   const [consentTextSaving, setConsentTextSaving] = useState(false);
+  const [orderTermsDraft, setOrderTermsDraft] = useState("");
+  const [orderTermsOriginal, setOrderTermsOriginal] = useState("");
+  const [orderTermsSaving, setOrderTermsSaving] = useState(false);
 
   useEffect(() => {
     if (!sessionLoading && (!session?.authenticated || session.role !== "admin")) {
@@ -655,6 +658,18 @@ export function AdminDashboard() {
         if (typeof d.value === "string") {
           setConsentTextDraft(d.value);
           setConsentTextOriginal(d.value);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    fetch("/api/settings/order-terms")
+      .then((r) => r.json())
+      .then((d: { value?: string }) => {
+        if (typeof d.value === "string") {
+          setOrderTermsDraft(d.value);
+          setOrderTermsOriginal(d.value);
         }
       })
       .catch(() => {});
@@ -683,6 +698,29 @@ export function AdminDashboard() {
       toast({ title: "Failed to save consent text", variant: "destructive" });
     } finally {
       setConsentTextSaving(false);
+    }
+  };
+
+  const handleSaveOrderTerms = async () => {
+    if (!orderTermsDraft.trim() || orderTermsDraft === orderTermsOriginal) return;
+    setOrderTermsSaving(true);
+    try {
+      const r = await fetch("/api/settings/order-terms", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ value: orderTermsDraft.trim() }),
+      });
+      if (!r.ok) throw new Error("Failed");
+      const d: { value?: string } = await r.json();
+      if (typeof d.value === "string") {
+        setOrderTermsOriginal(d.value);
+        setOrderTermsDraft(d.value);
+        toast({ title: "Order terms saved" });
+      }
+    } catch {
+      toast({ title: "Failed to save order terms", variant: "destructive" });
+    } finally {
+      setOrderTermsSaving(false);
     }
   };
 
@@ -1243,6 +1281,45 @@ export function AdminDashboard() {
                       disabled={consentTextSaving || !consentTextDraft.trim() || consentTextDraft === consentTextOriginal}
                     >
                       {consentTextSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Check className="w-4 h-4 mr-1.5" /> Save</>}
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <FileText className="w-5 h-5" /> Order Terms &amp; Conditions
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <p className="text-sm text-muted-foreground">
+                  Guests must accept these terms before placing an order. The exact text is stored with each order. Changes take effect for new orders immediately.
+                </p>
+                <Textarea
+                  value={orderTermsDraft}
+                  onChange={(e) => setOrderTermsDraft(e.target.value)}
+                  rows={8}
+                  className="text-sm font-mono"
+                  placeholder="Enter order terms and conditions…"
+                />
+                <div className="flex items-center justify-between">
+                  <p className="text-xs text-muted-foreground">
+                    {orderTermsDraft !== orderTermsOriginal ? "Unsaved changes" : "Saved"}
+                  </p>
+                  <div className="flex gap-2">
+                    {orderTermsDraft !== orderTermsOriginal && (
+                      <Button variant="outline" size="sm" onClick={() => setOrderTermsDraft(orderTermsOriginal)}>
+                        Reset
+                      </Button>
+                    )}
+                    <Button
+                      size="sm"
+                      onClick={handleSaveOrderTerms}
+                      disabled={orderTermsSaving || !orderTermsDraft.trim() || orderTermsDraft === orderTermsOriginal}
+                    >
+                      {orderTermsSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Check className="w-4 h-4 mr-1.5" /> Save</>}
                     </Button>
                   </div>
                 </div>

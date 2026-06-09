@@ -245,6 +245,16 @@ export interface Order {
   notes?: string | null;
   status: OrderStatus;
   paid: boolean;
+  /**
+     * When the guest accepted the order terms and conditions
+     * @nullable
+     */
+  termsAcceptedAt?: string | null;
+  /**
+     * Exact T&C text the guest accepted at order time
+     * @nullable
+     */
+  termsText?: string | null;
   createdAt: string;
 }
 
@@ -254,6 +264,12 @@ export interface OrderInput {
   items: PizzaItem[];
   pickupSlot: string;
   notes?: string;
+  /** The T&C text shown to and accepted by the guest */
+  termsText?: string;
+}
+
+export interface SettingValue {
+  value: string;
 }
 
 export type OrderUpdateStatus = typeof OrderUpdateStatus[keyof typeof OrderUpdateStatus];

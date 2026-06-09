@@ -72,7 +72,7 @@ router.post("/orders", requireAuth, async (req, res): Promise<void> => {
     return;
   }
 
-  const { eventId, items, pickupSlot, notes } = parsed.data;
+  const { eventId, items, pickupSlot, notes, termsText } = parsed.data;
 
   const [event] = await db.select().from(eventsTable).where(eq(eventsTable.id, eventId));
   if (!event || !event.active) {
@@ -165,6 +165,8 @@ router.post("/orders", requireAuth, async (req, res): Promise<void> => {
       quantity: totalQuantity,
       pickupSlot,
       notes: notes ?? null,
+      termsText: termsText ?? null,
+      termsAcceptedAt: termsText ? new Date() : null,
       status: "pending",
     })
     .returning();

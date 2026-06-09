@@ -342,6 +342,8 @@ export const ListOrdersResponseItem = zod.object({
   "notes": zod.string().nullish(),
   "status": zod.enum(['pending', 'confirmed', 'declined', 'completed']),
   "paid": zod.boolean(),
+  "termsAcceptedAt": zod.coerce.date().nullish().describe('When the guest accepted the order terms and conditions'),
+  "termsText": zod.string().nullish().describe('Exact T&C text the guest accepted at order time'),
   "createdAt": zod.coerce.date()
 })
 export const ListOrdersResponse = zod.array(ListOrdersResponseItem)
@@ -362,7 +364,8 @@ export const CreateOrderBody = zod.object({
   "quantity": zod.number().min(1).max(createOrderBodyItemsItemQuantityMax)
 })).min(1),
   "pickupSlot": zod.string(),
-  "notes": zod.string().optional()
+  "notes": zod.string().optional(),
+  "termsText": zod.string().optional().describe('The T&C text shown to and accepted by the guest')
 })
 
 
@@ -411,6 +414,8 @@ export const UpdateOrderResponse = zod.object({
   "notes": zod.string().nullish(),
   "status": zod.enum(['pending', 'confirmed', 'declined', 'completed']),
   "paid": zod.boolean(),
+  "termsAcceptedAt": zod.coerce.date().nullish().describe('When the guest accepted the order terms and conditions'),
+  "termsText": zod.string().nullish().describe('Exact T&C text the guest accepted at order time'),
   "createdAt": zod.coerce.date()
 })
 
@@ -555,6 +560,46 @@ export const CreateAdminUserBody = zod.object({
  */
 export const DeleteAdminUserParams = zod.object({
   "id": zod.coerce.number()
+})
+
+
+/**
+ * @summary Get current GDPR consent text
+ */
+export const GetConsentTextResponse = zod.object({
+  "value": zod.string()
+})
+
+
+/**
+ * @summary Update GDPR consent text (admin only)
+ */
+export const UpdateConsentTextBody = zod.object({
+  "value": zod.string()
+})
+
+export const UpdateConsentTextResponse = zod.object({
+  "value": zod.string()
+})
+
+
+/**
+ * @summary Get current order terms and conditions text
+ */
+export const GetOrderTermsResponse = zod.object({
+  "value": zod.string()
+})
+
+
+/**
+ * @summary Update order terms and conditions text (admin only)
+ */
+export const UpdateOrderTermsBody = zod.object({
+  "value": zod.string()
+})
+
+export const UpdateOrderTermsResponse = zod.object({
+  "value": zod.string()
 })
 
 

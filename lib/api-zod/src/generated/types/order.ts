@@ -27,5 +27,15 @@ export interface Order {
   notes?: string | null;
   status: OrderStatus;
   paid: boolean;
+  /**
+     * When the guest accepted the order terms and conditions
+     * @nullable
+     */
+  termsAcceptedAt?: Date | null;
+  /**
+     * Exact T&C text the guest accepted at order time
+     * @nullable
+     */
+  termsText?: string | null;
   createdAt: Date;
 }

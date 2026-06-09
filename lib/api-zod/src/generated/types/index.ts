@@ -35,6 +35,7 @@ export * from './recipeInput';
 export * from './recipeUpdate';
 export * from './sessionInfo';
 export * from './sessionInfoRole';
+export * from './settingValue';
 export * from './slotSummary';
 export * from './user';
 export * from './userImportInput';

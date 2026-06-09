@@ -13,4 +13,6 @@ export interface OrderInput {
   items: PizzaItem[];
   pickupSlot: string;
   notes?: string;
+  /** The T&C text shown to and accepted by the guest */
+  termsText?: string;
 }
