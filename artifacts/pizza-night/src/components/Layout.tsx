@@ -72,7 +72,7 @@ export function Layout({ children, topbarExtra }: LayoutProps) {
             ) : (
               <div className="flex items-center gap-2">
                 <Link href="/login" className="text-sm font-medium hover:text-primary transition-colors px-3 py-2">
-                  View My Order
+                  Login
                 </Link>
                 <Link href="/admin" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors px-3 py-2">
                   Admin
