@@ -273,6 +273,14 @@ export function Order() {
             {summaryLoading ? <Skeleton className="h-5 w-64 mx-auto" /> : summary ? (
               <div className="flex flex-col items-center gap-1">
                 <p className="text-base font-medium text-primary">{formatEventDate(summary.eventDate)} — {summary.eventName}</p>
+                {summary.location && (
+                  <p className="text-sm text-muted-foreground flex items-center gap-1">
+                    📍{" "}
+                    {summary.locationUrl
+                      ? <a href={summary.locationUrl} target="_blank" rel="noopener noreferrer" className="underline underline-offset-2 hover:text-primary transition-colors">{summary.location}</a>
+                      : summary.location}
+                  </p>
+                )}
                 {events.length > 1 && (
                   <button onClick={() => setPickerOpen(true)} className="inline-flex items-center gap-1.5 mt-1 px-3 py-1 rounded-full border border-border/60 bg-secondary/50 hover:bg-primary/10 hover:border-primary/40 hover:text-primary text-sm text-muted-foreground transition-all">
                     <CalendarDays className="w-3.5 h-3.5" /> change event
@@ -400,6 +408,14 @@ export function Order() {
                     <h2 className="text-xl font-serif font-bold text-foreground">Order Received</h2>
                     <p className="text-sm text-muted-foreground">{myOrder.eventName}</p>
                     <p className="text-sm font-medium text-foreground mt-0.5">{formatEventDate(myOrder.eventDate)} · {myOrder.pickupSlot} CET</p>
+                    {summary?.location && (
+                      <p className="text-xs text-muted-foreground mt-0.5 flex items-center gap-1">
+                        📍{" "}
+                        {summary.locationUrl
+                          ? <a href={summary.locationUrl} target="_blank" rel="noopener noreferrer" className="underline underline-offset-2 hover:text-primary transition-colors">{summary.location}</a>
+                          : summary.location}
+                      </p>
+                    )}
                     {myOrder.orderCode && (
                       <span className="inline-block mt-1.5 text-xs font-mono font-semibold bg-primary/10 text-primary px-2 py-0.5 rounded tracking-wide">
                         #{myOrder.orderCode}

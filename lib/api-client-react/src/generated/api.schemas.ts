@@ -111,6 +111,16 @@ export interface Event {
      * @nullable
      */
   maxPerGuest?: number | null;
+  /**
+     * Pickup location name (e.g. "Elm Street 12, 2nd floor")
+     * @nullable
+     */
+  location?: string | null;
+  /**
+     * Google Maps or other map URL for the pickup location
+     * @nullable
+     */
+  locationUrl?: string | null;
   createdAt: string;
 }
 
@@ -128,6 +138,10 @@ export interface EventInput {
   description?: string;
   /** Cutoff datetime after which no new orders or edits are accepted */
   orderDeadline?: string;
+  /** Pickup location name */
+  location?: string;
+  /** Google Maps or other map URL for the pickup location */
+  locationUrl?: string;
   slots?: string[];
   pizzaTypes?: PizzaType[];
 }
@@ -152,6 +166,16 @@ export interface EventUpdate {
   slots?: string[];
   pizzaTypes?: PizzaType[];
   active?: boolean;
+  /**
+     * Pickup location name
+     * @nullable
+     */
+  location?: string | null;
+  /**
+     * Google Maps or other map URL for the pickup location
+     * @nullable
+     */
+  locationUrl?: string | null;
 }
 
 export interface User {
@@ -381,6 +405,16 @@ export interface EventSummary {
   pizzaTypes: PizzaType[];
   slots: SlotSummary[];
   guests: EventGuest[];
+  /**
+     * Pickup location name
+     * @nullable
+     */
+  location?: string | null;
+  /**
+     * Google Maps or other map URL for the pickup location
+     * @nullable
+     */
+  locationUrl?: string | null;
 }
 
 export type ListOrdersParams = {

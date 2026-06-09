@@ -165,6 +165,8 @@ function EventEditPanel({ event, onClose }: { event: Event; onClose: () => void 
   const [slotCap, setSlotCap] = useState(String(event.slotCapacity));
   const [maxPerGuest, setMaxPerGuest] = useState(event.maxPerGuest != null ? String(event.maxPerGuest) : "");
   const [description, setDescription] = useState(event.description ?? "");
+  const [location, setLocation] = useState(event.location ?? "");
+  const [locationUrl, setLocationUrl] = useState(event.locationUrl ?? "");
   const [orderDeadline, setOrderDeadline] = useState<string>(() => {
     if (!event.orderDeadline) return "";
     const d = new Date(event.orderDeadline);
@@ -193,6 +195,8 @@ function EventEditPanel({ event, onClose }: { event: Event; onClose: () => void 
           maxPerGuest: maxPerGuest === "" ? null : (parseInt(maxPerGuest, 10) || null),
           description: description || undefined,
           orderDeadline: orderDeadline || null,
+          location: location || null,
+          locationUrl: locationUrl || null,
           slots,
           pizzaTypes: pizzaTypes as any,
         },
@@ -247,6 +251,16 @@ function EventEditPanel({ event, onClose }: { event: Event; onClose: () => void 
           rows={2}
           placeholder="Shown on home & order pages..."
         />
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="space-y-1.5">
+          <Label className="text-sm">Pickup Location <span className="text-muted-foreground font-normal">(optional)</span></Label>
+          <Input placeholder="e.g. Elm Street 12, 2nd floor" value={location} onChange={(e) => setLocation(e.target.value)} />
+        </div>
+        <div className="space-y-1.5">
+          <Label className="text-sm">Google Maps URL <span className="text-muted-foreground font-normal">(optional)</span></Label>
+          <Input type="url" placeholder="https://maps.google.com/..." value={locationUrl} onChange={(e) => setLocationUrl(e.target.value)} />
+        </div>
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <TagEditor label="Pickup Slots" tags={slots} onChange={setSlots} placeholder="e.g. 17:00-17:30" />
@@ -616,6 +630,8 @@ export function AdminDashboard() {
   const [newEventDeadline, setNewEventDeadline] = useState("");
   const [newEventSlots, setNewEventSlots] = useState<string[]>(DEFAULT_SLOTS);
   const [newEventPizzaTypes, setNewEventPizzaTypes] = useState<PizzaType[]>(DEFAULT_PIZZA_TYPES);
+  const [newEventLocation, setNewEventLocation] = useState("");
+  const [newEventLocationUrl, setNewEventLocationUrl] = useState("");
 
   // Event editing state
   const [editingEventId, setEditingEventId] = useState<number | null>(null);
@@ -784,6 +800,8 @@ export function AdminDashboard() {
           maxPerGuest: newEventMaxPerGuest === "" ? undefined : (parseInt(newEventMaxPerGuest, 10) || undefined),
           description: newEventDescription || undefined,
           orderDeadline: newEventDeadline || undefined,
+          location: newEventLocation || undefined,
+          locationUrl: newEventLocationUrl || undefined,
           slots: newEventSlots,
           pizzaTypes: newEventPizzaTypes as any,
         },
@@ -796,6 +814,8 @@ export function AdminDashboard() {
           setNewEventDeadline("");
           setNewEventSlots(DEFAULT_SLOTS);
           setNewEventPizzaTypes(DEFAULT_PIZZA_TYPES);
+          setNewEventLocation("");
+          setNewEventLocationUrl("");
           queryClient.invalidateQueries({ queryKey: getListEventsQueryKey() });
         },
       }
@@ -1086,6 +1106,16 @@ export function AdminDashboard() {
                     />
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-1.5">
+                      <Label className="text-sm">Pickup Location <span className="text-muted-foreground font-normal">(optional)</span></Label>
+                      <Input placeholder="e.g. Elm Street 12, 2nd floor" value={newEventLocation} onChange={(e) => setNewEventLocation(e.target.value)} />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-sm">Google Maps URL <span className="text-muted-foreground font-normal">(optional)</span></Label>
+                      <Input type="url" placeholder="https://maps.google.com/..." value={newEventLocationUrl} onChange={(e) => setNewEventLocationUrl(e.target.value)} />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <TagEditor label="Pickup Slots" tags={newEventSlots} onChange={setNewEventSlots} placeholder="e.g. 17:00-17:30" />
                     <PizzaTypeEditor pizzaTypes={newEventPizzaTypes} onChange={setNewEventPizzaTypes} />
                   </div>
@@ -1127,6 +1157,13 @@ export function AdminDashboard() {
                           </div>
                           {event.description && (
                             <p className="text-xs text-muted-foreground mt-1 truncate max-w-md">{event.description}</p>
+                          )}
+                          {event.location && (
+                            <p className="text-xs text-muted-foreground mt-0.5 truncate max-w-md">
+                              📍 {event.locationUrl
+                                ? <a href={event.locationUrl} target="_blank" rel="noopener noreferrer" className="underline underline-offset-2 hover:text-primary">{event.location}</a>
+                                : event.location}
+                            </p>
                           )}
                           <div className="flex flex-wrap gap-1 mt-2">
                             {(event.slots ?? []).map((s) => (

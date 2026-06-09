@@ -113,6 +113,8 @@ export const ListEventsResponseItem = zod.object({
 })),
   "active": zod.boolean(),
   "maxPerGuest": zod.number().min(1).nullish().describe('Maximum number of pizzas a single guest may order. Null means no limit.'),
+  "location": zod.string().nullish().describe('Pickup location name (e.g. \"Elm Street 12, 2nd floor\")'),
+  "locationUrl": zod.string().nullish().describe('Google Maps or other map URL for the pickup location'),
   "createdAt": zod.coerce.date()
 })
 export const ListEventsResponse = zod.array(ListEventsResponseItem)
@@ -137,6 +139,8 @@ export const CreateEventBody = zod.object({
   "maxPerGuest": zod.number().min(1).optional().describe('Maximum number of pizzas a single guest may order. Omit for no limit.'),
   "description": zod.string().optional(),
   "orderDeadline": zod.coerce.date().optional().describe('Cutoff datetime after which no new orders or edits are accepted'),
+  "location": zod.string().optional().describe('Pickup location name'),
+  "locationUrl": zod.string().optional().describe('Google Maps or other map URL for the pickup location'),
   "slots": zod.array(zod.string()).optional(),
   "pizzaTypes": zod.array(zod.object({
   "name": zod.string().describe('Pizza name (e.g. Margherita)'),
@@ -174,7 +178,9 @@ export const UpdateEventBody = zod.object({
   "price": zod.number().min(updateEventBodyPizzaTypesItemPriceMin).describe('Price in DKK'),
   "discountedPrice": zod.number().min(updateEventBodyPizzaTypesItemDiscountedPriceMin).optional().describe('Optional discounted price in DKK')
 })).optional(),
-  "active": zod.boolean().optional()
+  "active": zod.boolean().optional(),
+  "location": zod.string().nullish().describe('Pickup location name'),
+  "locationUrl": zod.string().nullish().describe('Google Maps or other map URL for the pickup location')
 })
 
 export const updateEventResponsePizzaTypesItemPriceMin = 0;
@@ -201,6 +207,8 @@ export const UpdateEventResponse = zod.object({
 })),
   "active": zod.boolean(),
   "maxPerGuest": zod.number().min(1).nullish().describe('Maximum number of pizzas a single guest may order. Null means no limit.'),
+  "location": zod.string().nullish().describe('Pickup location name (e.g. \"Elm Street 12, 2nd floor\")'),
+  "locationUrl": zod.string().nullish().describe('Google Maps or other map URL for the pickup location'),
   "createdAt": zod.coerce.date()
 })
 
@@ -468,7 +476,9 @@ export const GetSummaryResponse = zod.object({
   "guests": zod.array(zod.object({
   "id": zod.number(),
   "name": zod.string()
-}))
+})),
+  "location": zod.string().nullish().describe('Pickup location name'),
+  "locationUrl": zod.string().nullish().describe('Google Maps or other map URL for the pickup location')
 })
 
 

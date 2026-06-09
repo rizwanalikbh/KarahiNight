@@ -134,6 +134,14 @@ export function Receipt() {
             <h2 className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-3">Pickup</h2>
             <p className="font-semibold text-lg">{order.pickupSlot} <span className="text-sm font-normal text-gray-400">CET</span></p>
             <p className="text-gray-500 text-sm mt-0.5">{formatDate(event.date)}</p>
+            {event.location && (
+              <p className="text-gray-500 text-sm mt-1">
+                📍{" "}
+                {event.locationUrl
+                  ? <a href={event.locationUrl} target="_blank" rel="noopener noreferrer" className="underline">{event.location}</a>
+                  : event.location}
+              </p>
+            )}
           </div>
 
           {order.notes && (

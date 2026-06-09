@@ -27,4 +27,14 @@ export interface EventUpdate {
   slots?: string[];
   pizzaTypes?: PizzaType[];
   active?: boolean;
+  /**
+     * Pickup location name
+     * @nullable
+     */
+  location?: string | null;
+  /**
+     * Google Maps or other map URL for the pickup location
+     * @nullable
+     */
+  locationUrl?: string | null;
 }

@@ -32,4 +32,14 @@ export interface EventSummary {
   pizzaTypes: PizzaType[];
   slots: SlotSummary[];
   guests: EventGuest[];
+  /**
+     * Pickup location name
+     * @nullable
+     */
+  location?: string | null;
+  /**
+     * Google Maps or other map URL for the pickup location
+     * @nullable
+     */
+  locationUrl?: string | null;
 }

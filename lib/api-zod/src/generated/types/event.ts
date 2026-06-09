@@ -35,5 +35,15 @@ export interface Event {
      * @nullable
      */
   maxPerGuest?: number | null;
+  /**
+     * Pickup location name (e.g. "Elm Street 12, 2nd floor")
+     * @nullable
+     */
+  location?: string | null;
+  /**
+     * Google Maps or other map URL for the pickup location
+     * @nullable
+     */
+  locationUrl?: string | null;
   createdAt: Date;
 }

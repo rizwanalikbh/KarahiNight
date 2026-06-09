@@ -23,6 +23,8 @@ export const eventsTable = pgTable("events", {
   pizzaTypes: jsonb("pizza_types").$type<PizzaType[]>().notNull().default(DEFAULT_PIZZA_TYPES),
   maxPerGuest: integer("max_per_guest"),
   orderDeadline: timestamp("order_deadline", { withTimezone: true }),
+  location: text("location"),
+  locationUrl: text("location_url"),
   active: boolean("active").notNull().default(true),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });

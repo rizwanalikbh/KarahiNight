@@ -21,6 +21,10 @@ export interface EventInput {
   description?: string;
   /** Cutoff datetime after which no new orders or edits are accepted */
   orderDeadline?: Date;
+  /** Pickup location name */
+  location?: string;
+  /** Google Maps or other map URL for the pickup location */
+  locationUrl?: string;
   slots?: string[];
   pizzaTypes?: PizzaType[];
 }

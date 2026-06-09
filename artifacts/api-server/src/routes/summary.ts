@@ -82,6 +82,8 @@ router.get("/summary", async (req, res): Promise<void> => {
     pizzaTypes: eventPizzaTypes,
     slots,
     guests,
+    location: event.location ?? null,
+    locationUrl: event.locationUrl ?? null,
   });
 });
 

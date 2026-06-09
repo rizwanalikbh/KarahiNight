@@ -705,6 +705,12 @@ components:
           type: ["integer", "null"]
           minimum: 1
           description: Maximum number of pizzas a single guest may order. Null means no limit.
+        location:
+          type: ["string", "null"]
+          description: Pickup location name (e.g. "Elm Street 12, 2nd floor")
+        locationUrl:
+          type: ["string", "null"]
+          description: Google Maps or other map URL for the pickup location
         createdAt:
           type: string
           format: date-time
@@ -734,6 +740,12 @@ components:
           type: string
           format: date-time
           description: Cutoff datetime after which no new orders or edits are accepted
+        location:
+          type: string
+          description: Pickup location name
+        locationUrl:
+          type: string
+          description: Google Maps or other map URL for the pickup location
         slots:
           type: array
           items:
@@ -774,6 +786,12 @@ components:
             $ref: "#/components/schemas/PizzaType"
         active:
           type: boolean
+        location:
+          type: ["string", "null"]
+          description: Pickup location name
+        locationUrl:
+          type: ["string", "null"]
+          description: Google Maps or other map URL for the pickup location
 
     User:
       type: object
@@ -1107,3 +1125,9 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/EventGuest"
+        location:
+          type: ["string", "null"]
+          description: Pickup location name
+        locationUrl:
+          type: ["string", "null"]
+          description: Google Maps or other map URL for the pickup location
