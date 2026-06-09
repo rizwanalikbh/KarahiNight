@@ -194,16 +194,22 @@ export function Home() {
             Stay tuned on the WhatsApp group for the next announcement! 🍕
           </p>
           <div className="flex flex-col items-center gap-3 pt-2">
-            <div className="p-4 bg-white rounded-2xl shadow-md border border-border">
+            <a
+              href="https://chat.whatsapp.com/Chd68TpSYhaHIWBc1P3NqX?mode=gi_t"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="p-4 bg-white rounded-2xl shadow-md border border-border block hover:shadow-lg hover:scale-[1.02] transition-all duration-150"
+              title="Join the WhatsApp group"
+            >
               <QRCodeSVG
-                value="https://chat.whatsapp.com/placeholder"
+                value="https://chat.whatsapp.com/Chd68TpSYhaHIWBc1P3NqX?mode=gi_t"
                 size={160}
                 bgColor="#ffffff"
                 fgColor="#1a1a1a"
                 level="M"
               />
-            </div>
-            <p className="text-sm text-muted-foreground">Scan to join the WhatsApp group</p>
+            </a>
+            <p className="text-sm text-muted-foreground">Tap to join · or scan the QR code</p>
           </div>
         </div>
       </Layout>
