@@ -5,3 +5,4 @@ export * from "./orders";
 export * from "./recipes";
 export * from "./otp_sessions";
 export * from "./admin_users";
+export * from "./app_settings";

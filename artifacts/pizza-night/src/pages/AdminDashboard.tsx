@@ -742,6 +742,9 @@ export function AdminDashboard() {
   const [editingUserId, setEditingUserId] = useState<number | null>(null);
   const [consentUserId, setConsentUserId] = useState<number | null>(null);
   const [filterEventId, setFilterEventId] = useState<string>("all");
+  const [consentTextDraft, setConsentTextDraft] = useState("");
+  const [consentTextOriginal, setConsentTextOriginal] = useState("");
+  const [consentTextSaving, setConsentTextSaving] = useState(false);
 
   useEffect(() => {
     if (!sessionLoading && (!session?.authenticated || session.role !== "admin")) {
@@ -749,8 +752,43 @@ export function AdminDashboard() {
     }
   }, [sessionLoading, session, setLocation]);
 
+  useEffect(() => {
+    fetch("/api/settings/consent-text")
+      .then((r) => r.json())
+      .then((d: { value?: string }) => {
+        if (typeof d.value === "string") {
+          setConsentTextDraft(d.value);
+          setConsentTextOriginal(d.value);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
   if (sessionLoading) return <Layout><div className="flex justify-center p-12"><Loader2 className="animate-spin text-primary" /></div></Layout>;
   if (!session?.authenticated || session.role !== "admin") return null;
+
+  const handleSaveConsentText = async () => {
+    if (!consentTextDraft.trim() || consentTextDraft === consentTextOriginal) return;
+    setConsentTextSaving(true);
+    try {
+      const r = await fetch("/api/settings/consent-text", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ value: consentTextDraft.trim() }),
+      });
+      if (!r.ok) throw new Error("Failed");
+      const d: { value?: string } = await r.json();
+      if (typeof d.value === "string") {
+        setConsentTextOriginal(d.value);
+        setConsentTextDraft(d.value);
+        toast({ title: "Consent text saved" });
+      }
+    } catch {
+      toast({ title: "Failed to save consent text", variant: "destructive" });
+    } finally {
+      setConsentTextSaving(false);
+    }
+  };
 
   const handleStatusChange = (id: number, status: OrderUpdateStatus) => {
     updateOrder.mutate({ id, data: { status } }, {
@@ -883,12 +921,13 @@ export function AdminDashboard() {
         <h1 className="text-3xl font-serif font-bold text-foreground">Kitchen Dashboard</h1>
 
         <Tabs defaultValue="summary" className="w-full">
-          <TabsList className="grid w-full grid-cols-5">
+          <TabsList className="grid w-full grid-cols-6">
             <TabsTrigger value="summary">Summary</TabsTrigger>
             <TabsTrigger value="orders">Orders</TabsTrigger>
             <TabsTrigger value="events">Events</TabsTrigger>
             <TabsTrigger value="users">Guests</TabsTrigger>
             <TabsTrigger value="admins">Admins</TabsTrigger>
+            <TabsTrigger value="settings">Settings</TabsTrigger>
           </TabsList>
 
           {/* SUMMARY */}
@@ -1323,6 +1362,48 @@ export function AdminDashboard() {
                     })}
                   </TableBody>
                 </Table>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* SETTINGS */}
+          <TabsContent value="settings" className="pt-4 space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <ShieldCheck className="w-5 h-5" /> GDPR Consent Text
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <p className="text-sm text-muted-foreground">
+                  This text is shown to new guests during registration. They must read and accept it before receiving their verification code. Changes take effect immediately for new sign-ups.
+                </p>
+                <Textarea
+                  value={consentTextDraft}
+                  onChange={(e) => setConsentTextDraft(e.target.value)}
+                  rows={6}
+                  className="text-sm"
+                  placeholder="Enter consent text…"
+                />
+                <div className="flex items-center justify-between">
+                  <p className="text-xs text-muted-foreground">
+                    {consentTextDraft !== consentTextOriginal ? "Unsaved changes" : "Saved"}
+                  </p>
+                  <div className="flex gap-2">
+                    {consentTextDraft !== consentTextOriginal && (
+                      <Button variant="outline" size="sm" onClick={() => setConsentTextDraft(consentTextOriginal)}>
+                        Reset
+                      </Button>
+                    )}
+                    <Button
+                      size="sm"
+                      onClick={handleSaveConsentText}
+                      disabled={consentTextSaving || !consentTextDraft.trim() || consentTextDraft === consentTextOriginal}
+                    >
+                      {consentTextSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Check className="w-4 h-4 mr-1.5" /> Save</>}
+                    </Button>
+                  </div>
+                </div>
               </CardContent>
             </Card>
           </TabsContent>

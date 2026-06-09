@@ -108,19 +108,27 @@ router.post("/orders", requireAuth, async (req, res): Promise<void> => {
   const typedItems = items as PizzaItem[];
   const totalQuantity = typedItems.reduce((sum: number, item: PizzaItem) => sum + item.quantity, 0);
 
-  if (event.maxPerGuest !== null && event.maxPerGuest !== undefined && totalQuantity > event.maxPerGuest) {
-    res.status(400).json({ error: `You can order at most ${event.maxPerGuest} pizza(s) per guest for this event.` });
-    return;
-  }
-
-  const existingOrders = await db
+  const existingUserOrders = await db
     .select()
     .from(ordersTable)
     .where(and(eq(ordersTable.userId, userId), eq(ordersTable.eventId, eventId)));
 
-  if (existingOrders.length > 0) {
-    res.status(400).json({ error: "You have already placed an order for this event" });
-    return;
+  const existingUserTotal = existingUserOrders.reduce((sum, o) => sum + o.quantity, 0);
+
+  if (event.maxPerGuest !== null && event.maxPerGuest !== undefined) {
+    const remaining = event.maxPerGuest - existingUserTotal;
+    if (remaining <= 0) {
+      res.status(400).json({
+        error: `You've already reached your limit of ${event.maxPerGuest} pizza(s) for this event.`,
+      });
+      return;
+    }
+    if (existingUserTotal + totalQuantity > event.maxPerGuest) {
+      res.status(400).json({
+        error: `You've already ordered ${existingUserTotal} pizza(s). You can add at most ${remaining} more (limit: ${event.maxPerGuest} per guest).`,
+      });
+      return;
+    }
   }
 
   const allEventOrders = await db.select().from(ordersTable).where(eq(ordersTable.eventId, eventId));

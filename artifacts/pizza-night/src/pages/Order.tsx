@@ -139,6 +139,7 @@ export function Order() {
   const [pizzaItems, setPizzaItems] = useState<PizzaItem[]>([{ pizzaChoice: "", quantity: 1 }]);
   const [editItems, setEditItems] = useState<PizzaItem[]>([]);
   const [isEditing, setIsEditing] = useState(false);
+  const [isPlacingAnother, setIsPlacingAnother] = useState(false);
 
   const [checkoutStep, setCheckoutStep] = useState<CheckoutStep>('form');
   const [guestName, setGuestName] = useState('');
@@ -147,6 +148,16 @@ export function Order() {
   const [isMobileKnown, setIsMobileKnown] = useState(false);
   const [checkingMobile, setCheckingMobile] = useState(false);
   const [consentAccepted, setConsentAccepted] = useState(false);
+  const [consentText, setConsentText] = useState(
+    "Your mobile number and name are stored solely to organise this event — for example to confirm your order or contact you on the day. Your data will never be used for marketing purposes. It will be permanently deleted after one year."
+  );
+
+  useEffect(() => {
+    fetch("/api/settings/consent-text")
+      .then((r) => r.json())
+      .then((d: { value?: string }) => { if (typeof d.value === "string") setConsentText(d.value); })
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     if (events && events.length === 1 && !selectedEventId) {
@@ -179,17 +190,21 @@ export function Order() {
 
   const selectedSlotData = summary?.slots.find((s) => s.slot === pickupSlot);
   const slotAvailable = selectedSlotData?.available ?? 0;
-  const guestLimit = summary?.maxPerGuest ?? Infinity;
+  const isLoading = sessionLoading || eventsLoading || (isAuthenticated && ordersLoading);
+
+  const activeEventId = selectedEventId ?? (events && events.length > 0 ? events[0].id : undefined);
+  const myOrders = isAuthenticated ? (orders?.filter((o) => o.userId === session?.userId && o.eventId === activeEventId) ?? []) : [];
+  const myOrder = myOrders[0];
+  const myTotalOrdered = myOrders.reduce((sum, o) => sum + o.quantity, 0);
+  const guestLimitRemaining = summary?.maxPerGuest != null ? Math.max(0, summary.maxPerGuest - myTotalOrdered) : Infinity;
+
+  const guestLimit = isPlacingAnother ? guestLimitRemaining : (summary?.maxPerGuest ?? Infinity);
   const maxAllowed = Math.min(summary?.totalRemaining ?? 0, slotAvailable, guestLimit);
 
   const handleSlotChange = (val: string) => { setPickupSlot(val); setTotalQty(1); };
   const updateItemChoice = (index: number, choice: string) =>
     setPizzaItems((prev) => prev.map((item, i) => (i === index ? { ...item, pizzaChoice: choice } : item)));
 
-  const isLoading = sessionLoading || eventsLoading || (isAuthenticated && ordersLoading);
-
-  const activeEventId = selectedEventId ?? (events && events.length > 0 ? events[0].id : undefined);
-  const myOrder = isAuthenticated ? orders?.find((o) => o.userId === session?.userId && o.eventId === activeEventId) : undefined;
   const originalCount = myOrder ? (myOrder.items ?? []).length : 0;
 
   useEffect(() => {
@@ -292,14 +307,27 @@ export function Order() {
               <div className="text-center space-y-1">
                 <p className="font-semibold text-foreground">Welcome back, {session!.userName}!</p>
                 <p className="text-sm text-muted-foreground">
-                  {summaryLoading ? "Loading event details…" : summary?.orderingOpen ? (myOrder ? "You already have an order for this event." : "Ready to place your order?") : "Ordering is closed. You can still view your order."}
+                  {summaryLoading ? "Loading event details…" : summary?.orderingOpen
+                    ? (myOrders.length > 0
+                      ? `You've ordered ${myTotalOrdered} pizza${myTotalOrdered !== 1 ? "s" : ""} so far.${guestLimitRemaining < Infinity && guestLimitRemaining > 0 ? ` You can add ${guestLimitRemaining} more.` : guestLimitRemaining <= 0 ? " You've reached your limit." : ""}`
+                      : "Ready to place your order?")
+                    : "Ordering is closed. You can still view your order."}
                 </p>
               </div>
               {summaryLoading ? <Skeleton className="w-full h-14 rounded-xl" /> : (
-                <Button size="lg" className="w-full h-14 text-lg gap-2" onClick={() => setEventPreview(false)}>
-                  <Pizza className="w-5 h-5" />
-                  {myOrder ? "View My Order" : summary?.orderingOpen ? "Place My Order" : "View My Order"}
-                </Button>
+                <div className="w-full space-y-2">
+                  <Button size="lg" className="w-full h-14 text-lg gap-2" onClick={() => setEventPreview(false)}>
+                    <Pizza className="w-5 h-5" />
+                    {myOrders.length > 0 ? "View My Orders" : summary?.orderingOpen ? "Place My Order" : "View Order Status"}
+                  </Button>
+                  {myOrders.length > 0 && summary?.orderingOpen && guestLimitRemaining > 0 && (
+                    <Button size="lg" variant="outline" className="w-full h-12 text-base gap-2"
+                      onClick={() => { setPizzaItems([{ pizzaChoice: pizzaNames[0] ?? "", quantity: 1 }]); setPickupSlot(""); setNotes(""); setTotalQty(1); setIsPlacingAnother(true); setEventPreview(false); }}>
+                      <Plus className="w-4 h-4" />
+                      Add Another Order ({guestLimitRemaining} pizza{guestLimitRemaining !== 1 ? "s" : ""} left)
+                    </Button>
+                  )}
+                </div>
               )}
             </CardContent>
           </Card>
@@ -308,7 +336,7 @@ export function Order() {
     );
   }
 
-  if (isAuthenticated && myOrder) {
+  if (isAuthenticated && myOrders.length > 0 && !isPlacingAnother) {
     const displayItems = isEditing ? editItems : (myOrder.items ?? []);
     const slotAvailableForEdit = (summary?.slots.find((s) => s.slot === myOrder.pickupSlot)?.available ?? 0);
     const editGuestLimit = summary?.maxPerGuest ?? Infinity;
@@ -463,12 +491,59 @@ export function Order() {
               )}
             </CardContent>
           </Card>
+
+          {myOrders.slice(1).map((extraOrder) => (
+            <Card key={extraOrder.id} className="border-card-border shadow-sm">
+              <CardContent className="pt-5 pb-5">
+                <div className="flex items-center justify-between mb-3">
+                  <div>
+                    <p className="text-sm font-medium text-foreground">{extraOrder.pickupSlot} CET</p>
+                    <p className="text-xs text-muted-foreground">Order #{extraOrder.id}</p>
+                  </div>
+                  <div className="flex flex-col items-end gap-1">
+                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium capitalize ${extraOrder.status === "confirmed" ? "bg-accent/10 text-accent" : extraOrder.status === "completed" ? "bg-gray-100 text-gray-800" : extraOrder.status === "declined" ? "bg-destructive/10 text-destructive" : "bg-primary/10 text-primary"}`}>
+                      {extraOrder.status}
+                    </span>
+                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${extraOrder.paid ? "bg-green-100 text-green-700" : "bg-orange-100 text-orange-600"}`}>
+                      {extraOrder.paid ? "Paid" : "Not paid"}
+                    </span>
+                  </div>
+                </div>
+                <div className="bg-secondary/30 rounded-xl border border-border divide-y divide-border/50">
+                  {Object.entries(
+                    (extraOrder.items ?? []).reduce<Record<string, number>>((acc, item) => {
+                      acc[item.pizzaChoice] = (acc[item.pizzaChoice] ?? 0) + item.quantity;
+                      return acc;
+                    }, {})
+                  ).map(([choice, qty]) => (
+                    <div key={choice} className="flex justify-between items-center px-4 py-2.5">
+                      <span className="font-medium text-foreground text-sm">{choice}</span>
+                      <span className="text-xs text-muted-foreground">×{qty}</span>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+
+          {summary?.orderingOpen && guestLimitRemaining > 0 && !isEditing && (
+            <Button size="lg" variant="outline" className="w-full gap-2"
+              onClick={() => { setPizzaItems([{ pizzaChoice: pizzaNames[0] ?? "", quantity: 1 }]); setPickupSlot(""); setNotes(""); setTotalQty(1); setIsPlacingAnother(true); window.scrollTo(0, 0); }}>
+              <Plus className="w-4 h-4" />
+              Add Another Order ({guestLimitRemaining} pizza{guestLimitRemaining !== 1 ? "s" : ""} left)
+            </Button>
+          )}
+          {summary?.maxPerGuest != null && guestLimitRemaining <= 0 && !isEditing && (
+            <p className="text-xs text-center text-muted-foreground py-2">
+              You've ordered the maximum of {summary.maxPerGuest} pizza{summary.maxPerGuest !== 1 ? "s" : ""} for this event.
+            </p>
+          )}
         </div>
       </Layout>
     );
   }
 
-  if (summary && !summary.orderingOpen && !myOrder) {
+  if (summary && !summary.orderingOpen && myOrders.length === 0) {
     return (
       <Layout>
         {events.length > 1 && (
@@ -510,6 +585,7 @@ export function Order() {
           onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: getListOrdersQueryKey() });
             queryClient.invalidateQueries({ queryKey: getGetSummaryQueryKey() });
+            setIsPlacingAnother(false);
             window.scrollTo(0, 0);
           },
           onError: (err: any) => {
@@ -551,14 +627,13 @@ export function Order() {
     }
   };
 
-  const CONSENT_TEXT = "Your mobile number and name are stored solely to organise this event — for example to confirm your order or contact you on the day. Your data will never be used for marketing purposes. It will be permanently deleted after one year.";
 
   const handleSendOtp = () => {
     if (!isMobileKnown && !guestName.trim()) return;
     if (!isMobileKnown && !consentAccepted) return;
     const payload = isMobileKnown
       ? { mobile: guestMobile.trim() }
-      : { mobile: guestMobile.trim(), name: guestName.trim(), consentText: CONSENT_TEXT };
+      : { mobile: guestMobile.trim(), name: guestName.trim(), consentText };
     sendOtpMutation.mutate(
       { data: payload },
       {
@@ -698,7 +773,7 @@ export function Order() {
 
               <div className="rounded-xl border border-border bg-secondary/30 p-4 space-y-3">
                 <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Data & Privacy</p>
-                <p className="text-sm text-foreground leading-relaxed">{CONSENT_TEXT}</p>
+                <p className="text-sm text-foreground leading-relaxed">{consentText}</p>
                 <label className="flex items-start gap-3 cursor-pointer group">
                   <input
                     type="checkbox"
@@ -797,10 +872,17 @@ export function Order() {
           onOpenChange={setPickerOpen}
         />
       )}
+      {isPlacingAnother && (
+        <div className="max-w-xl mx-auto w-full mb-2">
+          <button type="button" onClick={() => { setIsPlacingAnother(false); window.scrollTo(0, 0); }} className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors py-2">
+            <ChevronLeft className="w-4 h-4" /> Back to my orders
+          </button>
+        </div>
+      )}
       <div className="max-w-xl mx-auto w-full">
         <Card className="border-card-border shadow-md">
           <CardHeader>
-            <CardTitle className="font-serif text-2xl">Place Your Order</CardTitle>
+            <CardTitle className="font-serif text-2xl">{isPlacingAnother ? "Add Another Order" : "Place Your Order"}</CardTitle>
             <CardDescription>
               {priceLabel(pizzaTypes)}{summary?.description ? ` — ${summary.description}` : ""}
             </CardDescription>
