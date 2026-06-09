@@ -17,8 +17,10 @@ export function Login() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
+  const prefill = new URLSearchParams(window.location.search).get("mobile") ?? "";
+
   const [step, setStep] = useState<Step>("mobile");
-  const [mobile, setMobile] = useState("");
+  const [mobile, setMobile] = useState(prefill.replace(/^\+45/, "").replace(/\D/g, "").slice(0, 8));
   const [otpCode, setOtpCode] = useState("");
   const [noOrdersError, setNoOrdersError] = useState(false);
 
@@ -184,12 +186,9 @@ export function Login() {
               <div className="flex items-start gap-3 rounded-xl border border-destructive/30 bg-destructive/5 px-4 py-3.5">
                 <AlertCircle className="w-5 h-5 text-destructive shrink-0 mt-0.5" />
                 <div>
-                  <p className="text-sm font-semibold text-destructive">No orders found</p>
+                  <p className="text-sm font-semibold text-destructive">Number not found</p>
                   <p className="text-sm text-destructive/80 mt-1">
-                    We don't have an order linked to this number. If you haven't ordered yet,{" "}
-                    <a href="/order" className="underline underline-offset-2 font-medium hover:text-destructive transition-colors">
-                      place your order here
-                    </a>.
+                    We don't have an account linked to this number. Please contact the organiser to be added to the guest list.
                   </p>
                 </div>
               </div>

@@ -1258,6 +1258,25 @@ export function AdminDashboard() {
                             </TableCell>
                             <TableCell className="text-right">
                               <div className="flex items-center justify-end gap-1">
+                                {user.mobile && (() => {
+                                  const digits = user.mobile.replace(/^\+45/, "").replace(/\D/g, "");
+                                  const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+                                  const link = `${window.location.origin}${base}/login?mobile=${digits}`;
+                                  return (
+                                    <Button
+                                      variant="ghost" size="icon"
+                                      className="h-8 w-8 text-muted-foreground hover:text-primary"
+                                      title="Copy login link"
+                                      onClick={() => {
+                                        navigator.clipboard.writeText(link).then(() =>
+                                          toast({ title: "Login link copied!", description: `Share this link with ${user.name}` })
+                                        );
+                                      }}
+                                    >
+                                      <Link className="h-4 w-4" />
+                                    </Button>
+                                  );
+                                })()}
                                 {user.consentAcceptedAt && (
                                   <Button variant="ghost" size="icon" onClick={() => setConsentUserId(user.id)} className="h-8 w-8 text-green-600 hover:text-green-700 hover:bg-green-50" title="View consent record">
                                     <ShieldCheck className="h-4 w-4" />
