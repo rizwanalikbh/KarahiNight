@@ -3,6 +3,13 @@ import { db, ordersTable, eventsTable, usersTable, type PizzaItem } from "@works
 import { eq, and } from "drizzle-orm";
 import { CreateOrderBody, UpdateOrderParams, UpdateOrderBody, DeleteOrderParams, ListOrdersQueryParams } from "@workspace/api-zod";
 
+function generateOrderCode(): string {
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  let code = "";
+  for (let i = 0; i < 6; i++) code += chars[Math.floor(Math.random() * chars.length)];
+  return code;
+}
+
 const router: IRouter = Router();
 
 function requireAuth(req: any, res: any, next: any): void {
@@ -36,6 +43,9 @@ async function enrichOrders(rawOrders: any[]) {
     eventDate: o.eventId ? (eventDateMap.get(o.eventId) ?? "") : "",
     items: Array.isArray(o.pizzaItems) ? o.pizzaItems : [],
     notes: o.notes ?? null,
+    orderCode: o.orderCode ?? null,
+    termsText: o.termsText ?? null,
+    termsAcceptedAt: o.termsAcceptedAt ? o.termsAcceptedAt.toISOString() : null,
     createdAt: o.createdAt.toISOString(),
   }));
 }
@@ -156,6 +166,13 @@ router.post("/orders", requireAuth, async (req, res): Promise<void> => {
     return;
   }
 
+  let orderCode = generateOrderCode();
+  for (let attempt = 0; attempt < 5; attempt++) {
+    const [existing] = await db.select({ id: ordersTable.id }).from(ordersTable).where(eq(ordersTable.orderCode, orderCode)).limit(1);
+    if (!existing) break;
+    orderCode = generateOrderCode();
+  }
+
   const [order] = await db
     .insert(ordersTable)
     .values({
@@ -165,6 +182,7 @@ router.post("/orders", requireAuth, async (req, res): Promise<void> => {
       quantity: totalQuantity,
       pickupSlot,
       notes: notes ?? null,
+      orderCode,
       termsText: termsText ?? null,
       termsAcceptedAt: termsText ? new Date() : null,
       status: "pending",

@@ -20,6 +20,7 @@ export const ordersTable = pgTable("orders", {
   notes: text("notes"),
   status: text("status").notNull().default("pending"),
   paid: boolean("paid").notNull().default(false),
+  orderCode: text("order_code").unique(),
   termsText: text("terms_text"),
   termsAcceptedAt: timestamp("terms_accepted_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),

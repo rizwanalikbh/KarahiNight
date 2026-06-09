@@ -342,6 +342,7 @@ export const ListOrdersResponseItem = zod.object({
   "notes": zod.string().nullish(),
   "status": zod.enum(['pending', 'confirmed', 'declined', 'completed']),
   "paid": zod.boolean(),
+  "orderCode": zod.string().nullish().describe('Unique human-readable reference code for this order'),
   "termsAcceptedAt": zod.coerce.date().nullish().describe('When the guest accepted the order terms and conditions'),
   "termsText": zod.string().nullish().describe('Exact T&C text the guest accepted at order time'),
   "createdAt": zod.coerce.date()
@@ -414,6 +415,7 @@ export const UpdateOrderResponse = zod.object({
   "notes": zod.string().nullish(),
   "status": zod.enum(['pending', 'confirmed', 'declined', 'completed']),
   "paid": zod.boolean(),
+  "orderCode": zod.string().nullish().describe('Unique human-readable reference code for this order'),
   "termsAcceptedAt": zod.coerce.date().nullish().describe('When the guest accepted the order terms and conditions'),
   "termsText": zod.string().nullish().describe('Exact T&C text the guest accepted at order time'),
   "createdAt": zod.coerce.date()

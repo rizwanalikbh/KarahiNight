@@ -644,6 +644,7 @@ export function AdminDashboard() {
   const [orderTermsDraft, setOrderTermsDraft] = useState("");
   const [orderTermsOriginal, setOrderTermsOriginal] = useState("");
   const [orderTermsSaving, setOrderTermsSaving] = useState(false);
+  const [termsOrderId, setTermsOrderId] = useState<number | null>(null);
 
   useEffect(() => {
     if (!sessionLoading && (!session?.authenticated || session.role !== "admin")) {
@@ -913,6 +914,7 @@ export function AdminDashboard() {
                   <TableHeader>
                     <TableRow>
                       <TableHead>Guest</TableHead>
+                      <TableHead>Code</TableHead>
                       {events && events.length > 1 && <TableHead>Event</TableHead>}
                       <TableHead>Pizzas</TableHead>
                       <TableHead>Slot</TableHead>
@@ -939,6 +941,9 @@ export function AdminDashboard() {
                         <>
                           <TableRow key={order.id} className={isEditing ? "bg-secondary/20" : undefined}>
                             <TableCell className="font-medium">{order.userName}</TableCell>
+                            <TableCell className="font-mono text-xs text-primary/80 font-semibold">
+                              {order.orderCode ? `#${order.orderCode}` : "—"}
+                            </TableCell>
                             {events && events.length > 1 && (
                               <TableCell className="text-xs text-muted-foreground">{order.eventName}</TableCell>
                             )}
@@ -977,6 +982,16 @@ export function AdminDashboard() {
                             </TableCell>
                             <TableCell className="text-right">
                               <div className="flex justify-end gap-1">
+                                {order.termsText && (
+                                  <Button
+                                    variant="ghost" size="icon"
+                                    className="h-8 w-8 text-blue-600 hover:bg-blue-50"
+                                    onClick={() => setTermsOrderId(order.id)}
+                                    title="View accepted terms"
+                                  >
+                                    <ShieldCheck className="h-4 w-4" />
+                                  </Button>
+                                )}
                                 {order.status === "confirmed" && (
                                   <a
                                     href={`/receipt/${order.id}`}
@@ -1005,7 +1020,7 @@ export function AdminDashboard() {
                           </TableRow>
                           {isEditing && (
                             <TableRow key={`${order.id}-edit`}>
-                              <TableCell colSpan={events && events.length > 1 ? 8 : 7} className="p-0">
+                              <TableCell colSpan={events && events.length > 1 ? 9 : 8} className="p-0">
                                 <OrderEditPanel
                                   order={order}
                                   event={orderEvent}
@@ -1353,6 +1368,41 @@ export function AdminDashboard() {
                   <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Consent text accepted</p>
                   <div className="rounded-lg border bg-secondary/30 p-3">
                     <p className="text-sm text-foreground leading-relaxed">{consentUser.consentText ?? "—"}</p>
+                  </div>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
+        );
+      })()}
+
+      {(() => {
+        const termsOrder = termsOrderId != null ? (orders ?? []).find((o) => o.id === termsOrderId) : null;
+        if (!termsOrder) return null;
+        const acceptedAt = termsOrder.termsAcceptedAt
+          ? new Date(termsOrder.termsAcceptedAt).toLocaleString("da-DK", { dateStyle: "long", timeStyle: "short" })
+          : null;
+        return (
+          <Dialog open={true} onOpenChange={(open) => { if (!open) setTermsOrderId(null); }}>
+            <DialogContent className="max-w-lg max-h-[80vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2">
+                  <ShieldCheck className="w-5 h-5 text-blue-600" />
+                  Accepted Terms — {termsOrder.userName}
+                  {termsOrder.orderCode && (
+                    <span className="ml-1 font-mono text-sm text-muted-foreground">#{termsOrder.orderCode}</span>
+                  )}
+                </DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4 pt-1">
+                <div className="space-y-1">
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Accepted on</p>
+                  <p className="text-sm text-foreground">{acceptedAt ?? "—"}</p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Terms text accepted</p>
+                  <div className="rounded-lg border bg-secondary/30 p-3">
+                    <p className="text-sm text-foreground leading-relaxed whitespace-pre-line">{termsOrder.termsText ?? "—"}</p>
                   </div>
                 </div>
               </div>

@@ -246,6 +246,11 @@ export interface Order {
   status: OrderStatus;
   paid: boolean;
   /**
+     * Unique human-readable reference code for this order
+     * @nullable
+     */
+  orderCode?: string | null;
+  /**
      * When the guest accepted the order terms and conditions
      * @nullable
      */

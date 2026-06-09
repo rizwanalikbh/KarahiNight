@@ -900,6 +900,9 @@ components:
           enum: [pending, confirmed, declined, completed]
         paid:
           type: boolean
+        orderCode:
+          type: ["string", "null"]
+          description: Unique human-readable reference code for this order
         termsAcceptedAt:
           type: ["string", "null"]
           format: date-time

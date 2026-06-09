@@ -400,6 +400,11 @@ export function Order() {
                     <h2 className="text-xl font-serif font-bold text-foreground">Order Received</h2>
                     <p className="text-sm text-muted-foreground">{myOrder.eventName}</p>
                     <p className="text-sm font-medium text-foreground mt-0.5">{formatEventDate(myOrder.eventDate)} · {myOrder.pickupSlot} CET</p>
+                    {myOrder.orderCode && (
+                      <span className="inline-block mt-1.5 text-xs font-mono font-semibold bg-primary/10 text-primary px-2 py-0.5 rounded tracking-wide">
+                        #{myOrder.orderCode}
+                      </span>
+                    )}
                     {events.length > 1 && (
                       <button onClick={() => setPickerOpen(true)} className="text-xs text-muted-foreground/60 hover:text-primary underline underline-offset-2 transition-colors mt-0.5">change event</button>
                     )}
@@ -510,7 +515,9 @@ export function Order() {
                 <div className="flex items-center justify-between mb-3">
                   <div>
                     <p className="text-sm font-medium text-foreground">{extraOrder.pickupSlot} CET</p>
-                    <p className="text-xs text-muted-foreground">Order #{extraOrder.id}</p>
+                    <p className="text-xs font-mono font-semibold text-primary/80">
+                      {extraOrder.orderCode ? `#${extraOrder.orderCode}` : `Order #${extraOrder.id}`}
+                    </p>
                   </div>
                   <div className="flex flex-col items-end gap-1">
                     <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium capitalize ${extraOrder.status === "confirmed" ? "bg-accent/10 text-accent" : extraOrder.status === "completed" ? "bg-gray-100 text-gray-800" : extraOrder.status === "declined" ? "bg-destructive/10 text-destructive" : "bg-primary/10 text-primary"}`}>
