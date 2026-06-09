@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import {
-  useGetMe, useGetSummary, useListOrders, useListEvents, useCreateOrder, useUpdateOrder,
+  useGetMe, useGetSummary, useListOrders, useListEvents, useCreateOrder,
   useSendOtp, useVerifyOtp,
   getListOrdersQueryKey, getGetSummaryQueryKey, getGetMeQueryKey
 } from "@workspace/api-client-react";
@@ -16,7 +16,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import {
-  Loader2, CheckCircle2, AlertCircle, CalendarDays, Pencil, Plus, X, Check,
+  Loader2, CheckCircle2, AlertCircle, CalendarDays, Plus, Check,
   ArrowRight, Lock, Pizza, Phone, User, ChevronLeft
 } from "lucide-react";
 import type { PizzaItem as APIPizzaItem } from "@workspace/api-client-react";
@@ -126,7 +126,6 @@ export function Order() {
     { query: { enabled: isAuthenticated, queryKey: getListOrdersQueryKey({}) } }
   );
   const createOrder = useCreateOrder();
-  const updateOrder = useUpdateOrder();
   const sendOtpMutation = useSendOtp();
   const verifyOtpMutation = useVerifyOtp();
 
@@ -137,8 +136,6 @@ export function Order() {
   const [notes, setNotes] = useState("");
   const [totalQty, setTotalQty] = useState(1);
   const [pizzaItems, setPizzaItems] = useState<PizzaItem[]>([{ pizzaChoice: "", quantity: 1 }]);
-  const [editItems, setEditItems] = useState<PizzaItem[]>([]);
-  const [isEditing, setIsEditing] = useState(false);
   const [isPlacingAnother, setIsPlacingAnother] = useState(false);
 
   const [checkoutStep, setCheckoutStep] = useState<CheckoutStep>('form');
@@ -216,15 +213,6 @@ export function Order() {
   const handleSlotChange = (val: string) => { setPickupSlot(val); setTotalQty(1); };
   const updateItemChoice = (index: number, choice: string) =>
     setPizzaItems((prev) => prev.map((item, i) => (i === index ? { ...item, pizzaChoice: choice } : item)));
-
-  const originalCount = myOrder ? (myOrder.items ?? []).length : 0;
-
-  useEffect(() => {
-    if (myOrder && !isEditing) {
-      setEditItems((myOrder.items ?? []).map((i) => ({ pizzaChoice: i.pizzaChoice, quantity: i.quantity })));
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [JSON.stringify(myOrder?.items), isEditing]);
 
   if (isLoading) {
     return (
@@ -357,39 +345,6 @@ export function Order() {
   }
 
   if (isAuthenticated && myOrders.length > 0 && !isPlacingAnother) {
-    const displayItems = isEditing ? editItems : (myOrder.items ?? []);
-    const slotAvailableForEdit = (summary?.slots.find((s) => s.slot === myOrder.pickupSlot)?.available ?? 0);
-    const editGuestLimit = summary?.maxPerGuest ?? Infinity;
-    const maxTotal = Math.min(myOrder.quantity + slotAvailableForEdit, editGuestLimit);
-    const canAddMore = editItems.length < maxTotal;
-
-    const handleSaveEdit = () => {
-      if (editItems.some((i) => !i.pizzaChoice)) return;
-      updateOrder.mutate({ id: myOrder.id, data: { items: editItems as APIPizzaItem[] } }, {
-        onSuccess: () => {
-          setIsEditing(false);
-          queryClient.invalidateQueries({ queryKey: getListOrdersQueryKey() });
-          queryClient.invalidateQueries({ queryKey: getGetSummaryQueryKey() });
-          toast({ title: "Order updated!" });
-        },
-        onError: (err: any) => {
-          toast({ title: "Error", description: err?.response?.data?.error ?? "Could not update order.", variant: "destructive" });
-        },
-      });
-    };
-
-    const handleCancelEdit = () => {
-      setEditItems((myOrder.items ?? []).map((i) => ({ pizzaChoice: i.pizzaChoice, quantity: i.quantity })));
-      setIsEditing(false);
-    };
-
-    const updateEditChoice = (index: number, choice: string) =>
-      setEditItems((prev) => prev.map((it, i) => (i === index ? { ...it, pizzaChoice: choice } : it)));
-    const addEditPizza = () => { if (!canAddMore) return; setEditItems((prev) => [...prev, { pizzaChoice: pizzaNames[0] ?? "", quantity: 1 }]); };
-    const removeEditPizza = (index: number) => { if (index < originalCount) return; setEditItems((prev) => prev.filter((_, i) => i !== index)); };
-
-    const orderTotal = computeItemsTotal(displayItems, pizzaTypes);
-
     return (
       <Layout>
         {events.length > 1 && (
@@ -398,177 +353,91 @@ export function Order() {
             onOpenChange={setPickerOpen}
           />
         )}
-        <div className="max-w-xl mx-auto w-full pt-8">
-          <Card className="border-card-border shadow-md">
-            <CardContent className="pt-8 pb-8">
-              <div className="flex items-start justify-between mb-6">
-                <div className="flex items-center gap-3">
-                  <CheckCircle2 className="w-8 h-8 text-primary shrink-0" />
-                  <div>
-                    <h2 className="text-xl font-serif font-bold text-foreground">Order Received</h2>
-                    <p className="text-sm text-muted-foreground">{myOrder.eventName}</p>
-                    <p className="text-sm font-medium text-foreground mt-0.5">{formatEventDate(myOrder.eventDate)} · {myOrder.pickupSlot} CET</p>
-                    {summary?.location && (
-                      <p className="text-xs text-muted-foreground mt-0.5 flex items-center gap-1">
-                        📍{" "}
-                        {summary.locationUrl
-                          ? <a href={summary.locationUrl} target="_blank" rel="noopener noreferrer" className="underline underline-offset-2 hover:text-primary transition-colors">{summary.location}</a>
-                          : summary.location}
-                      </p>
-                    )}
-                    {myOrder.orderCode && (
-                      <span className="inline-block mt-1.5 text-xs font-mono font-semibold bg-primary/10 text-primary px-2 py-0.5 rounded tracking-wide">
-                        #{myOrder.orderCode}
-                      </span>
-                    )}
-                    {events.length > 1 && (
-                      <button onClick={() => setPickerOpen(true)} className="text-xs text-muted-foreground/60 hover:text-primary underline underline-offset-2 transition-colors mt-0.5">change event</button>
-                    )}
-                  </div>
-                </div>
-                <div className="flex flex-col items-end gap-1.5">
-                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium capitalize ${myOrder.status === "confirmed" ? "bg-accent/10 text-accent" : myOrder.status === "completed" ? "bg-gray-100 text-gray-800" : myOrder.status === "declined" ? "bg-destructive/10 text-destructive" : "bg-primary/10 text-primary"}`}>
-                    {myOrder.status}
-                  </span>
-                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${myOrder.paid ? "bg-green-100 text-green-700" : "bg-orange-100 text-orange-600"}`}>
-                    {myOrder.paid ? "Paid" : "Not paid"}
-                  </span>
-                  {!isEditing && myOrder.status !== "completed" && myOrder.status !== "declined" && summary?.orderingOpen && (
-                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setIsEditing(true)}>
-                      <Pencil className="w-4 h-4" />
-                    </Button>
-                  )}
-                </div>
-              </div>
-
-              <div className="space-y-3 mb-6">
-                <div className="flex items-center justify-between">
-                  <Label className="text-sm font-semibold text-foreground">
-                    {isEditing ? `Pizzas (${editItems.length}/${maxTotal} max)` : "Your Pizzas"}
-                  </Label>
-                  {isEditing && (
-                    <Button type="button" size="sm" variant="outline" className="h-6 px-2 text-xs gap-1" onClick={addEditPizza} disabled={!canAddMore}>
-                      <Plus className="w-3 h-3" /> Add pizza
-                    </Button>
-                  )}
-                </div>
-
-                {isEditing ? (
-                  <div className="space-y-3">
-                    {editItems.map((item, index) => (
-                      <div key={index} className="space-y-1">
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs text-muted-foreground w-14 shrink-0">Pizza {index + 1}{index < originalCount ? "" : " ✦"}</span>
-                          <div className="flex-1 flex flex-wrap gap-1.5">
-                            {pizzaTypes.map((pt) => (
-                              <button key={pt.name} type="button" onClick={() => updateEditChoice(index, pt.name)}
-                                className={`py-2 px-3 rounded-lg border text-xs font-medium transition-colors cursor-pointer ${item.pizzaChoice === pt.name ? "border-primary bg-primary/5 text-primary" : "border-border hover:bg-secondary/50 text-foreground"}`}>
-                                {pt.name}
-                                <span className={`ml-1 ${item.pizzaChoice === pt.name ? "text-primary/60" : "text-muted-foreground"}`}>
-                                  {pt.discountedPrice !== undefined ? <><s>{pt.price}</s> {pt.discountedPrice}</> : pt.price} kr
-                                </span>
-                              </button>
-                            ))}
-                          </div>
-                          {index >= originalCount ? (
-                            <Button type="button" variant="ghost" size="icon" className="h-7 w-7 shrink-0 text-muted-foreground hover:text-destructive" onClick={() => removeEditPizza(index)}>
-                              <X className="w-3.5 h-3.5" />
-                            </Button>
-                          ) : <div className="w-7 shrink-0" />}
-                        </div>
+        <div className="max-w-xl mx-auto w-full pt-8 space-y-4">
+          {myOrders.map((order, idx) => {
+            const orderTotal = computeItemsTotal(order.items ?? [], pizzaTypes);
+            return (
+              <Card key={order.id} className="border-card-border shadow-md">
+                <CardContent className="pt-8 pb-8">
+                  <div className="flex items-start justify-between mb-6">
+                    <div className="flex items-center gap-3">
+                      <CheckCircle2 className="w-8 h-8 text-primary shrink-0" />
+                      <div>
+                        <h2 className="text-xl font-serif font-bold text-foreground">Order Received</h2>
+                        <p className="text-sm text-muted-foreground">{order.eventName}</p>
+                        <p className="text-sm font-medium text-foreground mt-0.5">{formatEventDate(order.eventDate)} · {order.pickupSlot} CET</p>
+                        {summary?.location && (
+                          <p className="text-xs text-muted-foreground mt-0.5 flex items-center gap-1">
+                            📍{" "}
+                            {summary.locationUrl
+                              ? <a href={summary.locationUrl} target="_blank" rel="noopener noreferrer" className="underline underline-offset-2 hover:text-primary transition-colors">{summary.location}</a>
+                              : summary.location}
+                          </p>
+                        )}
+                        {order.orderCode && (
+                          <span className="inline-block mt-1.5 text-xs font-mono font-semibold bg-primary/10 text-primary px-2 py-0.5 rounded tracking-wide">
+                            #{order.orderCode}
+                          </span>
+                        )}
+                        {events.length > 1 && idx === 0 && (
+                          <button onClick={() => setPickerOpen(true)} className="text-xs text-muted-foreground/60 hover:text-primary underline underline-offset-2 transition-colors mt-0.5 block">change event</button>
+                        )}
                       </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="bg-secondary/30 rounded-xl border border-border divide-y divide-border/50">
-                    {Object.entries(
-                      displayItems.reduce<Record<string, number>>((acc, item) => {
-                        acc[item.pizzaChoice] = (acc[item.pizzaChoice] ?? 0) + item.quantity;
-                        return acc;
-                      }, {})
-                    ).map(([choice, qty]) => {
-                      const pt = pizzaTypes.find((p) => p.name === choice);
-                      return (
-                        <div key={choice} className="flex justify-between items-center px-4 py-3">
-                          <span className="font-medium text-foreground">{choice}</span>
-                          <span className="text-sm text-muted-foreground">×{qty}{pt ? <> · {effectivePrice(pt) * qty} DKK</> : ""}</span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-
-              <div className="bg-secondary/50 p-4 rounded-xl border border-border flex justify-between items-center mb-6">
-                <span className="font-medium text-foreground">Total:</span>
-                <span className="font-serif font-bold text-xl text-primary">{orderTotal} DKK</span>
-              </div>
-
-              {myOrder.notes && (
-                <div className="mb-6 p-3 bg-secondary/30 rounded-lg">
-                  <p className="text-xs text-muted-foreground font-medium mb-1">Notes</p>
-                  <p className="text-sm text-foreground">{myOrder.notes}</p>
-                </div>
-              )}
-
-              {isEditing && (
-                <div className="flex gap-3">
-                  <Button className="flex-1" onClick={handleSaveEdit} disabled={updateOrder.isPending || editItems.some((i) => !i.pizzaChoice)}>
-                    {updateOrder.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Check className="w-4 h-4 mr-1.5" />Save Changes</>}
-                  </Button>
-                  <Button variant="outline" onClick={handleCancelEdit} disabled={updateOrder.isPending}>Cancel</Button>
-                </div>
-              )}
-              {!isEditing && myOrder.status !== "declined" && myOrder.status !== "completed" && (
-                <p className="text-xs text-center text-muted-foreground">Need to change something? Tap the pencil icon above.</p>
-              )}
-            </CardContent>
-          </Card>
-
-          {myOrders.slice(1).map((extraOrder) => (
-            <Card key={extraOrder.id} className="border-card-border shadow-sm">
-              <CardContent className="pt-5 pb-5">
-                <div className="flex items-center justify-between mb-3">
-                  <div>
-                    <p className="text-sm font-medium text-foreground">{extraOrder.pickupSlot} CET</p>
-                    <p className="text-xs font-mono font-semibold text-primary/80">
-                      {extraOrder.orderCode ? `#${extraOrder.orderCode}` : `Order #${extraOrder.id}`}
-                    </p>
-                  </div>
-                  <div className="flex flex-col items-end gap-1">
-                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium capitalize ${extraOrder.status === "confirmed" ? "bg-accent/10 text-accent" : extraOrder.status === "completed" ? "bg-gray-100 text-gray-800" : extraOrder.status === "declined" ? "bg-destructive/10 text-destructive" : "bg-primary/10 text-primary"}`}>
-                      {extraOrder.status}
-                    </span>
-                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${extraOrder.paid ? "bg-green-100 text-green-700" : "bg-orange-100 text-orange-600"}`}>
-                      {extraOrder.paid ? "Paid" : "Not paid"}
-                    </span>
-                  </div>
-                </div>
-                <div className="bg-secondary/30 rounded-xl border border-border divide-y divide-border/50">
-                  {Object.entries(
-                    (extraOrder.items ?? []).reduce<Record<string, number>>((acc, item) => {
-                      acc[item.pizzaChoice] = (acc[item.pizzaChoice] ?? 0) + item.quantity;
-                      return acc;
-                    }, {})
-                  ).map(([choice, qty]) => (
-                    <div key={choice} className="flex justify-between items-center px-4 py-2.5">
-                      <span className="font-medium text-foreground text-sm">{choice}</span>
-                      <span className="text-xs text-muted-foreground">×{qty}</span>
                     </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+                    <div className="flex flex-col items-end gap-1.5">
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium capitalize ${order.status === "confirmed" ? "bg-accent/10 text-accent" : order.status === "completed" ? "bg-gray-100 text-gray-800" : order.status === "declined" ? "bg-destructive/10 text-destructive" : "bg-primary/10 text-primary"}`}>
+                        {order.status}
+                      </span>
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${order.paid ? "bg-green-100 text-green-700" : "bg-orange-100 text-orange-600"}`}>
+                        {order.paid ? "Paid" : "Not paid"}
+                      </span>
+                    </div>
+                  </div>
 
-          {summary?.orderingOpen && guestLimitRemaining > 0 && !isEditing && (
+                  <div className="space-y-3 mb-6">
+                    <Label className="text-sm font-semibold text-foreground">Your Pizzas</Label>
+                    <div className="bg-secondary/30 rounded-xl border border-border divide-y divide-border/50">
+                      {Object.entries(
+                        (order.items ?? []).reduce<Record<string, number>>((acc, item) => {
+                          acc[item.pizzaChoice] = (acc[item.pizzaChoice] ?? 0) + item.quantity;
+                          return acc;
+                        }, {})
+                      ).map(([choice, qty]) => {
+                        const pt = pizzaTypes.find((p) => p.name === choice);
+                        return (
+                          <div key={choice} className="flex justify-between items-center px-4 py-3">
+                            <span className="font-medium text-foreground">{choice}</span>
+                            <span className="text-sm text-muted-foreground">×{qty}{pt ? <> · {effectivePrice(pt) * qty} DKK</> : ""}</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  <div className="bg-secondary/50 p-4 rounded-xl border border-border flex justify-between items-center mb-6">
+                    <span className="font-medium text-foreground">Total:</span>
+                    <span className="font-serif font-bold text-xl text-primary">{orderTotal} DKK</span>
+                  </div>
+
+                  {order.notes && (
+                    <div className="p-3 bg-secondary/30 rounded-lg">
+                      <p className="text-xs text-muted-foreground font-medium mb-1">Notes</p>
+                      <p className="text-sm text-foreground">{order.notes}</p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            );
+          })}
+
+          {summary?.orderingOpen && guestLimitRemaining > 0 && (
             <Button size="lg" variant="outline" className="w-full gap-2"
               onClick={() => { setPizzaItems([{ pizzaChoice: pizzaNames[0] ?? "", quantity: 1 }]); setPickupSlot(""); setNotes(""); setTotalQty(1); setIsPlacingAnother(true); window.scrollTo(0, 0); }}>
               <Plus className="w-4 h-4" />
               Add Another Order ({guestLimitRemaining} pizza{guestLimitRemaining !== 1 ? "s" : ""} left)
             </Button>
           )}
-          {summary?.maxPerGuest != null && guestLimitRemaining <= 0 && !isEditing && (
+          {summary?.maxPerGuest != null && guestLimitRemaining <= 0 && (
             <p className="text-xs text-center text-muted-foreground py-2">
               You've ordered the maximum of {summary.maxPerGuest} pizza{summary.maxPerGuest !== 1 ? "s" : ""} for this event.
             </p>
