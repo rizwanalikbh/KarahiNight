@@ -54,6 +54,7 @@ export const GetMeResponse = zod.object({
 export const SendOtpBody = zod.object({
   "mobile": zod.string().describe('Mobile number — 8-digit Danish number or E.164. Backend prepends +45 if no country code.'),
   "name": zod.string().optional(),
+  "consentText": zod.string().optional().describe('Exact GDPR consent text shown to and accepted by the user (required for new guests)'),
   "loginMode": zod.boolean().optional().describe('If true, only send OTP if mobile has existing orders; does not create a new user'),
   "adminMode": zod.boolean().optional().describe('If true, only send OTP if mobile is a registered admin user')
 })
@@ -222,6 +223,8 @@ export const ListUsersResponseItem = zod.object({
   "email": zod.string().nullish(),
   "mobile": zod.string().nullish(),
   "active": zod.boolean(),
+  "consentText": zod.string().nullish().describe('Exact GDPR consent text the user accepted'),
+  "consentAcceptedAt": zod.coerce.date().nullish().describe('When the user accepted the GDPR consent'),
   "createdAt": zod.coerce.date()
 })
 export const ListUsersResponse = zod.array(ListUsersResponseItem)
@@ -258,6 +261,8 @@ export const UpdateUserResponse = zod.object({
   "email": zod.string().nullish(),
   "mobile": zod.string().nullish(),
   "active": zod.boolean(),
+  "consentText": zod.string().nullish().describe('Exact GDPR consent text the user accepted'),
+  "consentAcceptedAt": zod.coerce.date().nullish().describe('When the user accepted the GDPR consent'),
   "createdAt": zod.coerce.date()
 })
 
@@ -302,6 +307,8 @@ export const RegenerateCodeResponse = zod.object({
   "email": zod.string().nullish(),
   "mobile": zod.string().nullish(),
   "active": zod.boolean(),
+  "consentText": zod.string().nullish().describe('Exact GDPR consent text the user accepted'),
+  "consentAcceptedAt": zod.coerce.date().nullish().describe('When the user accepted the GDPR consent'),
   "createdAt": zod.coerce.date()
 })
 

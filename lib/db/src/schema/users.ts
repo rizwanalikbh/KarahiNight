@@ -9,6 +9,8 @@ export const usersTable = pgTable("users", {
   email: text("email").unique(),
   mobile: text("mobile").unique(),
   active: boolean("active").notNull().default(true),
+  consentText: text("consent_text"),
+  consentAcceptedAt: timestamp("consent_accepted_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 

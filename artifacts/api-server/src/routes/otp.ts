@@ -17,7 +17,7 @@ router.post("/otp/send", async (req, res): Promise<void> => {
     return;
   }
 
-  const { mobile: rawMobile, name, loginMode, adminMode } = parsed.data;
+  const { mobile: rawMobile, name, consentText, loginMode, adminMode } = parsed.data;
   const mobile = normaliseMobile(rawMobile);
 
   if (adminMode) {
@@ -59,7 +59,7 @@ router.post("/otp/send", async (req, res): Promise<void> => {
   const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
 
   await db.delete(otpSessionsTable).where(eq(otpSessionsTable.mobile, mobile));
-  await db.insert(otpSessionsTable).values({ mobile, name: resolvedName, code: HARDCODED_OTP, expiresAt });
+  await db.insert(otpSessionsTable).values({ mobile, name: resolvedName, code: HARDCODED_OTP, expiresAt, consentText: consentText ?? null });
 
   req.log.info({ mobile }, "OTP sent (hardcoded — use 123456)");
 
@@ -126,7 +126,13 @@ router.post("/otp/verify", async (req, res): Promise<void> => {
   if (!user) {
     [user] = await db
       .insert(usersTable)
-      .values({ name: otpRecord.name, mobile, active: true })
+      .values({
+        name: otpRecord.name,
+        mobile,
+        active: true,
+        consentText: otpRecord.consentText ?? null,
+        consentAcceptedAt: otpRecord.consentText ? new Date() : null,
+      })
       .returning();
   }
 

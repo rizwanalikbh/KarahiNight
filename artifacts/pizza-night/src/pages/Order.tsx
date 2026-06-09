@@ -146,6 +146,7 @@ export function Order() {
   const [otpCode, setOtpCode] = useState('');
   const [isMobileKnown, setIsMobileKnown] = useState(false);
   const [checkingMobile, setCheckingMobile] = useState(false);
+  const [consentAccepted, setConsentAccepted] = useState(false);
 
   useEffect(() => {
     if (events && events.length === 1 && !selectedEventId) {
@@ -550,11 +551,14 @@ export function Order() {
     }
   };
 
+  const CONSENT_TEXT = "Your mobile number and name are stored solely to organise this event — for example to confirm your order or contact you on the day. Your data will never be used for marketing purposes. It will be permanently deleted after one year.";
+
   const handleSendOtp = () => {
     if (!isMobileKnown && !guestName.trim()) return;
+    if (!isMobileKnown && !consentAccepted) return;
     const payload = isMobileKnown
       ? { mobile: guestMobile.trim() }
-      : { mobile: guestMobile.trim(), name: guestName.trim() };
+      : { mobile: guestMobile.trim(), name: guestName.trim(), consentText: CONSENT_TEXT };
     sendOtpMutation.mutate(
       { data: payload },
       {
@@ -685,16 +689,33 @@ export function Order() {
                   id="guestName"
                   value={guestName}
                   onChange={(e) => setGuestName(e.target.value)}
-                  onKeyDown={(e) => { if (e.key === "Enter" && guestName.trim()) handleSendOtp(); }}
+                  onKeyDown={(e) => { if (e.key === "Enter" && guestName.trim() && consentAccepted) handleSendOtp(); }}
                   placeholder="Full name"
                   className="h-12"
                   autoFocus
                 />
               </div>
+
+              <div className="rounded-xl border border-border bg-secondary/30 p-4 space-y-3">
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Data & Privacy</p>
+                <p className="text-sm text-foreground leading-relaxed">{CONSENT_TEXT}</p>
+                <label className="flex items-start gap-3 cursor-pointer group">
+                  <input
+                    type="checkbox"
+                    checked={consentAccepted}
+                    onChange={(e) => setConsentAccepted(e.target.checked)}
+                    className="mt-0.5 h-4 w-4 accent-primary shrink-0"
+                  />
+                  <span className="text-sm text-foreground group-hover:text-primary transition-colors">
+                    I understand and accept
+                  </span>
+                </label>
+              </div>
+
               <Button
                 size="lg"
                 className="w-full h-14 text-lg gap-2"
-                disabled={!guestName.trim() || sendOtpMutation.isPending}
+                disabled={!guestName.trim() || !consentAccepted || sendOtpMutation.isPending}
                 onClick={handleSendOtp}
               >
                 {sendOtpMutation.isPending ? <Loader2 className="w-5 h-5 animate-spin" /> : <>Send Code <ArrowRight className="w-4 h-4" /></>}

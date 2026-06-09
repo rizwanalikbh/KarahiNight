@@ -18,6 +18,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
@@ -739,6 +740,7 @@ export function AdminDashboard() {
   const [newUserEmail, setNewUserEmail] = useState("");
   const [newUserMobile, setNewUserMobile] = useState("");
   const [editingUserId, setEditingUserId] = useState<number | null>(null);
+  const [consentUserId, setConsentUserId] = useState<number | null>(null);
   const [filterEventId, setFilterEventId] = useState<string>("all");
 
   useEffect(() => {
@@ -1282,6 +1284,11 @@ export function AdminDashboard() {
                             </TableCell>
                             <TableCell className="text-right">
                               <div className="flex items-center justify-end gap-1">
+                                {user.consentAcceptedAt && (
+                                  <Button variant="ghost" size="icon" onClick={() => setConsentUserId(user.id)} className="h-8 w-8 text-green-600 hover:text-green-700 hover:bg-green-50" title="View consent record">
+                                    <ShieldCheck className="h-4 w-4" />
+                                  </Button>
+                                )}
                                 <Button
                                   variant="ghost" size="icon"
                                   className={`h-8 w-8 ${isEditing ? "text-primary bg-primary/10" : ""}`}
@@ -1321,6 +1328,38 @@ export function AdminDashboard() {
           </TabsContent>
         </Tabs>
       </div>
+
+      {(() => {
+        const consentUser = consentUserId != null ? (users ?? []).find((u) => u.id === consentUserId) : null;
+        if (!consentUser) return null;
+        const acceptedAt = consentUser.consentAcceptedAt
+          ? new Date(consentUser.consentAcceptedAt).toLocaleString("da-DK", { dateStyle: "long", timeStyle: "short" })
+          : null;
+        return (
+          <Dialog open={true} onOpenChange={(open) => { if (!open) setConsentUserId(null); }}>
+            <DialogContent className="max-w-lg">
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2">
+                  <ShieldCheck className="w-5 h-5 text-green-600" />
+                  GDPR Consent — {consentUser.name}
+                </DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4 pt-1">
+                <div className="space-y-1">
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Accepted on</p>
+                  <p className="text-sm text-foreground">{acceptedAt ?? "—"}</p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Consent text accepted</p>
+                  <div className="rounded-lg border bg-secondary/30 p-3">
+                    <p className="text-sm text-foreground leading-relaxed">{consentUser.consentText ?? "—"}</p>
+                  </div>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
+        );
+      })()}
     </Layout>
   );
 }

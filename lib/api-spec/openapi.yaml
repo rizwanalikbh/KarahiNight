@@ -731,6 +731,13 @@ components:
           type: ["string", "null"]
         active:
           type: boolean
+        consentText:
+          type: ["string", "null"]
+          description: Exact GDPR consent text the user accepted
+        consentAcceptedAt:
+          type: ["string", "null"]
+          format: date-time
+          description: When the user accepted the GDPR consent
         createdAt:
           type: string
           format: date-time
@@ -941,6 +948,9 @@ components:
           description: Mobile number — 8-digit Danish number or E.164. Backend prepends +45 if no country code.
         name:
           type: string
+        consentText:
+          type: string
+          description: Exact GDPR consent text shown to and accepted by the user (required for new guests)
         loginMode:
           type: boolean
           description: If true, only send OTP if mobile has existing orders; does not create a new user

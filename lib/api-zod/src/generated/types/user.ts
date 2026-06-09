@@ -15,5 +15,15 @@ export interface User {
   /** @nullable */
   mobile?: string | null;
   active: boolean;
+  /**
+     * Exact GDPR consent text the user accepted
+     * @nullable
+     */
+  consentText?: string | null;
+  /**
+     * When the user accepted the GDPR consent
+     * @nullable
+     */
+  consentAcceptedAt?: Date | null;
   createdAt: Date;
 }

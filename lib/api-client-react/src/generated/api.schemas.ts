@@ -163,6 +163,16 @@ export interface User {
   /** @nullable */
   mobile?: string | null;
   active: boolean;
+  /**
+     * Exact GDPR consent text the user accepted
+     * @nullable
+     */
+  consentText?: string | null;
+  /**
+     * When the user accepted the GDPR consent
+     * @nullable
+     */
+  consentAcceptedAt?: string | null;
   createdAt: string;
 }
 
@@ -299,6 +309,8 @@ export interface OtpSendInput {
   /** Mobile number — 8-digit Danish number or E.164. Backend prepends +45 if no country code. */
   mobile: string;
   name?: string;
+  /** Exact GDPR consent text shown to and accepted by the user (required for new guests) */
+  consentText?: string;
   /** If true, only send OTP if mobile has existing orders; does not create a new user */
   loginMode?: boolean;
   /** If true, only send OTP if mobile is a registered admin user */
