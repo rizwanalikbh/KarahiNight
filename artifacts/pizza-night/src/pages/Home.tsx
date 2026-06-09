@@ -226,7 +226,7 @@ export function Home() {
           </h1>
           {!isLoading && summary && (
             <div className="flex flex-col items-center gap-1">
-              <p className="text-base font-medium text-primary">{formatEventDate(summary.eventDate)} — {summary.eventName}</p>
+              <p className="text-base font-medium text-primary">{formatEventDate(summary.eventDate)}</p>
               {multipleEvents && (
                 <button onClick={() => setPickerOpen(true)} className="inline-flex items-center gap-1.5 mt-1 px-3 py-1 rounded-full border border-border/60 bg-secondary/50 hover:bg-primary/10 hover:border-primary/40 hover:text-primary text-sm text-muted-foreground transition-all">
                   <CalendarDays className="w-3.5 h-3.5" /> change event
@@ -257,7 +257,6 @@ export function Home() {
                       const mx = Math.max(...prices);
                       return mn === mx ? `${mn} DKK per pizza` : `from ${mn} DKK per pizza`;
                     })()}</div>
-                    {summary.description && <div className="text-white/80 text-sm">{summary.description}</div>}
                   </div>
                   {summary.orderingOpen && countdown && (
                     <div className="shrink-0 bg-black/40 backdrop-blur-sm rounded-lg px-3 py-2">
