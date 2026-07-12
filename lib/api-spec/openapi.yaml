@@ -886,7 +886,7 @@ components:
         quantity:
           type: integer
           minimum: 1
-          maximum: 3
+          maximum: 50
 
     Order:
       type: object

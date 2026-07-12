@@ -332,7 +332,7 @@ export const ListOrdersQueryParams = zod.object({
   "eventId": zod.coerce.number().optional()
 })
 
-export const listOrdersResponseItemsItemQuantityMax = 3;
+export const listOrdersResponseItemsItemQuantityMax = 50;
 
 export const listOrdersResponseQuantityMax = 3;
 
@@ -365,7 +365,7 @@ export const ListOrdersResponse = zod.array(ListOrdersResponseItem)
 /**
  * @summary Place a new order
  */
-export const createOrderBodyItemsItemQuantityMax = 3;
+export const createOrderBodyItemsItemQuantityMax = 50;
 
 
 
@@ -389,7 +389,7 @@ export const UpdateOrderParams = zod.object({
   "id": zod.coerce.number()
 })
 
-export const updateOrderBodyItemsItemQuantityMax = 3;
+export const updateOrderBodyItemsItemQuantityMax = 50;
 
 
 
@@ -405,7 +405,7 @@ export const UpdateOrderBody = zod.object({
   "paid": zod.boolean().optional()
 })
 
-export const updateOrderResponseItemsItemQuantityMax = 3;
+export const updateOrderResponseItemsItemQuantityMax = 50;
 
 export const updateOrderResponseQuantityMax = 3;
 

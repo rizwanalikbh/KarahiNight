@@ -3,6 +3,16 @@ import { db, ordersTable, eventsTable, usersTable, type PizzaItem } from "@works
 import { eq, and } from "drizzle-orm";
 import { CreateOrderBody, UpdateOrderParams, UpdateOrderBody, DeleteOrderParams, ListOrdersQueryParams } from "@workspace/api-zod";
 
+// Only "Main" category dishes count toward slot/event/per-guest capacity —
+// extras (Staples, Sides, Drinks, Dessert) are side add-ons, not booked karahi portions.
+function mainQuantity(items: PizzaItem[], eventPizzaTypes: any[]): number {
+  return items.reduce((sum, item) => {
+    const pt = eventPizzaTypes.find((p: any) => p.name === item.pizzaChoice);
+    const category = pt?.category ?? "Main";
+    return category === "Main" ? sum + item.quantity : sum;
+  }, 0);
+}
+
 function generateOrderCode(): string {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
   let code = "";
@@ -116,7 +126,7 @@ router.post("/orders", requireAuth, async (req, res): Promise<void> => {
   }
 
   const typedItems = items as PizzaItem[];
-  const totalQuantity = typedItems.reduce((sum: number, item: PizzaItem) => sum + item.quantity, 0);
+  const totalQuantity = mainQuantity(typedItems, eventPizzaTypes);
 
   const existingUserOrders = await db
     .select()
@@ -129,13 +139,13 @@ router.post("/orders", requireAuth, async (req, res): Promise<void> => {
     const remaining = event.maxPerGuest - existingUserTotal;
     if (remaining <= 0) {
       res.status(400).json({
-        error: `You've already reached your limit of ${event.maxPerGuest} dish(es) for this event.`,
+        error: `You've already reached your limit of ${event.maxPerGuest} main dish(es) for this event.`,
       });
       return;
     }
     if (existingUserTotal + totalQuantity > event.maxPerGuest) {
       res.status(400).json({
-        error: `You've already ordered ${existingUserTotal} dish(es). You can add at most ${remaining} more (limit: ${event.maxPerGuest} per guest).`,
+        error: `You've already ordered ${existingUserTotal} main dish(es). You can add at most ${remaining} more (limit: ${event.maxPerGuest} per guest).`,
       });
       return;
     }
@@ -154,14 +164,14 @@ router.post("/orders", requireAuth, async (req, res): Promise<void> => {
 
   if (slotBooked + totalQuantity > event.slotCapacity) {
     res.status(400).json({
-      error: `Slot capacity exceeded. Only ${event.slotCapacity - slotBooked} dish(es) remaining in that slot.`,
+      error: `Slot capacity exceeded. Only ${event.slotCapacity - slotBooked} main dish(es) remaining in that slot.`,
     });
     return;
   }
 
   if (totalBooked + totalQuantity > event.totalCapacity) {
     res.status(400).json({
-      error: `Total event capacity exceeded. Only ${event.totalCapacity - totalBooked} dish(es) remaining.`,
+      error: `Total event capacity exceeded. Only ${event.totalCapacity - totalBooked} main dish(es) remaining.`,
     });
     return;
   }
@@ -234,8 +244,10 @@ router.patch("/orders/:id", requireAuth, async (req, res): Promise<void> => {
     if (parsed.data.paid !== undefined) updateData.paid = parsed.data.paid;
     if (parsed.data.items !== undefined) {
       const typedItems = parsed.data.items as PizzaItem[];
+      const [ownerEvent] = await db.select().from(eventsTable).where(eq(eventsTable.id, existing.eventId));
+      const ownerEventPizzaTypes = Array.isArray(ownerEvent?.pizzaTypes) ? ownerEvent.pizzaTypes : [];
       updateData.pizzaItems = typedItems;
-      updateData.quantity = typedItems.reduce((sum: number, item: PizzaItem) => sum + item.quantity, 0);
+      updateData.quantity = mainQuantity(typedItems, ownerEventPizzaTypes);
     }
   } else {
     // Guest can only change dish types / add more dishes — never reduce count
@@ -266,11 +278,11 @@ router.patch("/orders/:id", requireAuth, async (req, res): Promise<void> => {
       return;
     }
 
-    const newTotal = newItems.reduce((s, i) => s + i.quantity, 0);
+    const newTotal = mainQuantity(newItems, eventPizzaTypes);
     const existingTotal = existing.quantity;
 
     if (event.maxPerGuest !== null && event.maxPerGuest !== undefined && newTotal > event.maxPerGuest) {
-      res.status(400).json({ error: `You can order at most ${event.maxPerGuest} dish(es) per guest for this event.` });
+      res.status(400).json({ error: `You can order at most ${event.maxPerGuest} main dish(es) per guest for this event.` });
       return;
     }
 
@@ -286,7 +298,7 @@ router.patch("/orders/:id", requireAuth, async (req, res): Promise<void> => {
         .reduce((s, o) => s + o.quantity, 0);
 
       if (totalBooked + newTotal > event.totalCapacity) {
-        res.status(400).json({ error: `Only ${event.totalCapacity - totalBooked} dish(es) remaining in total` });
+        res.status(400).json({ error: `Only ${event.totalCapacity - totalBooked} main dish(es) remaining in total` });
         return;
       }
 
@@ -296,7 +308,7 @@ router.patch("/orders/:id", requireAuth, async (req, res): Promise<void> => {
       const slotBooked = slotOrders.reduce((s, o) => s + o.quantity, 0);
 
       if (slotBooked + newTotal > event.slotCapacity) {
-        res.status(400).json({ error: `Only ${event.slotCapacity - slotBooked} dish(es) remaining in your slot` });
+        res.status(400).json({ error: `Only ${event.slotCapacity - slotBooked} main dish(es) remaining in your slot` });
         return;
       }
     }

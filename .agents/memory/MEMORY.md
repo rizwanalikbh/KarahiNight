@@ -1,0 +1,1 @@
+- [Karahi Night: extras vs capacity](karahi-night-extras-capacity.md) — only "Main" category dish quantity counts toward slot/event/per-guest limits; addon categories are exempt.

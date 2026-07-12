@@ -251,7 +251,7 @@ export interface PizzaItem {
   pizzaChoice: string;
   /**
      * @minimum 1
-     * @maximum 3
+     * @maximum 50
      */
   quantity: number;
 }
