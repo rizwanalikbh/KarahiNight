@@ -441,7 +441,7 @@ export function Recipes() {
     new Set(
       events?.flatMap((e) =>
         (e.pizzaTypes ?? []).map((pt: any) => (typeof pt === "string" ? pt : pt.name))
-      ) ?? ["Lamb Karahi", "Chicken Karahi", "Beef Karahi", "Naan"]
+      ) ?? ["Lamb Karahi", "Chicken Karahi", "Beef Karahi", "Plain Naan"]
     )
   );
 

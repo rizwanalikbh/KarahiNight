@@ -10,7 +10,7 @@ const DEFAULT_PIZZA_TYPES: PizzaType[] = [
   { name: "Lamb Karahi", price: 429, category: "Main" },
   { name: "Chicken Karahi", price: 279, category: "Main" },
   { name: "Beef Karahi", price: 339, category: "Main" },
-  { name: "Naan", price: 15, category: "Staples" },
+  { name: "Plain Naan", price: 15, category: "Staples" },
 ];
 
 export const eventsTable = pgTable("events", {
