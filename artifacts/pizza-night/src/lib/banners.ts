@@ -9,8 +9,8 @@ export const BANNER_VARIANTS = [
   { id: "banner-5", label: "Festive Table", src: "/banners/banner-5.jpg" },
   { id: "banner-6", label: "Golden Pattern", src: "/banners/banner-6.jpg" },
   { id: "banner-7", label: "Gujranwala Grill", src: "/banners/banner-7.jpg" },
-  { id: "banner-8", label: "Lahore Food Street", src: "/banners/banner-8.jpg" },
-  { id: "banner-9", label: "Peshawar Tikka", src: "/banners/banner-9.jpg" },
+  { id: "banner-8", label: "Lahore Food Street", src: "/banners/banner-8-lahore.jpg" },
+  { id: "banner-9", label: "Peshawar Tikka", src: "/banners/banner-9-peshawar.jpg" },
 ] as const;
 
 export const DEFAULT_BANNER_ID = BANNER_VARIANTS[0].id;
