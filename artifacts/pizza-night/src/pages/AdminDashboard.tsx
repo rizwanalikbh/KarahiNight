@@ -37,8 +37,8 @@ type PizzaType = { name: string; price: number; discountedPrice?: number; catego
 
 const DEFAULT_SLOTS = ["16:00-16:30","16:30-17:00","17:00-17:30","17:30-18:00","18:00-18:30","18:30-19:00"];
 const DEFAULT_PIZZA_TYPES: PizzaType[] = [
-  { name: "Chicken Karahi", price: 279, category: "Main" },
   { name: "Lamb Karahi", price: 429, category: "Main" },
+  { name: "Chicken Karahi", price: 279, category: "Main" },
   { name: "Beef Karahi", price: 339, category: "Main" },
   { name: "Naan", price: 15, category: "Staples" },
 ];
@@ -135,6 +135,18 @@ function PizzaTypeEditor({
     items: pizzaTypes.map((pt, i) => ({ pt, i })).filter(({ pt }) => (pt.category ?? "Main") === cat),
   })).filter((g) => g.items.length > 0);
 
+  // Move an item up/down relative to its neighbors within the same category
+  // group (display order), swapping positions in the underlying array.
+  const moveWithinGroup = (groupItems: { pt: PizzaType; i: number }[], position: number, direction: -1 | 1) => {
+    const targetPosition = position + direction;
+    if (targetPosition < 0 || targetPosition >= groupItems.length) return;
+    const indexA = groupItems[position]!.i;
+    const indexB = groupItems[targetPosition]!.i;
+    const next = [...pizzaTypes];
+    [next[indexA], next[indexB]] = [next[indexB]!, next[indexA]!];
+    onChange(next);
+  };
+
   return (
     <div className="space-y-2">
       <Label className="text-sm">Menu Items & Prices</Label>
@@ -142,8 +154,28 @@ function PizzaTypeEditor({
         {grouped.map(({ category, items }) => (
           <div key={category} className="space-y-1.5">
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{category}</p>
-            {items.map(({ pt, i }) => (
+            {items.map(({ pt, i }, position) => (
               <div key={i} className="flex items-center gap-2 px-3 py-2 border rounded-lg bg-background text-sm">
+                <div className="flex flex-col -my-1">
+                  <button
+                    type="button"
+                    onClick={() => moveWithinGroup(items, position, -1)}
+                    disabled={position === 0}
+                    className="text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:hover:text-muted-foreground transition-colors"
+                    title="Move up"
+                  >
+                    <ChevronUp className="w-3.5 h-3.5" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => moveWithinGroup(items, position, 1)}
+                    disabled={position === items.length - 1}
+                    className="text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:hover:text-muted-foreground transition-colors"
+                    title="Move down"
+                  >
+                    <ChevronDown className="w-3.5 h-3.5" />
+                  </button>
+                </div>
                 <span className="flex-1 font-medium">{pt.name}</span>
                 <span className="text-muted-foreground">{pt.price} DKK</span>
                 {pt.discountedPrice !== undefined && (

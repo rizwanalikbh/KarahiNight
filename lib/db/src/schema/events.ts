@@ -7,8 +7,8 @@ export type PizzaType = { name: string; price: number; discountedPrice?: number;
 
 const DEFAULT_SLOTS = ["16:00-16:30","16:30-17:00","17:00-17:30","17:30-18:00","18:00-18:30","18:30-19:00"];
 const DEFAULT_PIZZA_TYPES: PizzaType[] = [
-  { name: "Chicken Karahi", price: 279, category: "Main" },
   { name: "Lamb Karahi", price: 429, category: "Main" },
+  { name: "Chicken Karahi", price: 279, category: "Main" },
   { name: "Beef Karahi", price: 339, category: "Main" },
   { name: "Naan", price: 15, category: "Staples" },
 ];
