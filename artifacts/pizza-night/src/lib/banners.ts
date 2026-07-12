@@ -3,7 +3,7 @@
 // Event.bannerVariant === "custom" + Event.customBannerUrl).
 export const BANNER_VARIANTS = [
   { id: "banner-1", label: "Classic Karahi", src: "/banners/banner-1.png" },
-  { id: "banner-2", label: "Charcoal Grill Night", src: "/banners/banner-2.jpg" },
+  { id: "banner-2", label: "Chicken Karahi", src: "/banners/banner-2.jpg" },
   { id: "banner-3", label: "Spice Market", src: "/banners/banner-3.jpg" },
   { id: "banner-4", label: "Fresh Naan", src: "/banners/banner-4.jpg" },
   { id: "banner-5", label: "Festive Table", src: "/banners/banner-5.jpg" },
