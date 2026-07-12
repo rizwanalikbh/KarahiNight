@@ -23,8 +23,10 @@ import type { PizzaItem as APIPizzaItem } from "@workspace/api-client-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useQueryClient } from "@tanstack/react-query";
 
-interface PizzaType { name: string; price: number; discountedPrice?: number; }
+interface PizzaType { name: string; price: number; discountedPrice?: number; category?: string; }
 interface PizzaItem { pizzaChoice: string; quantity: number; }
+
+const MENU_CATEGORY_ORDER = ["Main", "Staples", "Sides", "Drinks", "Dessert"];
 
 function formatEventDate(dateStr: string): string {
   try {
@@ -52,8 +54,9 @@ function computeItemsTotal(items: PizzaItem[], pizzaTypes: PizzaType[]): number 
 }
 
 function priceLabel(pizzaTypes: PizzaType[]): string {
-  if (pizzaTypes.length === 0) return "90 DKK per dish";
-  const prices = pizzaTypes.map(effectivePrice);
+  const mains = pizzaTypes.filter((p) => (p.category ?? "Main") === "Main");
+  if (mains.length === 0) return "90 DKK per dish";
+  const prices = mains.map(effectivePrice);
   const min = Math.min(...prices);
   const max = Math.max(...prices);
   if (min === max) return `${min} DKK per dish`;
@@ -879,17 +882,22 @@ export function Order() {
                     {pizzaItems.map((item, index) => (
                       <div key={index} className="space-y-1.5">
                         {pizzaItems.length > 1 && <span className="text-sm text-muted-foreground">Dish {index + 1}</span>}
-                        <div className="flex flex-wrap gap-2">
-                          {pizzaTypes.map((pt) => (
-                            <button key={pt.name} type="button" onClick={() => updateItemChoice(index, pt.name)}
-                              className={`px-4 py-3 rounded-xl border text-sm font-medium transition-colors cursor-pointer ${item.pizzaChoice === pt.name ? "border-primary bg-primary/5 text-primary" : "border-border hover:bg-secondary/50 text-foreground"}`}>
-                              <span className="block">{pt.name}</span>
-                              <span className={`block text-xs mt-0.5 ${item.pizzaChoice === pt.name ? "text-primary/60" : "text-muted-foreground"}`}>
-                                {pt.discountedPrice !== undefined ? <><s>{pt.price}</s> {pt.discountedPrice}</> : pt.price} DKK
-                              </span>
-                            </button>
-                          ))}
-                        </div>
+                        {MENU_CATEGORY_ORDER.filter((cat) => pizzaTypes.some((pt) => (pt.category ?? "Main") === cat)).map((cat) => (
+                          <div key={cat} className="space-y-1.5">
+                            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{cat}</p>
+                            <div className="flex flex-wrap gap-2">
+                              {pizzaTypes.filter((pt) => (pt.category ?? "Main") === cat).map((pt) => (
+                                <button key={pt.name} type="button" onClick={() => updateItemChoice(index, pt.name)}
+                                  className={`px-4 py-3 rounded-xl border text-sm font-medium transition-colors cursor-pointer ${item.pizzaChoice === pt.name ? "border-primary bg-primary/5 text-primary" : "border-border hover:bg-secondary/50 text-foreground"}`}>
+                                  <span className="block">{pt.name}</span>
+                                  <span className={`block text-xs mt-0.5 ${item.pizzaChoice === pt.name ? "text-primary/60" : "text-muted-foreground"}`}>
+                                    {pt.discountedPrice !== undefined ? <><s>{pt.price}</s> {pt.discountedPrice}</> : pt.price} DKK
+                                  </span>
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        ))}
                       </div>
                     ))}
                   </div>

@@ -2,14 +2,15 @@ import { pgTable, text, serial, integer, boolean, timestamp, date, jsonb } from 
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 
-export type PizzaType = { name: string; price: number; discountedPrice?: number };
+export type PizzaCategory = "Main" | "Staples" | "Sides" | "Drinks" | "Dessert";
+export type PizzaType = { name: string; price: number; discountedPrice?: number; category?: PizzaCategory };
 
 const DEFAULT_SLOTS = ["16:00-16:30","16:30-17:00","17:00-17:30","17:30-18:00","18:00-18:30","18:30-19:00"];
 const DEFAULT_PIZZA_TYPES: PizzaType[] = [
-  { name: "Chicken Karahi", price: 90 },
-  { name: "Lamb Karahi", price: 120 },
-  { name: "Beef Karahi", price: 100 },
-  { name: "Naan", price: 15 },
+  { name: "Chicken Karahi", price: 90, category: "Main" },
+  { name: "Lamb Karahi", price: 120, category: "Main" },
+  { name: "Beef Karahi", price: 100, category: "Main" },
+  { name: "Naan", price: 15, category: "Staples" },
 ];
 
 export const eventsTable = pgTable("events", {

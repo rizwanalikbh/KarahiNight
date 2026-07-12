@@ -262,11 +262,11 @@ export function Home() {
                   <div>
                     <div className="text-white font-medium text-lg">{(() => {
                       const pts = (summary.pizzaTypes ?? []) as any[];
-                      if (pts.length === 0) return "90 DKK per dish";
+                      const mains = pts.filter((p) => typeof p !== "string" && (p.category ?? "Main") === "Main");
+                      if (mains.length === 0) return "90 DKK per dish";
                       const effective = (p: any): number =>
-                        typeof p === "string" ? 90
-                          : (p.discountedPrice != null ? p.discountedPrice : p.price);
-                      const prices = pts.map(effective);
+                        p.discountedPrice != null ? p.discountedPrice : p.price;
+                      const prices = mains.map(effective);
                       const mn = Math.min(...prices);
                       const mx = Math.max(...prices);
                       return mn === mx ? `${mn} DKK per dish` : `from ${mn} DKK per dish`;

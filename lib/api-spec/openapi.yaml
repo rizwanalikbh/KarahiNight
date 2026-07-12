@@ -665,6 +665,10 @@ components:
           type: integer
           minimum: 0
           description: Optional discounted price in DKK
+        category:
+          type: string
+          enum: [Main, Staples, Sides, Drinks, Dessert]
+          description: Menu category this dish belongs to. Defaults to Main when omitted.
 
     Event:
       type: object

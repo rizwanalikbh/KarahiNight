@@ -30,14 +30,14 @@ import {
 import { useQueryClient } from "@tanstack/react-query";
 import { OrderUpdateStatus } from "@workspace/api-client-react";
 
-type PizzaType = { name: string; price: number; discountedPrice?: number };
+type PizzaType = { name: string; price: number; discountedPrice?: number; category?: string };
 
 const DEFAULT_SLOTS = ["16:00-16:30","16:30-17:00","17:00-17:30","17:30-18:00","18:00-18:30","18:30-19:00"];
 const DEFAULT_PIZZA_TYPES: PizzaType[] = [
-  { name: "Chicken Karahi", price: 90 },
-  { name: "Lamb Karahi", price: 120 },
-  { name: "Beef Karahi", price: 100 },
-  { name: "Naan", price: 15 },
+  { name: "Chicken Karahi", price: 90, category: "Main" },
+  { name: "Lamb Karahi", price: 120, category: "Main" },
+  { name: "Beef Karahi", price: 100, category: "Main" },
+  { name: "Naan", price: 15, category: "Staples" },
 ];
 
 function formatEventDate(dateStr: string): string {
@@ -91,6 +91,9 @@ function TagEditor({
   );
 }
 
+const MENU_CATEGORIES = ["Main", "Staples", "Sides", "Drinks", "Dessert"] as const;
+type MenuCategory = typeof MENU_CATEGORIES[number];
+
 // ── Menu item editor with pricing ────────────────────────────────────────────
 function PizzaTypeEditor({
   pizzaTypes,
@@ -99,32 +102,44 @@ function PizzaTypeEditor({
   const [newName, setNewName] = useState("");
   const [newPrice, setNewPrice] = useState("90");
   const [newDiscounted, setNewDiscounted] = useState("");
+  const [newCategory, setNewCategory] = useState<MenuCategory>("Main");
 
   const add = () => {
     const name = newName.trim();
     const price = parseInt(newPrice, 10);
     if (!name || isNaN(price)) return;
     const discountedPrice = newDiscounted !== "" ? parseInt(newDiscounted, 10) : undefined;
-    onChange([...pizzaTypes, { name, price, ...(discountedPrice !== undefined && !isNaN(discountedPrice) ? { discountedPrice } : {}) }]);
+    onChange([...pizzaTypes, { name, price, category: newCategory, ...(discountedPrice !== undefined && !isNaN(discountedPrice) ? { discountedPrice } : {}) }]);
     setNewName("");
     setNewPrice("90");
     setNewDiscounted("");
+    setNewCategory("Main");
   };
 
   const remove = (index: number) => onChange(pizzaTypes.filter((_, i) => i !== index));
 
+  const grouped = MENU_CATEGORIES.map((cat) => ({
+    category: cat,
+    items: pizzaTypes.map((pt, i) => ({ pt, i })).filter(({ pt }) => (pt.category ?? "Main") === cat),
+  })).filter((g) => g.items.length > 0);
+
   return (
     <div className="space-y-2">
       <Label className="text-sm">Menu Items & Prices</Label>
-      <div className="space-y-1.5">
-        {pizzaTypes.map((pt, i) => (
-          <div key={i} className="flex items-center gap-2 px-3 py-2 border rounded-lg bg-background text-sm">
-            <span className="flex-1 font-medium">{pt.name}</span>
-            <span className="text-muted-foreground">{pt.price} DKK</span>
-            {pt.discountedPrice !== undefined && (
-              <span className="text-xs text-accent">({pt.discountedPrice} DKK discounted)</span>
-            )}
-            <button type="button" onClick={() => remove(i)} className="text-muted-foreground hover:text-destructive transition-colors ml-1">×</button>
+      <div className="space-y-3">
+        {grouped.map(({ category, items }) => (
+          <div key={category} className="space-y-1.5">
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{category}</p>
+            {items.map(({ pt, i }) => (
+              <div key={i} className="flex items-center gap-2 px-3 py-2 border rounded-lg bg-background text-sm">
+                <span className="flex-1 font-medium">{pt.name}</span>
+                <span className="text-muted-foreground">{pt.price} DKK</span>
+                {pt.discountedPrice !== undefined && (
+                  <span className="text-xs text-accent">({pt.discountedPrice} DKK discounted)</span>
+                )}
+                <button type="button" onClick={() => remove(i)} className="text-muted-foreground hover:text-destructive transition-colors ml-1">×</button>
+              </div>
+            ))}
           </div>
         ))}
         {pizzaTypes.length === 0 && (
@@ -134,9 +149,22 @@ function PizzaTypeEditor({
       <div className="flex gap-2 items-end flex-wrap">
         <div className="flex-1 min-w-[120px] space-y-1">
           <label className="text-xs text-muted-foreground">Name</label>
-          <Input className="h-8 text-sm" placeholder="e.g. Quattro Stagioni" value={newName}
+          <Input className="h-8 text-sm" placeholder="e.g. Chana Masala" value={newName}
             onChange={(e) => setNewName(e.target.value)}
             onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); add(); } }} />
+        </div>
+        <div className="w-32 space-y-1">
+          <label className="text-xs text-muted-foreground">Category</label>
+          <Select value={newCategory} onValueChange={(v) => setNewCategory(v as MenuCategory)}>
+            <SelectTrigger className="h-8 text-sm">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {MENU_CATEGORIES.map((cat) => (
+                <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
         <div className="w-24 space-y-1">
           <label className="text-xs text-muted-foreground">Price (DKK)</label>
