@@ -24,6 +24,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { BannerPicker } from "../components/BannerPicker";
+import { EventPreviewCard } from "../components/EventPreviewCard";
 import { DEFAULT_BANNER_ID } from "../lib/banners";
 import {
   Loader2, Trash2, Plus, CalendarDays,
@@ -1122,66 +1123,78 @@ export function AdminDashboard() {
                 <CardTitle className="text-lg flex items-center gap-2"><CalendarDays className="w-5 h-5" /> Create Event</CardTitle>
               </CardHeader>
               <CardContent>
-                <form onSubmit={handleCreateEvent} className="space-y-4">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div className="space-y-1.5">
-                      <Label className="text-sm">Event Name</Label>
-                      <Input placeholder="e.g. Friday Karahi Night" value={newEventName} onChange={(e) => setNewEventName(e.target.value)} />
+                <div className="grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-6">
+                  <form onSubmit={handleCreateEvent} className="space-y-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div className="space-y-1.5">
+                        <Label className="text-sm">Event Name</Label>
+                        <Input placeholder="e.g. Friday Karahi Night" value={newEventName} onChange={(e) => setNewEventName(e.target.value)} />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label className="text-sm">Date</Label>
+                        <Input type="date" value={newEventDate} onChange={(e) => setNewEventDate(e.target.value)} />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label className="text-sm">Total Capacity</Label>
+                        <Input type="number" min={1} value={newEventCapacity} onChange={(e) => setNewEventCapacity(e.target.value)} />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label className="text-sm">Main Items per Slot</Label>
+                        <Input type="number" min={1} value={newEventSlot} onChange={(e) => setNewEventSlot(e.target.value)} />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label className="text-sm">Max Dishes per Guest <span className="text-muted-foreground font-normal">(optional)</span></Label>
+                        <Input type="number" min={1} placeholder="No limit" value={newEventMaxPerGuest} onChange={(e) => setNewEventMaxPerGuest(e.target.value)} />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label className="text-sm">Order Deadline <span className="text-muted-foreground font-normal">(optional)</span></Label>
+                        <Input type="datetime-local" value={newEventDeadline} onChange={(e) => setNewEventDeadline(e.target.value)} />
+                        <p className="text-xs text-muted-foreground">After this time, no new orders or edits.</p>
+                      </div>
                     </div>
                     <div className="space-y-1.5">
-                      <Label className="text-sm">Date</Label>
-                      <Input type="date" value={newEventDate} onChange={(e) => setNewEventDate(e.target.value)} />
+                      <Label className="text-sm">Description</Label>
+                      <Textarea
+                        placeholder="Shown on home & order pages..."
+                        value={newEventDescription}
+                        onChange={(e) => setNewEventDescription(e.target.value)}
+                        className="resize-none"
+                        rows={2}
+                      />
                     </div>
-                    <div className="space-y-1.5">
-                      <Label className="text-sm">Total Capacity</Label>
-                      <Input type="number" min={1} value={newEventCapacity} onChange={(e) => setNewEventCapacity(e.target.value)} />
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div className="space-y-1.5">
+                        <Label className="text-sm">Pickup Location <span className="text-muted-foreground font-normal">(optional)</span></Label>
+                        <Input placeholder="e.g. Elm Street 12, 2nd floor" value={newEventLocation} onChange={(e) => setNewEventLocation(e.target.value)} />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label className="text-sm">Google Maps URL <span className="text-muted-foreground font-normal">(optional)</span></Label>
+                        <Input type="url" placeholder="https://maps.google.com/..." value={newEventLocationUrl} onChange={(e) => setNewEventLocationUrl(e.target.value)} />
+                      </div>
                     </div>
-                    <div className="space-y-1.5">
-                      <Label className="text-sm">Main Items per Slot</Label>
-                      <Input type="number" min={1} value={newEventSlot} onChange={(e) => setNewEventSlot(e.target.value)} />
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <TagEditor label="Pickup Slots" tags={newEventSlots} onChange={setNewEventSlots} placeholder="e.g. 17:00-17:30" />
+                      <PizzaTypeEditor pizzaTypes={newEventPizzaTypes} onChange={setNewEventPizzaTypes} />
                     </div>
-                    <div className="space-y-1.5">
-                      <Label className="text-sm">Max Dishes per Guest <span className="text-muted-foreground font-normal">(optional)</span></Label>
-                      <Input type="number" min={1} placeholder="No limit" value={newEventMaxPerGuest} onChange={(e) => setNewEventMaxPerGuest(e.target.value)} />
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label className="text-sm">Order Deadline <span className="text-muted-foreground font-normal">(optional)</span></Label>
-                      <Input type="datetime-local" value={newEventDeadline} onChange={(e) => setNewEventDeadline(e.target.value)} />
-                      <p className="text-xs text-muted-foreground">After this time, no new orders or edits.</p>
-                    </div>
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label className="text-sm">Description</Label>
-                    <Textarea
-                      placeholder="Shown on home & order pages..."
-                      value={newEventDescription}
-                      onChange={(e) => setNewEventDescription(e.target.value)}
-                      className="resize-none"
-                      rows={2}
+                    <BannerPicker
+                      value={{ bannerVariant: newEventBannerVariant, customBannerUrl: newEventCustomBannerUrl }}
+                      onChange={(next) => { setNewEventBannerVariant(next.bannerVariant); setNewEventCustomBannerUrl(next.customBannerUrl); }}
+                    />
+                    <Button type="submit" disabled={createEvent.isPending || !newEventName.trim() || !newEventDate}>
+                      <Plus className="w-4 h-4 mr-2" /> Create Event
+                    </Button>
+                  </form>
+                  <div className="lg:sticky lg:top-4 lg:self-start">
+                    <EventPreviewCard
+                      name={newEventName}
+                      date={newEventDate}
+                      description={newEventDescription}
+                      location={newEventLocation}
+                      pizzaTypes={newEventPizzaTypes}
+                      banner={{ bannerVariant: newEventBannerVariant, customBannerUrl: newEventCustomBannerUrl }}
                     />
                   </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div className="space-y-1.5">
-                      <Label className="text-sm">Pickup Location <span className="text-muted-foreground font-normal">(optional)</span></Label>
-                      <Input placeholder="e.g. Elm Street 12, 2nd floor" value={newEventLocation} onChange={(e) => setNewEventLocation(e.target.value)} />
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label className="text-sm">Google Maps URL <span className="text-muted-foreground font-normal">(optional)</span></Label>
-                      <Input type="url" placeholder="https://maps.google.com/..." value={newEventLocationUrl} onChange={(e) => setNewEventLocationUrl(e.target.value)} />
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <TagEditor label="Pickup Slots" tags={newEventSlots} onChange={setNewEventSlots} placeholder="e.g. 17:00-17:30" />
-                    <PizzaTypeEditor pizzaTypes={newEventPizzaTypes} onChange={setNewEventPizzaTypes} />
-                  </div>
-                  <BannerPicker
-                    value={{ bannerVariant: newEventBannerVariant, customBannerUrl: newEventCustomBannerUrl }}
-                    onChange={(next) => { setNewEventBannerVariant(next.bannerVariant); setNewEventCustomBannerUrl(next.customBannerUrl); }}
-                  />
-                  <Button type="submit" disabled={createEvent.isPending || !newEventName.trim() || !newEventDate}>
-                    <Plus className="w-4 h-4 mr-2" /> Create Event
-                  </Button>
-                </form>
+                </div>
               </CardContent>
             </Card>
 
