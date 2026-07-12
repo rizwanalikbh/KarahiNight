@@ -33,13 +33,14 @@ import {
 import { useQueryClient } from "@tanstack/react-query";
 import { OrderUpdateStatus } from "@workspace/api-client-react";
 
-type PizzaType = { name: string; price: number; discountedPrice?: number; category?: string };
+type PizzaType = { name: string; price: number; discountedPrice?: number; category?: string; portionDescription?: string };
 
 const DEFAULT_SLOTS = ["16:00-16:30","16:30-17:00","17:00-17:30","17:30-18:00","18:00-18:30","18:30-19:00"];
+const DEFAULT_PORTION_DESCRIPTION = "Medium Family Size - enough for two adults and two children";
 const DEFAULT_PIZZA_TYPES: PizzaType[] = [
-  { name: "Lamb Karahi", price: 429, category: "Main" },
-  { name: "Chicken Karahi", price: 279, category: "Main" },
-  { name: "Beef Karahi", price: 339, category: "Main" },
+  { name: "Lamb Karahi", price: 429, category: "Main", portionDescription: DEFAULT_PORTION_DESCRIPTION },
+  { name: "Chicken Karahi", price: 279, category: "Main", portionDescription: DEFAULT_PORTION_DESCRIPTION },
+  { name: "Beef Karahi", price: 339, category: "Main", portionDescription: DEFAULT_PORTION_DESCRIPTION },
   { name: "Plain Naan", price: 15, category: "Staples" },
 ];
 
@@ -115,12 +116,14 @@ function PizzaTypeEditor({
   const [newPrice, setNewPrice] = useState("90");
   const [newDiscounted, setNewDiscounted] = useState("");
   const [newCategory, setNewCategory] = useState<MenuCategory>("Main");
+  const [newPortionDescription, setNewPortionDescription] = useState("");
 
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [editName, setEditName] = useState("");
   const [editPrice, setEditPrice] = useState("");
   const [editDiscounted, setEditDiscounted] = useState("");
   const [editCategory, setEditCategory] = useState<MenuCategory>("Main");
+  const [editPortionDescription, setEditPortionDescription] = useState("");
 
   const startEdit = (index: number, pt: PizzaType) => {
     setEditingIndex(index);
@@ -128,6 +131,7 @@ function PizzaTypeEditor({
     setEditPrice(String(pt.price));
     setEditDiscounted(pt.discountedPrice !== undefined ? String(pt.discountedPrice) : "");
     setEditCategory((pt.category as MenuCategory) ?? "Main");
+    setEditPortionDescription(pt.portionDescription ?? "");
   };
 
   const cancelEdit = () => setEditingIndex(null);
@@ -137,8 +141,13 @@ function PizzaTypeEditor({
     const price = parseInt(editPrice, 10);
     if (!name || isNaN(price)) return;
     const discountedPrice = editDiscounted !== "" ? parseInt(editDiscounted, 10) : undefined;
+    const portionDescription = editPortionDescription.trim();
     const next = [...pizzaTypes];
-    next[index] = { name, price, category: editCategory, ...(discountedPrice !== undefined && !isNaN(discountedPrice) ? { discountedPrice } : {}) };
+    next[index] = {
+      name, price, category: editCategory,
+      ...(discountedPrice !== undefined && !isNaN(discountedPrice) ? { discountedPrice } : {}),
+      ...(portionDescription ? { portionDescription } : {}),
+    };
     onChange(next);
     setEditingIndex(null);
   };
@@ -148,11 +157,17 @@ function PizzaTypeEditor({
     const price = parseInt(newPrice, 10);
     if (!name || isNaN(price)) return;
     const discountedPrice = newDiscounted !== "" ? parseInt(newDiscounted, 10) : undefined;
-    onChange([...pizzaTypes, { name, price, category: newCategory, ...(discountedPrice !== undefined && !isNaN(discountedPrice) ? { discountedPrice } : {}) }]);
+    const portionDescription = newPortionDescription.trim();
+    onChange([...pizzaTypes, {
+      name, price, category: newCategory,
+      ...(discountedPrice !== undefined && !isNaN(discountedPrice) ? { discountedPrice } : {}),
+      ...(portionDescription ? { portionDescription } : {}),
+    }]);
     setNewName("");
     setNewPrice("90");
     setNewDiscounted("");
     setNewCategory("Main");
+    setNewPortionDescription("");
   };
 
   const remove = (index: number) => onChange(pizzaTypes.filter((_, i) => i !== index));
@@ -211,6 +226,12 @@ function PizzaTypeEditor({
                     <label className="text-xs text-muted-foreground">Discounted (opt.)</label>
                     <Input type="number" min={0} className="h-8 text-sm" placeholder="—" value={editDiscounted} onChange={(e) => setEditDiscounted(e.target.value)} />
                   </div>
+                  <div className="flex-1 min-w-[220px] space-y-1">
+                    <label className="text-xs text-muted-foreground">Portion size description (opt.)</label>
+                    <Input className="h-8 text-sm" placeholder="e.g. Medium Family Size - enough for two adults and two children"
+                      value={editPortionDescription} onChange={(e) => setEditPortionDescription(e.target.value)}
+                      onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); saveEdit(i); } if (e.key === "Escape") cancelEdit(); }} />
+                  </div>
                   <div className="flex gap-1 shrink-0">
                     <Button type="button" size="sm" className="h-8" onClick={() => saveEdit(i)} disabled={!editName.trim()}>
                       <Check className="w-3.5 h-3.5" />
@@ -242,12 +263,15 @@ function PizzaTypeEditor({
                       <ChevronDown className="w-3.5 h-3.5" />
                     </button>
                   </div>
-                  <button type="button" onClick={() => startEdit(i, pt)} className="flex-1 text-left font-medium hover:text-primary transition-colors">
-                    {pt.name}
+                  <button type="button" onClick={() => startEdit(i, pt)} className="flex-1 text-left min-w-0">
+                    <span className="block font-medium hover:text-primary transition-colors truncate">{pt.name}</span>
+                    {pt.portionDescription && (
+                      <span className="block text-xs text-muted-foreground truncate">{pt.portionDescription}</span>
+                    )}
                   </button>
-                  <span className="text-muted-foreground">{pt.price} DKK</span>
+                  <span className="text-muted-foreground shrink-0">{pt.price} DKK</span>
                   {pt.discountedPrice !== undefined && (
-                    <span className="text-xs text-accent">({pt.discountedPrice} DKK discounted)</span>
+                    <span className="text-xs text-accent shrink-0">({pt.discountedPrice} DKK discounted)</span>
                   )}
                   <button type="button" onClick={() => startEdit(i, pt)} className="text-muted-foreground hover:text-primary transition-colors ml-1" title="Edit">
                     <Pencil className="w-3.5 h-3.5" />
@@ -289,6 +313,12 @@ function PizzaTypeEditor({
         <div className="w-28 space-y-1">
           <label className="text-xs text-muted-foreground">Discounted (opt.)</label>
           <Input type="number" min={0} className="h-8 text-sm" placeholder="—" value={newDiscounted} onChange={(e) => setNewDiscounted(e.target.value)} />
+        </div>
+        <div className="flex-1 min-w-[220px] space-y-1">
+          <label className="text-xs text-muted-foreground">Portion size description (opt.)</label>
+          <Input className="h-8 text-sm" placeholder="e.g. Medium Family Size - enough for two adults and two children"
+            value={newPortionDescription} onChange={(e) => setNewPortionDescription(e.target.value)}
+            onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); add(); } }} />
         </div>
         <Button type="button" size="sm" className="h-8 shrink-0" onClick={add} disabled={!newName.trim()}>
           <Plus className="w-3 h-3 mr-1" /> Add

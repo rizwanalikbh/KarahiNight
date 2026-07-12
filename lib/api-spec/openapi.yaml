@@ -775,6 +775,9 @@ components:
           type: string
           enum: [Main, Staples, Sides, Drinks, Dessert]
           description: Menu category this dish belongs to. Defaults to Main when omitted.
+        portionDescription:
+          type: string
+          description: Portion size description shown to guests while ordering (e.g. "Medium Family Size - enough for two adults and two children").
 
     Event:
       type: object

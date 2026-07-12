@@ -24,7 +24,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useQueryClient } from "@tanstack/react-query";
 import { getBannerSrc } from "@/lib/banners";
 
-interface PizzaType { name: string; price: number; discountedPrice?: number; category?: string; }
+interface PizzaType { name: string; price: number; discountedPrice?: number; category?: string; portionDescription?: string; }
 interface PizzaItem { pizzaChoice: string; quantity: number; }
 
 const MENU_CATEGORY_ORDER = ["Main", "Staples", "Sides", "Drinks", "Dessert"];
@@ -901,11 +901,16 @@ export function Order() {
                         <div className="flex flex-wrap gap-2">
                           {mainTypes.map((pt) => (
                             <button key={pt.name} type="button" onClick={() => updateItemChoice(index, pt.name)}
-                              className={`px-4 py-3 rounded-xl border text-sm font-medium transition-colors cursor-pointer ${item.pizzaChoice === pt.name ? "border-primary bg-primary/5 text-primary" : "border-border hover:bg-secondary/50 text-foreground"}`}>
+                              className={`px-4 py-3 rounded-xl border text-sm font-medium transition-colors cursor-pointer text-left max-w-[220px] ${item.pizzaChoice === pt.name ? "border-primary bg-primary/5 text-primary" : "border-border hover:bg-secondary/50 text-foreground"}`}>
                               <span className="block">{pt.name}</span>
                               <span className={`block text-xs mt-0.5 ${item.pizzaChoice === pt.name ? "text-primary/60" : "text-muted-foreground"}`}>
                                 {pt.discountedPrice !== undefined ? <><s>{pt.price}</s> {pt.discountedPrice}</> : pt.price} DKK
                               </span>
+                              {pt.portionDescription && (
+                                <span className={`block text-[11px] mt-1 leading-snug ${item.pizzaChoice === pt.name ? "text-primary/60" : "text-muted-foreground"}`}>
+                                  {pt.portionDescription}
+                                </span>
+                              )}
                             </button>
                           ))}
                         </div>

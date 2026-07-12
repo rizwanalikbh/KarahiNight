@@ -97,6 +97,8 @@ export interface PizzaType {
   discountedPrice?: number;
   /** Menu category this dish belongs to. Defaults to Main when omitted. */
   category?: PizzaTypeCategory;
+  /** Portion size description shown to guests while ordering (e.g. "Medium Family Size - enough for two adults and two children"). */
+  portionDescription?: string;
 }
 
 export interface Event {

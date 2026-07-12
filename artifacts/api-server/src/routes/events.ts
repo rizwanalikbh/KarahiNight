@@ -10,10 +10,11 @@ import {
 } from "@workspace/api-zod";
 
 const DEFAULT_SLOTS = ["16:00-16:30","16:30-17:00","17:00-17:30","17:30-18:00","18:00-18:30","18:30-19:00"];
+const DEFAULT_PORTION_DESCRIPTION = "Medium Family Size - enough for two adults and two children";
 const DEFAULT_PIZZA_TYPES: PizzaType[] = [
-  { name: "Lamb Karahi", price: 429, category: "Main" },
-  { name: "Chicken Karahi", price: 279, category: "Main" },
-  { name: "Beef Karahi", price: 339, category: "Main" },
+  { name: "Lamb Karahi", price: 429, category: "Main", portionDescription: DEFAULT_PORTION_DESCRIPTION },
+  { name: "Chicken Karahi", price: 279, category: "Main", portionDescription: DEFAULT_PORTION_DESCRIPTION },
+  { name: "Beef Karahi", price: 339, category: "Main", portionDescription: DEFAULT_PORTION_DESCRIPTION },
   { name: "Plain Naan", price: 15, category: "Staples" },
 ];
 
