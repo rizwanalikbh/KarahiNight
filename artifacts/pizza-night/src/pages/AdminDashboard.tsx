@@ -40,6 +40,15 @@ const DEFAULT_PIZZA_TYPES: PizzaType[] = [
   { name: "Naan", price: 15, category: "Staples" },
 ];
 
+// Default new-event date: the first Saturday that is at least 7 days out.
+function getDefaultEventDate(): string {
+  const d = new Date();
+  d.setDate(d.getDate() + 7);
+  const daysUntilSaturday = (6 - d.getDay() + 7) % 7;
+  d.setDate(d.getDate() + daysUntilSaturday);
+  return d.toISOString().slice(0, 10);
+}
+
 function formatEventDate(dateStr: string): string {
   try {
     const d = new Date(dateStr + "T12:00:00");
@@ -651,7 +660,7 @@ export function AdminDashboard() {
 
   // Event creation form state
   const [newEventName, setNewEventName] = useState("");
-  const [newEventDate, setNewEventDate] = useState("2026-05-24");
+  const [newEventDate, setNewEventDate] = useState(getDefaultEventDate);
   const [newEventCapacity, setNewEventCapacity] = useState("10");
   const [newEventSlot, setNewEventSlot] = useState("3");
   const [newEventMaxPerGuest, setNewEventMaxPerGuest] = useState("");
@@ -841,6 +850,7 @@ export function AdminDashboard() {
           setNewEventName("");
           setNewEventDescription("");
           setNewEventDeadline("");
+          setNewEventDate(getDefaultEventDate());
           setNewEventSlots(DEFAULT_SLOTS);
           setNewEventPizzaTypes(DEFAULT_PIZZA_TYPES);
           setNewEventLocation("");
