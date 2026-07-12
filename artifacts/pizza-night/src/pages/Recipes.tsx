@@ -113,7 +113,7 @@ function RecipeCard({
       {open && (
         <div className="px-5 pb-5 border-t">
           <p className="text-xs text-muted-foreground mt-4 mb-3 font-medium uppercase tracking-wider">
-            Ingredients per pizza
+            Ingredients per dish
           </p>
 
           <div className="space-y-2 mb-4">
@@ -207,7 +207,7 @@ function NewRecipeForm({
 
   const handleCreate = () => {
     const type = pizzaType === "__custom" ? customType.trim() : pizzaType.trim();
-    if (!type) { toast({ title: "Enter a pizza type", variant: "destructive" }); return; }
+    if (!type) { toast({ title: "Enter a dish type", variant: "destructive" }); return; }
     const ingredients = rows
       .filter((r) => r.name.trim() && r.quantity.trim())
       .map((r) => ({ name: r.name.trim(), quantity: parseFloat(r.quantity), unit: r.unit }));
@@ -233,11 +233,11 @@ function NewRecipeForm({
       <p className="text-sm font-semibold mb-4">New Recipe</p>
 
       <div className="mb-4">
-        <label className="text-xs text-muted-foreground font-medium uppercase tracking-wider mb-1.5 block">Pizza type</label>
+        <label className="text-xs text-muted-foreground font-medium uppercase tracking-wider mb-1.5 block">Dish type</label>
         <div className="flex gap-2">
           <Select value={pizzaType} onValueChange={setPizzaType}>
             <SelectTrigger className="flex-1 text-sm">
-              <SelectValue placeholder="Select pizza type…" />
+              <SelectValue placeholder="Select dish type…" />
             </SelectTrigger>
             <SelectContent>
               {unused.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}
@@ -256,7 +256,7 @@ function NewRecipeForm({
       </div>
 
       <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider mb-2">
-        Ingredients per pizza
+        Ingredients per dish
       </p>
       <div className="space-y-2 mb-4">
         {rows.map((row, i) => (
@@ -405,7 +405,7 @@ function InventoryPlanner() {
           </div>
           <p className="text-xs text-muted-foreground mt-3">
             Based on {filtered.length} order{filtered.length !== 1 ? "s" : ""} ·{" "}
-            {filtered.reduce((acc, o) => acc + (o.items?.reduce((s, i) => s + i.quantity, 0) ?? 0), 0)} pizzas total
+            {filtered.reduce((acc, o) => acc + (o.items?.reduce((s, i) => s + i.quantity, 0) ?? 0), 0)} dishes total
           </p>
         </>
       )}
@@ -441,7 +441,7 @@ export function Recipes() {
     new Set(
       events?.flatMap((e) =>
         (e.pizzaTypes ?? []).map((pt: any) => (typeof pt === "string" ? pt : pt.name))
-      ) ?? ["Margherita", "Pepperoni", "Special"]
+      ) ?? ["Chicken Karahi", "Lamb Karahi", "Beef Karahi", "Naan"]
     )
   );
 
@@ -452,7 +452,7 @@ export function Recipes() {
           <BookOpen className="w-6 h-6 text-primary" /> Recipes & Inventory
         </h1>
         <p className="text-sm text-muted-foreground mt-1">
-          Define ingredient quantities per pizza, then plan your shopping list automatically.
+          Define ingredient quantities per dish, then plan your shopping list automatically.
         </p>
       </div>
 

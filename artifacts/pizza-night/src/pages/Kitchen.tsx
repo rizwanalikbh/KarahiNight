@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Check, ChevronRight, RefreshCw, Pizza, LogOut, LayoutDashboard, X } from "lucide-react";
+import { Check, ChevronRight, RefreshCw, ChefHat, LogOut, LayoutDashboard, X } from "lucide-react";
 import { useLogout } from "@workspace/api-client-react";
 
 function formatEventDate(dateStr: string): string {
@@ -85,11 +85,11 @@ function Ticket({ order, onConfirm, onComplete, onDecline, isPending }: TicketPr
       {/* Divider */}
       <div className="border-t border-dashed border-current opacity-20" />
 
-      {/* Pizza items */}
+      {/* Dish items */}
       <ul className="space-y-1 flex-1">
         {(order.items ?? []).map((item, i) => (
           <li key={i} className="flex items-center gap-2 text-sm">
-            <Pizza className="w-3.5 h-3.5 text-primary shrink-0" />
+            <ChefHat className="w-3.5 h-3.5 text-primary shrink-0" />
             <span className="font-semibold text-foreground">{item.quantity}×</span>
             <span className="text-foreground">{item.pizzaChoice}</span>
           </li>
@@ -299,7 +299,7 @@ export function Kitchen() {
           </div>
         ) : ordersBySlot.size === 0 ? (
           <div className="flex flex-col items-center justify-center h-full py-24 text-center">
-            <Pizza className="w-16 h-16 text-muted-foreground/30 mb-4" />
+            <ChefHat className="w-16 h-16 text-muted-foreground/30 mb-4" />
             <p className="text-xl font-serif font-semibold text-muted-foreground">No orders yet</p>
             <p className="text-sm text-muted-foreground/70 mt-1">
               {selectedEvent ? `${selectedEvent.name} — ${formatEventDate(selectedEvent.date)}` : "Select an event above"}
@@ -386,7 +386,7 @@ function KitchenHeader({
     <header className="sticky top-0 z-20 border-b bg-card shadow-sm">
       <div className="px-4 h-14 flex items-center gap-4">
         <div className="flex items-center gap-2 text-primary font-serif font-bold text-lg shrink-0">
-          <Pizza className="w-5 h-5" />
+          <ChefHat className="w-5 h-5" />
           <span>Kitchen</span>
         </div>
 

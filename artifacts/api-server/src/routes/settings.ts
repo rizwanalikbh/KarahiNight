@@ -7,8 +7,8 @@ export const DEFAULT_CONSENT_TEXT =
 
 export const DEFAULT_ORDER_TERMS =
   "By placing this order you confirm that:\n\n" +
-  "1. You will collect your pizza(s) at the selected pickup slot.\n" +
-  "2. Payment of 70 DKK per pizza is due at pickup — cash or MobilePay accepted.\n" +
+  "1. You will collect your dish(es) at the selected pickup slot.\n" +
+  "2. Payment is due at pickup, based on the dishes ordered — cash or MobilePay accepted.\n" +
   "3. Orders can only be cancelled by messaging the organiser before the event.\n" +
   "4. Uncollected and unpaid orders may affect your invitation to future events.\n" +
   "5. Your name, contact details, and order information are stored solely to manage this event and will be permanently deleted within one year.";

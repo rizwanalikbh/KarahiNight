@@ -6,7 +6,7 @@ import { Layout } from "../components/Layout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Clock, Lock, CalendarDays, ArrowRight, Check, Search, Pizza } from "lucide-react";
+import { Clock, Lock, CalendarDays, ArrowRight, Check, Search, ChefHat } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { QRCodeSVG } from "qrcode.react";
 
@@ -87,7 +87,7 @@ function EventPickerModal({ events, selectedId, open, onSelect, onOpenChange }: 
               Which evening are you joining?
             </DialogTitle>
           </DialogHeader>
-          <p className="text-sm text-muted-foreground mt-1.5">Select the pizza night you were invited to.</p>
+          <p className="text-sm text-muted-foreground mt-1.5">Select the karahi night you were invited to.</p>
         </div>
         {events.length > 3 && (
           <div className="px-4 pt-4 pb-0">
@@ -186,12 +186,12 @@ export function Home() {
       <Layout>
         <div className="flex flex-col items-center max-w-md mx-auto text-center pt-16 space-y-6">
           <div className="w-24 h-24 bg-primary/10 rounded-full flex items-center justify-center mx-auto">
-            <img src="/pizza-icon.png" alt="Pizza" className="w-16 h-16 opacity-80" />
+            <img src="/karahi-icon.png" alt="Karahi Night" className="w-16 h-16 opacity-80" />
           </div>
           <h1 className="text-4xl font-serif font-bold text-foreground">No Active Events</h1>
           <p className="text-lg text-muted-foreground">
-            No pizza nights are scheduled right now.<br />
-            Stay tuned on the WhatsApp group for the next announcement! 🍕
+            No karahi nights are scheduled right now.<br />
+            Stay tuned on the WhatsApp group for the next announcement! 🍛
           </p>
           <div className="flex flex-col items-center gap-3 pt-2">
             <a
@@ -225,10 +225,10 @@ export function Home() {
       <div className="flex flex-col items-center max-w-2xl mx-auto space-y-8 text-center">
         <div className="space-y-4">
           <div className="w-24 h-24 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-6">
-            <img src="/pizza-icon.png" alt="Pizza" className="w-16 h-16 opacity-80" />
+            <img src="/karahi-icon.png" alt="Karahi Night" className="w-16 h-16 opacity-80" />
           </div>
           <h1 className="text-4xl sm:text-5xl font-serif font-bold text-foreground">
-            {isLoading ? "Pizza Night" : (summary?.eventName ?? "Pizza Night")}
+            {isLoading ? "Karahi Night" : (summary?.eventName ?? "Karahi Night")}
           </h1>
           {!isLoading && summary && (
             <div className="flex flex-col items-center gap-1">
@@ -254,7 +254,7 @@ export function Home() {
         </div>
 
         <div className="w-full aspect-video md:aspect-[21/9] rounded-2xl overflow-hidden shadow-lg border relative">
-          <img src="/pizza-hero.png" alt="Handmade pizza" className="w-full h-full object-cover" />
+          <img src="/karahi-hero.png" alt="Sizzling karahi" className="w-full h-full object-cover" />
           {!isLoading && summary && (
             <>
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex flex-col justify-end p-6 text-left">
@@ -262,14 +262,14 @@ export function Home() {
                   <div>
                     <div className="text-white font-medium text-lg">{(() => {
                       const pts = (summary.pizzaTypes ?? []) as any[];
-                      if (pts.length === 0) return "70 DKK per pizza";
+                      if (pts.length === 0) return "90 DKK per dish";
                       const effective = (p: any): number =>
-                        typeof p === "string" ? 70
+                        typeof p === "string" ? 90
                           : (p.discountedPrice != null ? p.discountedPrice : p.price);
                       const prices = pts.map(effective);
                       const mn = Math.min(...prices);
                       const mx = Math.max(...prices);
-                      return mn === mx ? `${mn} DKK per pizza` : `from ${mn} DKK per pizza`;
+                      return mn === mx ? `${mn} DKK per dish` : `from ${mn} DKK per dish`;
                     })()}</div>
                   </div>
                   {summary.orderingOpen && countdown && (
@@ -298,7 +298,7 @@ export function Home() {
           <div className="w-full space-y-2">
             <div className="flex justify-between text-sm">
               <span className="text-muted-foreground font-medium">Spots filling up</span>
-              <span className="text-foreground font-semibold">{summary!.totalBooked} / {summary!.totalCapacity} pizzas ordered</span>
+              <span className="text-foreground font-semibold">{summary!.totalBooked} / {summary!.totalCapacity} dishes ordered</span>
             </div>
             <div className="w-full h-3 bg-secondary rounded-full overflow-hidden">
               <div className={`h-full rounded-full transition-all duration-700 ${progressPct >= 90 ? "bg-destructive" : progressPct >= 70 ? "bg-orange-400" : "bg-primary"}`} style={{ width: `${progressPct}%` }} />
@@ -315,15 +315,15 @@ export function Home() {
               <div className="flex flex-col items-center gap-3">
                 <p className="text-sm text-muted-foreground">Welcome back, {session!.userName}!</p>
                 <Button size="lg" className="w-full h-14 text-lg gap-2" onClick={handleOrder}>
-                  <Pizza className="w-5 h-5" />
+                  <ChefHat className="w-5 h-5" />
                   {summary.orderingOpen ? "Place My Order" : "View My Order"}
                 </Button>
               </div>
             ) : (
               <div className="flex flex-col items-center gap-3 w-full">
                 <Button size="lg" className="w-full h-14 text-lg gap-2" onClick={handleOrder} disabled={!summary.orderingOpen && summary.totalRemaining <= 0}>
-                  <Pizza className="w-5 h-5" />
-                  {summary.orderingOpen ? "Order My Pizza" : summary.totalRemaining <= 0 ? "Fully Booked" : "Order My Pizza"}
+                  <ChefHat className="w-5 h-5" />
+                  {summary.orderingOpen ? "Order My Karahi" : summary.totalRemaining <= 0 ? "Fully Booked" : "Order My Karahi"}
                   {summary.orderingOpen && <ArrowRight className="w-4 h-4" />}
                 </Button>
                 <a

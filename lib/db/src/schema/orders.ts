@@ -5,7 +5,7 @@ import { usersTable } from "./users";
 import { eventsTable } from "./events";
 
 export const PizzaItemSchema = z.object({
-  pizzaChoice: z.enum(["Margherita", "Pepperoni", "Special"]),
+  pizzaChoice: z.enum(["Chicken Karahi", "Lamb Karahi", "Beef Karahi", "Naan"]),
   quantity: z.number().int().min(1).max(3),
 });
 export type PizzaItem = z.infer<typeof PizzaItemSchema>;

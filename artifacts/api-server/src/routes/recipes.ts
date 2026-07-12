@@ -34,7 +34,7 @@ router.post("/recipes", requireAdmin, async (req, res) => {
 
   const existing = await db.select().from(recipesTable).where(eq(recipesTable.pizzaType, pizzaType));
   if (existing.length > 0) {
-    res.status(409).json({ error: "Recipe for this pizza type already exists" });
+    res.status(409).json({ error: "Recipe for this dish type already exists" });
     return;
   }
 

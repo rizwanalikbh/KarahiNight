@@ -11,9 +11,10 @@ import {
 
 const DEFAULT_SLOTS = ["16:00-16:30","16:30-17:00","17:00-17:30","17:30-18:00","18:00-18:30","18:30-19:00"];
 const DEFAULT_PIZZA_TYPES: PizzaType[] = [
-  { name: "Margherita", price: 70 },
-  { name: "Pepperoni", price: 70 },
-  { name: "Special", price: 70 },
+  { name: "Chicken Karahi", price: 90 },
+  { name: "Lamb Karahi", price: 120 },
+  { name: "Beef Karahi", price: 100 },
+  { name: "Naan", price: 15 },
 ];
 
 function generateSlug(): string {

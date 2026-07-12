@@ -111,7 +111,7 @@ router.post("/orders", requireAuth, async (req, res): Promise<void> => {
     );
 
   if (!validItems) {
-    res.status(400).json({ error: "Invalid pizza items for this event" });
+    res.status(400).json({ error: "Invalid dish items for this event" });
     return;
   }
 
@@ -129,13 +129,13 @@ router.post("/orders", requireAuth, async (req, res): Promise<void> => {
     const remaining = event.maxPerGuest - existingUserTotal;
     if (remaining <= 0) {
       res.status(400).json({
-        error: `You've already reached your limit of ${event.maxPerGuest} pizza(s) for this event.`,
+        error: `You've already reached your limit of ${event.maxPerGuest} dish(es) for this event.`,
       });
       return;
     }
     if (existingUserTotal + totalQuantity > event.maxPerGuest) {
       res.status(400).json({
-        error: `You've already ordered ${existingUserTotal} pizza(s). You can add at most ${remaining} more (limit: ${event.maxPerGuest} per guest).`,
+        error: `You've already ordered ${existingUserTotal} dish(es). You can add at most ${remaining} more (limit: ${event.maxPerGuest} per guest).`,
       });
       return;
     }
@@ -154,14 +154,14 @@ router.post("/orders", requireAuth, async (req, res): Promise<void> => {
 
   if (slotBooked + totalQuantity > event.slotCapacity) {
     res.status(400).json({
-      error: `Slot capacity exceeded. Only ${event.slotCapacity - slotBooked} pizza(s) remaining in that slot.`,
+      error: `Slot capacity exceeded. Only ${event.slotCapacity - slotBooked} dish(es) remaining in that slot.`,
     });
     return;
   }
 
   if (totalBooked + totalQuantity > event.totalCapacity) {
     res.status(400).json({
-      error: `Total event capacity exceeded. Only ${event.totalCapacity - totalBooked} pizza(s) remaining.`,
+      error: `Total event capacity exceeded. Only ${event.totalCapacity - totalBooked} dish(es) remaining.`,
     });
     return;
   }
@@ -238,9 +238,9 @@ router.patch("/orders/:id", requireAuth, async (req, res): Promise<void> => {
       updateData.quantity = typedItems.reduce((sum: number, item: PizzaItem) => sum + item.quantity, 0);
     }
   } else {
-    // Guest can only change pizza types / add more pizzas — never reduce count
+    // Guest can only change dish types / add more dishes — never reduce count
     if (parsed.data.items === undefined) {
-      res.status(400).json({ error: "Only pizza items can be updated by guests" });
+      res.status(400).json({ error: "Only dish items can be updated by guests" });
       return;
     }
 
@@ -248,11 +248,11 @@ router.patch("/orders/:id", requireAuth, async (req, res): Promise<void> => {
     const originalCount = Array.isArray(existing.pizzaItems) ? existing.pizzaItems.length : 0;
 
     if (newItems.length < originalCount) {
-      res.status(400).json({ error: "You cannot remove pizzas from your order" });
+      res.status(400).json({ error: "You cannot remove dishes from your order" });
       return;
     }
 
-    // Validate pizza types and slot capacity
+    // Validate dish types and slot capacity
     const [event] = await db.select().from(eventsTable).where(eq(eventsTable.id, existing.eventId));
     if (!event) {
       res.status(400).json({ error: "Event not found" });
@@ -262,7 +262,7 @@ router.patch("/orders/:id", requireAuth, async (req, res): Promise<void> => {
     const eventPizzaTypes = Array.isArray(event.pizzaTypes) ? event.pizzaTypes : [];
     const validTypes = newItems.every((i) => eventPizzaTypes.some((pt: any) => pt.name === i.pizzaChoice));
     if (!validTypes) {
-      res.status(400).json({ error: "Invalid pizza type" });
+      res.status(400).json({ error: "Invalid dish type" });
       return;
     }
 
@@ -270,12 +270,12 @@ router.patch("/orders/:id", requireAuth, async (req, res): Promise<void> => {
     const existingTotal = existing.quantity;
 
     if (event.maxPerGuest !== null && event.maxPerGuest !== undefined && newTotal > event.maxPerGuest) {
-      res.status(400).json({ error: `You can order at most ${event.maxPerGuest} pizza(s) per guest for this event.` });
+      res.status(400).json({ error: `You can order at most ${event.maxPerGuest} dish(es) per guest for this event.` });
       return;
     }
 
     if (newTotal > existingTotal) {
-      // Adding more pizzas — check slot and event capacity
+      // Adding more dishes — check slot and event capacity
       const allEventOrders = await db
         .select()
         .from(ordersTable)
@@ -286,7 +286,7 @@ router.patch("/orders/:id", requireAuth, async (req, res): Promise<void> => {
         .reduce((s, o) => s + o.quantity, 0);
 
       if (totalBooked + newTotal > event.totalCapacity) {
-        res.status(400).json({ error: `Only ${event.totalCapacity - totalBooked} pizza(s) remaining in total` });
+        res.status(400).json({ error: `Only ${event.totalCapacity - totalBooked} dish(es) remaining in total` });
         return;
       }
 
@@ -296,7 +296,7 @@ router.patch("/orders/:id", requireAuth, async (req, res): Promise<void> => {
       const slotBooked = slotOrders.reduce((s, o) => s + o.quantity, 0);
 
       if (slotBooked + newTotal > event.slotCapacity) {
-        res.status(400).json({ error: `Only ${event.slotCapacity - slotBooked} pizza(s) remaining in your slot` });
+        res.status(400).json({ error: `Only ${event.slotCapacity - slotBooked} dish(es) remaining in your slot` });
         return;
       }
     }

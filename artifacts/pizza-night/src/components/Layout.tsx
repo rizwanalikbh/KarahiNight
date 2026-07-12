@@ -1,7 +1,7 @@
 import { useGetMe, useLogout, getGetMeQueryKey } from "@workspace/api-client-react";
 import { Link, useLocation } from "wouter";
 import { Button } from "./ui/button";
-import { LogOut, Pizza } from "lucide-react";
+import { LogOut, ChefHat } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 
 interface LayoutProps {
@@ -30,8 +30,8 @@ export function Layout({ children, topbarExtra }: LayoutProps) {
       <header className="border-b bg-card">
         <div className="container mx-auto px-4 h-16 flex items-center gap-4">
           <Link href="/" className="flex items-center gap-2 text-primary font-serif font-bold text-xl hover:opacity-80 transition-opacity shrink-0">
-            <Pizza className="w-6 h-6" />
-            <span>Pizza Night</span>
+            <ChefHat className="w-6 h-6" />
+            <span>Karahi Night</span>
           </Link>
 
           {topbarExtra && (

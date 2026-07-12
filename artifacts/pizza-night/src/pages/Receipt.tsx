@@ -22,7 +22,7 @@ function formatNow(): string {
 
 function lookupPrice(pizzaChoice: string, pizzaTypes: PizzaType[]): number {
   const pt = pizzaTypes.find((p) => p.name === pizzaChoice);
-  return pt ? (pt.discountedPrice ?? pt.price) : 70;
+  return pt ? (pt.discountedPrice ?? pt.price) : 90;
 }
 
 function lookupPizzaType(pizzaChoice: string, pizzaTypes: PizzaType[]): PizzaType | undefined {
@@ -57,7 +57,7 @@ export function Receipt() {
 
   const items = order.items ?? [];
   const eventPizzaTypes: PizzaType[] = (event.pizzaTypes ?? []).map((pt: any) =>
-    typeof pt === "string" ? { name: pt, price: 70 } : pt
+    typeof pt === "string" ? { name: pt, price: 90 } : pt
   );
 
   const totalPrice = items.reduce((sum, item) => {
@@ -88,8 +88,8 @@ export function Receipt() {
 
           {/* Header */}
           <div className="text-center mb-10 border-b-2 border-gray-200 pb-8">
-            <div className="text-3xl mb-1">🍕</div>
-            <h1 className="text-2xl font-bold tracking-tight mt-2">Pizza Night</h1>
+            <div className="text-3xl mb-1">🍛</div>
+            <h1 className="text-2xl font-bold tracking-tight mt-2">Karahi Night</h1>
             <p className="text-sm text-gray-500 mt-1">Order Receipt</p>
           </div>
 

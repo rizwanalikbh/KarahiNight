@@ -3,7 +3,7 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: Private Pizza Night preorder API
+  description: Private Karahi Night preorder API
 servers:
   - url: /api
     description: Base API path
@@ -402,7 +402,7 @@ paths:
     get:
       operationId: listRecipes
       tags: [recipes]
-      summary: List all pizza recipes (admin only)
+      summary: List all dish recipes (admin only)
       responses:
         "200":
           description: List of recipes
@@ -415,7 +415,7 @@ paths:
     post:
       operationId: createRecipe
       tags: [recipes]
-      summary: Create a pizza recipe (admin only)
+      summary: Create a dish recipe (admin only)
       requestBody:
         required: true
         content:
@@ -430,13 +430,13 @@ paths:
               schema:
                 $ref: "#/components/schemas/Recipe"
         "409":
-          description: Recipe for this pizza type already exists
+          description: Recipe for this dish type already exists
 
   /recipes/{id}:
     patch:
       operationId: updateRecipe
       tags: [recipes]
-      summary: Update a pizza recipe (admin only)
+      summary: Update a dish recipe (admin only)
       parameters:
         - name: id
           in: path
@@ -461,7 +461,7 @@ paths:
     delete:
       operationId: deleteRecipe
       tags: [recipes]
-      summary: Delete a pizza recipe (admin only)
+      summary: Delete a dish recipe (admin only)
       parameters:
         - name: id
           in: path
@@ -656,7 +656,7 @@ components:
       properties:
         name:
           type: string
-          description: Pizza name (e.g. Margherita)
+          description: Dish name (e.g. Chicken Karahi)
         price:
           type: integer
           minimum: 0
@@ -704,7 +704,7 @@ components:
         maxPerGuest:
           type: ["integer", "null"]
           minimum: 1
-          description: Maximum number of pizzas a single guest may order. Null means no limit.
+          description: Maximum number of dishes a single guest may order. Null means no limit.
         location:
           type: ["string", "null"]
           description: Pickup location name (e.g. "Elm Street 12, 2nd floor")
@@ -733,7 +733,7 @@ components:
         maxPerGuest:
           type: integer
           minimum: 1
-          description: Maximum number of pizzas a single guest may order. Omit for no limit.
+          description: Maximum number of dishes a single guest may order. Omit for no limit.
         description:
           type: string
         orderDeadline:
@@ -769,7 +769,7 @@ components:
         maxPerGuest:
           type: ["integer", "null"]
           minimum: 1
-          description: Maximum pizzas per guest. Set to null to remove the limit.
+          description: Maximum dishes per guest. Set to null to remove the limit.
         description:
           type: string
         orderDeadline:
@@ -1110,7 +1110,7 @@ components:
           description: Cutoff datetime after which no new orders or edits are accepted
         maxPerGuest:
           type: ["integer", "null"]
-          description: Maximum pizzas per guest for this event. Null means no per-guest limit.
+          description: Maximum dishes per guest for this event. Null means no per-guest limit.
         description:
           type: ["string", "null"]
         pizzaTypes:

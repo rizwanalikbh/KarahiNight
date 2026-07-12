@@ -50,36 +50,36 @@
 }
 
 :root {
-  /* Warm Pizza Theme */
-  --background: 40 40% 96%; /* Doughy cream */
-  --foreground: 25 30% 20%; /* Charred brown */
+  /* Spice Route Theme */
+  --background: 30 40% 96%; /* Warm cream */
+  --foreground: 15 30% 18%; /* Deep espresso brown */
   
-  --card: 40 30% 98%; 
-  --card-foreground: 25 30% 20%;
-  --card-border: 25 20% 85%;
+  --card: 30 35% 98%; 
+  --card-foreground: 15 30% 18%;
+  --card-border: 20 20% 85%;
   
-  --popover: 40 40% 96%;
-  --popover-foreground: 25 30% 20%;
-  --popover-border: 25 20% 85%;
+  --popover: 30 40% 96%;
+  --popover-foreground: 15 30% 18%;
+  --popover-border: 20 20% 85%;
 
-  --primary: 5 75% 55%; /* Tomato Red */
+  --primary: 14 82% 48%; /* Paprika red-orange */
   --primary-foreground: 0 0% 100%;
   
-  --secondary: 25 20% 90%; 
-  --secondary-foreground: 25 30% 20%;
+  --secondary: 30 20% 90%; 
+  --secondary-foreground: 15 30% 18%;
   
   --muted: 25 20% 92%;
-  --muted-foreground: 25 15% 45%;
+  --muted-foreground: 20 15% 45%;
   
-  --accent: 140 40% 40%; /* Basil Green */
-  --accent-foreground: 0 0% 100%;
+  --accent: 42 88% 52%; /* Turmeric gold */
+  --accent-foreground: 20 30% 15%;
   
   --destructive: 0 84% 60%;
   --destructive-foreground: 0 0% 100%;
 
-  --border: 25 20% 85%;
-  --input: 25 20% 85%;
-  --ring: 5 75% 55%;
+  --border: 20 20% 85%;
+  --input: 20 20% 85%;
+  --ring: 14 82% 48%;
 
   --radius: 0.75rem;
 
@@ -88,35 +88,35 @@
 }
 
 .dark {
-  --background: 25 30% 12%; 
-  --foreground: 40 40% 94%; 
+  --background: 15 30% 12%; 
+  --foreground: 30 40% 94%; 
   
-  --card: 25 25% 15%;
-  --card-foreground: 40 40% 94%;
-  --card-border: 25 20% 25%;
+  --card: 15 25% 15%;
+  --card-foreground: 30 40% 94%;
+  --card-border: 20 20% 25%;
   
-  --popover: 25 25% 15%;
-  --popover-foreground: 40 40% 94%;
-  --popover-border: 25 20% 25%;
+  --popover: 15 25% 15%;
+  --popover-foreground: 30 40% 94%;
+  --popover-border: 20 20% 25%;
 
-  --primary: 5 70% 60%;
+  --primary: 14 78% 55%;
   --primary-foreground: 0 0% 100%;
   
-  --secondary: 25 25% 20%;
-  --secondary-foreground: 40 40% 94%;
+  --secondary: 20 25% 20%;
+  --secondary-foreground: 30 40% 94%;
   
-  --muted: 25 25% 20%;
-  --muted-foreground: 25 20% 65%;
+  --muted: 20 25% 20%;
+  --muted-foreground: 20 20% 65%;
   
-  --accent: 140 35% 45%; 
-  --accent-foreground: 0 0% 100%;
+  --accent: 42 80% 55%; 
+  --accent-foreground: 20 30% 15%;
   
   --destructive: 0 62% 30%;
   --destructive-foreground: 0 0% 100%;
 
-  --border: 25 20% 25%;
-  --input: 25 20% 25%;
-  --ring: 5 70% 60%;
+  --border: 20 20% 25%;
+  --input: 20 20% 25%;
+  --ring: 14 78% 55%;
 }
 
 @layer base {

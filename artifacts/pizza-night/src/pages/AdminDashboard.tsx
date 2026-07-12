@@ -34,9 +34,10 @@ type PizzaType = { name: string; price: number; discountedPrice?: number };
 
 const DEFAULT_SLOTS = ["16:00-16:30","16:30-17:00","17:00-17:30","17:30-18:00","18:00-18:30","18:30-19:00"];
 const DEFAULT_PIZZA_TYPES: PizzaType[] = [
-  { name: "Margherita", price: 70 },
-  { name: "Pepperoni", price: 70 },
-  { name: "Special", price: 70 },
+  { name: "Chicken Karahi", price: 90 },
+  { name: "Lamb Karahi", price: 120 },
+  { name: "Beef Karahi", price: 100 },
+  { name: "Naan", price: 15 },
 ];
 
 function formatEventDate(dateStr: string): string {
@@ -49,7 +50,7 @@ function formatEventDate(dateStr: string): string {
 function computeOrderTotal(items: { pizzaChoice: string; quantity: number }[], pizzaTypes: PizzaType[]): number {
   return items.reduce((sum, item) => {
     const pt = pizzaTypes.find((p) => p.name === item.pizzaChoice);
-    return sum + (pt?.price ?? 70) * item.quantity;
+    return sum + (pt?.price ?? 90) * item.quantity;
   }, 0);
 }
 
@@ -90,13 +91,13 @@ function TagEditor({
   );
 }
 
-// ── Pizza type editor with pricing ────────────────────────────────────────────
+// ── Menu item editor with pricing ────────────────────────────────────────────
 function PizzaTypeEditor({
   pizzaTypes,
   onChange,
 }: { pizzaTypes: PizzaType[]; onChange: (types: PizzaType[]) => void }) {
   const [newName, setNewName] = useState("");
-  const [newPrice, setNewPrice] = useState("70");
+  const [newPrice, setNewPrice] = useState("90");
   const [newDiscounted, setNewDiscounted] = useState("");
 
   const add = () => {
@@ -106,7 +107,7 @@ function PizzaTypeEditor({
     const discountedPrice = newDiscounted !== "" ? parseInt(newDiscounted, 10) : undefined;
     onChange([...pizzaTypes, { name, price, ...(discountedPrice !== undefined && !isNaN(discountedPrice) ? { discountedPrice } : {}) }]);
     setNewName("");
-    setNewPrice("70");
+    setNewPrice("90");
     setNewDiscounted("");
   };
 
@@ -114,7 +115,7 @@ function PizzaTypeEditor({
 
   return (
     <div className="space-y-2">
-      <Label className="text-sm">Pizza Types & Prices</Label>
+      <Label className="text-sm">Menu Items & Prices</Label>
       <div className="space-y-1.5">
         {pizzaTypes.map((pt, i) => (
           <div key={i} className="flex items-center gap-2 px-3 py-2 border rounded-lg bg-background text-sm">
@@ -127,7 +128,7 @@ function PizzaTypeEditor({
           </div>
         ))}
         {pizzaTypes.length === 0 && (
-          <p className="text-xs text-muted-foreground py-1">No pizza types yet.</p>
+          <p className="text-xs text-muted-foreground py-1">No menu items yet.</p>
         )}
       </div>
       <div className="flex gap-2 items-end flex-wrap">
@@ -178,7 +179,7 @@ function EventEditPanel({ event, onClose }: { event: Event; onClose: () => void 
     const raw = event.pizzaTypes ?? [];
     if (raw.length === 0) return DEFAULT_PIZZA_TYPES;
     if (typeof raw[0] === "string") {
-      return (raw as unknown as string[]).map((n) => ({ name: n, price: 70 }));
+      return (raw as unknown as string[]).map((n) => ({ name: n, price: 90 }));
     }
     return raw as unknown as PizzaType[];
   });
@@ -233,7 +234,7 @@ function EventEditPanel({ event, onClose }: { event: Event; onClose: () => void 
           <Input type="number" min={1} value={slotCap} onChange={(e) => setSlotCap(e.target.value)} />
         </div>
         <div className="space-y-1.5">
-          <Label className="text-sm">Max Pizzas per Guest <span className="text-muted-foreground font-normal">(optional)</span></Label>
+          <Label className="text-sm">Max Dishes per Guest <span className="text-muted-foreground font-normal">(optional)</span></Label>
           <Input type="number" min={1} placeholder="No limit" value={maxPerGuest} onChange={(e) => setMaxPerGuest(e.target.value)} />
         </div>
         <div className="space-y-1.5">
@@ -289,7 +290,7 @@ function OrderEditPanel({
 }) {
   const slots: string[] = event?.slots ?? [];
   const eventPizzaTypes: PizzaType[] = (event?.pizzaTypes ?? []).map((pt: any) =>
-    typeof pt === "string" ? { name: pt, price: 70 } : pt
+    typeof pt === "string" ? { name: pt, price: 90 } : pt
   );
   const pizzaNames = eventPizzaTypes.map((pt) => pt.name);
   const maxPizzas: number = event?.slotCapacity ?? 3;
@@ -345,7 +346,7 @@ function OrderEditPanel({
       <div className="space-y-2">
         <div className="flex items-center justify-between">
           <Label className="text-xs font-medium text-muted-foreground">
-            Pizzas ({items.length}/{maxPizzas} max)
+            Dishes ({items.length}/{maxPizzas} max)
           </Label>
           <Button
             type="button" size="sm" variant="outline"
@@ -353,7 +354,7 @@ function OrderEditPanel({
             onClick={addPizza}
             disabled={items.length >= maxPizzas}
           >
-            <Plus className="w-3 h-3" /> Add pizza
+            <Plus className="w-3 h-3" /> Add dish
           </Button>
         </div>
         <div className="space-y-2">
@@ -384,7 +385,7 @@ function OrderEditPanel({
                 className="h-6 w-6 shrink-0 text-muted-foreground hover:text-destructive"
                 onClick={() => removePizza(index)}
                 disabled={items.length <= 1}
-                title="Remove this pizza"
+                title="Remove this dish"
               >
                 <X className="w-3 h-3" />
               </Button>
@@ -936,7 +937,7 @@ export function AdminDashboard() {
                       <TableHead>Guest</TableHead>
                       <TableHead>Code</TableHead>
                       {events && events.length > 1 && <TableHead>Event</TableHead>}
-                      <TableHead>Pizzas</TableHead>
+                      <TableHead>Dishes</TableHead>
                       <TableHead>Slot</TableHead>
                       <TableHead>Notes</TableHead>
                       <TableHead>Status</TableHead>
@@ -953,7 +954,7 @@ export function AdminDashboard() {
                     {filteredOrders.map((order) => {
                       const orderEvent = events?.find((e) => e.id === order.eventId);
                       const eventPizzaTypes: PizzaType[] = (orderEvent?.pizzaTypes ?? []).map((pt: any) =>
-                        typeof pt === "string" ? { name: pt, price: 70 } : pt
+                        typeof pt === "string" ? { name: pt, price: 90 } : pt
                       );
                       const orderTotal = computeOrderTotal(order.items ?? [], eventPizzaTypes);
                       const isEditing = editingOrderId === order.id;
@@ -1071,7 +1072,7 @@ export function AdminDashboard() {
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-1.5">
                       <Label className="text-sm">Event Name</Label>
-                      <Input placeholder="e.g. Neapolitan Pizza Night" value={newEventName} onChange={(e) => setNewEventName(e.target.value)} />
+                      <Input placeholder="e.g. Friday Karahi Night" value={newEventName} onChange={(e) => setNewEventName(e.target.value)} />
                     </div>
                     <div className="space-y-1.5">
                       <Label className="text-sm">Date</Label>
@@ -1086,7 +1087,7 @@ export function AdminDashboard() {
                       <Input type="number" min={1} value={newEventSlot} onChange={(e) => setNewEventSlot(e.target.value)} />
                     </div>
                     <div className="space-y-1.5">
-                      <Label className="text-sm">Max Pizzas per Guest <span className="text-muted-foreground font-normal">(optional)</span></Label>
+                      <Label className="text-sm">Max Dishes per Guest <span className="text-muted-foreground font-normal">(optional)</span></Label>
                       <Input type="number" min={1} placeholder="No limit" value={newEventMaxPerGuest} onChange={(e) => setNewEventMaxPerGuest(e.target.value)} />
                     </div>
                     <div className="space-y-1.5">
@@ -1133,7 +1134,7 @@ export function AdminDashboard() {
               )}
               {events?.map((event) => {
                 const eventPizzaTypes: PizzaType[] = (event.pizzaTypes ?? []).map((pt: any) =>
-                  typeof pt === "string" ? { name: pt, price: 70 } : pt
+                  typeof pt === "string" ? { name: pt, price: 90 } : pt
                 );
                 return (
                   <Card key={event.id} className={!event.active ? "opacity-60" : ""}>
@@ -1148,7 +1149,7 @@ export function AdminDashboard() {
                           </div>
                           <div className="flex flex-wrap gap-x-4 gap-y-0.5 mt-1 text-sm text-muted-foreground">
                             <span>{formatEventDate(event.date)}</span>
-                            <span>{event.totalCapacity} pizzas total · {event.slotCapacity}/slot{event.maxPerGuest != null ? ` · max ${event.maxPerGuest}/guest` : ""}</span>
+                            <span>{event.totalCapacity} dishes total · {event.slotCapacity}/slot{event.maxPerGuest != null ? ` · max ${event.maxPerGuest}/guest` : ""}</span>
                             {event.orderDeadline && (
                               <span className={new Date() > new Date(event.orderDeadline) ? "text-destructive" : ""}>
                                 Orders close {new Date(event.orderDeadline).toLocaleString("en-GB", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}

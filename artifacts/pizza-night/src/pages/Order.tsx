@@ -17,7 +17,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import {
   Loader2, CheckCircle2, AlertCircle, CalendarDays, Plus, Check,
-  ArrowRight, Lock, Pizza, Phone, User, ChevronLeft
+  ArrowRight, Lock, ChefHat, Phone, User, ChevronLeft
 } from "lucide-react";
 import type { PizzaItem as APIPizzaItem } from "@workspace/api-client-react";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -47,17 +47,17 @@ function effectivePrice(pt: PizzaType): number {
 function computeItemsTotal(items: PizzaItem[], pizzaTypes: PizzaType[]): number {
   return items.reduce((sum, item) => {
     const pt = pizzaTypes.find((p) => p.name === item.pizzaChoice);
-    return sum + effectivePrice(pt ?? { name: "", price: 70 }) * item.quantity;
+    return sum + effectivePrice(pt ?? { name: "", price: 90 }) * item.quantity;
   }, 0);
 }
 
 function priceLabel(pizzaTypes: PizzaType[]): string {
-  if (pizzaTypes.length === 0) return "70 DKK per pizza";
+  if (pizzaTypes.length === 0) return "90 DKK per dish";
   const prices = pizzaTypes.map(effectivePrice);
   const min = Math.min(...prices);
   const max = Math.max(...prices);
-  if (min === max) return `${min} DKK per pizza`;
-  return `from ${min} DKK per pizza`;
+  if (min === max) return `${min} DKK per dish`;
+  return `from ${min} DKK per dish`;
 }
 
 interface EventPickerModalProps {
@@ -79,7 +79,7 @@ function EventPickerModal({ events, selectedId, open, onSelect, onOpenChange }: 
           <DialogHeader>
             <DialogTitle className="font-serif text-2xl font-bold text-foreground text-center">Which evening are you joining?</DialogTitle>
           </DialogHeader>
-          <p className="text-sm text-muted-foreground mt-1.5">Select the pizza night you'd like to order for.</p>
+          <p className="text-sm text-muted-foreground mt-1.5">Select the karahi night you'd like to order for.</p>
         </div>
         <div className="p-4 space-y-2.5 max-h-[50vh] overflow-y-auto">
           {events.map((ev) => {
@@ -151,7 +151,7 @@ export function Order() {
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [termsOpen, setTermsOpen] = useState(false);
   const [orderTermsText, setOrderTermsText] = useState(
-    "By placing this order you confirm that you will collect your pizza(s) at the selected pickup slot, that payment of 70 DKK per pizza is due at pickup, and that orders can only be cancelled by messaging the organiser before the event."
+    "By placing this order you confirm that you will collect your dish(es) at the selected pickup slot, that payment is due at pickup based on the dishes ordered, and that orders can only be cancelled by messaging the organiser before the event."
   );
 
   useEffect(() => {
@@ -180,7 +180,7 @@ export function Order() {
   );
 
   const pizzaTypes: PizzaType[] = (summary?.pizzaTypes ?? []).map((pt: any) =>
-    typeof pt === "string" ? { name: pt, price: 70 } : pt
+    typeof pt === "string" ? { name: pt, price: 90 } : pt
   );
   const pizzaNames = pizzaTypes.map((pt) => pt.name);
 
@@ -233,7 +233,7 @@ export function Order() {
             <CardContent className="pt-10 pb-10 flex flex-col items-center">
               <CalendarDays className="w-16 h-16 text-muted-foreground mb-4" />
               <h2 className="text-2xl font-serif font-bold text-foreground mb-2">No Active Events</h2>
-              <p className="text-muted-foreground">Stay tuned on the WhatsApp group for the next pizza night announcement!</p>
+              <p className="text-muted-foreground">Stay tuned on the WhatsApp group for the next karahi night announcement!</p>
             </CardContent>
           </Card>
         </div>
@@ -255,9 +255,9 @@ export function Order() {
         <div className="flex flex-col items-center max-w-2xl mx-auto space-y-6 pt-8 text-center pb-12">
           <div className="space-y-3">
             <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mx-auto">
-              <img src="/pizza-icon.png" alt="Pizza" className="w-14 h-14 opacity-80" />
+              <img src="/karahi-icon.png" alt="Karahi Night" className="w-14 h-14 opacity-80" />
             </div>
-            <h1 className="text-3xl sm:text-4xl font-serif font-bold text-foreground">{summary?.eventName ?? "Pizza Night"}</h1>
+            <h1 className="text-3xl sm:text-4xl font-serif font-bold text-foreground">{summary?.eventName ?? "Karahi Night"}</h1>
             {summaryLoading ? <Skeleton className="h-5 w-64 mx-auto" /> : summary ? (
               <div className="flex flex-col items-center gap-1">
                 <p className="text-base font-medium text-primary">{formatEventDate(summary.eventDate)} — {summary.eventName}</p>
@@ -278,7 +278,7 @@ export function Order() {
             ) : null}
           </div>
           <div className="w-full aspect-video md:aspect-[21/9] rounded-2xl overflow-hidden shadow-lg border relative">
-            <img src="/pizza-hero.png" alt="Handmade pizza" className="w-full h-full object-cover" />
+            <img src="/karahi-hero.png" alt="Sizzling karahi" className="w-full h-full object-cover" />
             {summary && (
               <>
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex flex-col justify-end p-6 text-left">
@@ -302,7 +302,7 @@ export function Order() {
             <div className="w-full space-y-2">
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground font-medium">Spots filling up</span>
-                <span className="text-foreground font-semibold">{summary.totalBooked} / {summary.totalCapacity} pizzas ordered</span>
+                <span className="text-foreground font-semibold">{summary.totalBooked} / {summary.totalCapacity} dishes ordered</span>
               </div>
               <div className="w-full h-3 bg-secondary rounded-full overflow-hidden">
                 <div className={`h-full rounded-full transition-all duration-700 ${progressPct >= 90 ? "bg-destructive" : progressPct >= 70 ? "bg-orange-400" : "bg-primary"}`} style={{ width: `${progressPct}%` }} />
@@ -317,7 +317,7 @@ export function Order() {
                 <p className="text-sm text-muted-foreground">
                   {summaryLoading ? "Loading event details…" : summary?.orderingOpen
                     ? (myOrders.length > 0
-                      ? `You've ordered ${myTotalOrdered} pizza${myTotalOrdered !== 1 ? "s" : ""} so far.${guestLimitRemaining < Infinity && guestLimitRemaining > 0 ? ` You can add ${guestLimitRemaining} more.` : guestLimitRemaining <= 0 ? " You've reached your limit." : ""}`
+                      ? `You've ordered ${myTotalOrdered} dish${myTotalOrdered !== 1 ? "es" : ""} so far.${guestLimitRemaining < Infinity && guestLimitRemaining > 0 ? ` You can add ${guestLimitRemaining} more.` : guestLimitRemaining <= 0 ? " You've reached your limit." : ""}`
                       : "Ready to place your order?")
                     : "Ordering is closed. You can still view your order."}
                 </p>
@@ -325,14 +325,14 @@ export function Order() {
               {summaryLoading ? <Skeleton className="w-full h-14 rounded-xl" /> : (
                 <div className="w-full space-y-2">
                   <Button size="lg" className="w-full h-14 text-lg gap-2" onClick={() => setEventPreview(false)}>
-                    <Pizza className="w-5 h-5" />
+                    <ChefHat className="w-5 h-5" />
                     {myOrders.length > 0 ? "View My Orders" : summary?.orderingOpen ? "Place My Order" : "View Order Status"}
                   </Button>
                   {myOrders.length > 0 && summary?.orderingOpen && guestLimitRemaining > 0 && (
                     <Button size="lg" variant="outline" className="w-full h-12 text-base gap-2"
                       onClick={() => { setPizzaItems([{ pizzaChoice: pizzaNames[0] ?? "", quantity: 1 }]); setPickupSlot(""); setNotes(""); setTotalQty(1); setIsPlacingAnother(true); setEventPreview(false); }}>
                       <Plus className="w-4 h-4" />
-                      Add Another Order ({guestLimitRemaining} pizza{guestLimitRemaining !== 1 ? "s" : ""} left)
+                      Add Another Order ({guestLimitRemaining} dish{guestLimitRemaining !== 1 ? "es" : ""} left)
                     </Button>
                   )}
                 </div>
@@ -395,7 +395,7 @@ export function Order() {
                   </div>
 
                   <div className="space-y-3 mb-6">
-                    <Label className="text-sm font-semibold text-foreground">Your Pizzas</Label>
+                    <Label className="text-sm font-semibold text-foreground">Your Dishes</Label>
                     <div className="bg-secondary/30 rounded-xl border border-border divide-y divide-border/50">
                       {Object.entries(
                         (order.items ?? []).reduce<Record<string, number>>((acc, item) => {
@@ -434,12 +434,12 @@ export function Order() {
             <Button size="lg" variant="outline" className="w-full gap-2"
               onClick={() => { setPizzaItems([{ pizzaChoice: pizzaNames[0] ?? "", quantity: 1 }]); setPickupSlot(""); setNotes(""); setTotalQty(1); setIsPlacingAnother(true); window.scrollTo(0, 0); }}>
               <Plus className="w-4 h-4" />
-              Add Another Order ({guestLimitRemaining} pizza{guestLimitRemaining !== 1 ? "s" : ""} left)
+              Add Another Order ({guestLimitRemaining} dish{guestLimitRemaining !== 1 ? "es" : ""} left)
             </Button>
           )}
           {summary?.maxPerGuest != null && guestLimitRemaining <= 0 && (
             <p className="text-xs text-center text-muted-foreground py-2">
-              You've ordered the maximum of {summary.maxPerGuest} pizza{summary.maxPerGuest !== 1 ? "s" : ""} for this event.
+              You've ordered the maximum of {summary.maxPerGuest} dish{summary.maxPerGuest !== 1 ? "es" : ""} for this event.
             </p>
           )}
         </div>
@@ -843,7 +843,7 @@ export function Order() {
 
               {pickupSlot && (
                 <div className="space-y-3 animate-in fade-in slide-in-from-top-2">
-                  <Label className="text-base font-semibold">How Many Pizzas?</Label>
+                  <Label className="text-base font-semibold">How Many Dishes?</Label>
                   {maxAllowed === 0 ? (
                     <div className="flex items-center gap-2 rounded-lg border border-destructive/30 bg-destructive/5 px-3 py-2.5 text-sm text-destructive font-medium">
                       This slot is now full — pick a different time.
@@ -851,7 +851,7 @@ export function Order() {
                   ) : (
                     <div className="flex items-center gap-2 rounded-lg border border-primary/25 bg-primary/5 px-3 py-2.5 text-sm">
                       <span className="text-muted-foreground">You can order up to</span>
-                      <span className="font-bold text-primary">{maxAllowed} pizza{maxAllowed !== 1 ? "s" : ""}</span>
+                      <span className="font-bold text-primary">{maxAllowed} dish{maxAllowed !== 1 ? "es" : ""}</span>
                       <span className="text-muted-foreground">in this slot.</span>
                     </div>
                   )}
@@ -863,7 +863,7 @@ export function Order() {
                       <SelectContent>
                         {Array.from({ length: maxAllowed }).map((_, i) => (
                           <SelectItem key={i + 1} value={String(i + 1)}>
-                            {i + 1} pizza{i > 0 ? "s" : ""}
+                            {i + 1} dish{i > 0 ? "es" : ""}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -874,11 +874,11 @@ export function Order() {
 
               {pickupSlot && pizzaItems.length > 0 && pizzaTypes.length > 0 && (
                 <div className="space-y-3 animate-in fade-in slide-in-from-top-2">
-                  <Label className="text-base font-semibold">{pizzaItems.length === 1 ? "Choose Your Pizza" : "Choose Each Pizza"}</Label>
+                  <Label className="text-base font-semibold">{pizzaItems.length === 1 ? "Choose Your Dish" : "Choose Each Dish"}</Label>
                   <div className="space-y-3">
                     {pizzaItems.map((item, index) => (
                       <div key={index} className="space-y-1.5">
-                        {pizzaItems.length > 1 && <span className="text-sm text-muted-foreground">Pizza {index + 1}</span>}
+                        {pizzaItems.length > 1 && <span className="text-sm text-muted-foreground">Dish {index + 1}</span>}
                         <div className="flex flex-wrap gap-2">
                           {pizzaTypes.map((pt) => (
                             <button key={pt.name} type="button" onClick={() => updateItemChoice(index, pt.name)}
