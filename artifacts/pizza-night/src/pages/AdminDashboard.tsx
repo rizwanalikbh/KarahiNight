@@ -258,7 +258,7 @@ function EventEditPanel({ event, onClose }: { event: Event; onClose: () => void 
           <Input type="number" min={1} value={totalCap} onChange={(e) => setTotalCap(e.target.value)} />
         </div>
         <div className="space-y-1.5">
-          <Label className="text-sm">Pizzas per Slot</Label>
+          <Label className="text-sm">Main Items per Slot</Label>
           <Input type="number" min={1} value={slotCap} onChange={(e) => setSlotCap(e.target.value)} />
         </div>
         <div className="space-y-1.5">
@@ -1111,7 +1111,7 @@ export function AdminDashboard() {
                       <Input type="number" min={1} value={newEventCapacity} onChange={(e) => setNewEventCapacity(e.target.value)} />
                     </div>
                     <div className="space-y-1.5">
-                      <Label className="text-sm">Pizzas per Slot</Label>
+                      <Label className="text-sm">Main Items per Slot</Label>
                       <Input type="number" min={1} value={newEventSlot} onChange={(e) => setNewEventSlot(e.target.value)} />
                     </div>
                     <div className="space-y-1.5">
