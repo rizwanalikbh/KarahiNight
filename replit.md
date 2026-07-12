@@ -46,7 +46,7 @@ Note: the underlying package/folder is still named `pizza-night` (kept internal 
 ## Product
 
 - Invited guests log in via name dropdown + 4-digit code
-- Order karahi dishes (Chicken Karahi 90 DKK / Lamb Karahi 120 DKK / Beef Karahi 100 DKK / Naan 15 DKK by default, editable per event), pick a pickup slot (16:00–19:00)
+- Order karahi dishes (Chicken Karahi 279 DKK / Beef Karahi 339 DKK / Lamb Karahi 429 DKK / Naan 15 DKK by default, editable per event), pick a pickup slot (16:00–19:00)
 - Admin logs in with password "IamAdmin" and manages orders, users, capacity, and menu items/prices
 
 ## User preferences
