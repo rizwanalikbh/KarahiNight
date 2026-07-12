@@ -42,4 +42,14 @@ export interface EventSummary {
      * @nullable
      */
   locationUrl?: string | null;
+  /**
+     * Selected preset banner id (e.g. "banner-1"), or "custom" when customBannerUrl is set.
+     * @nullable
+     */
+  bannerVariant?: string | null;
+  /**
+     * Object storage path for an admin-uploaded custom banner image.
+     * @nullable
+     */
+  customBannerUrl?: string | null;
 }

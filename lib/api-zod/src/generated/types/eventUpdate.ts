@@ -37,4 +37,14 @@ export interface EventUpdate {
      * @nullable
      */
   locationUrl?: string | null;
+  /**
+     * Selected preset banner id (e.g. "banner-1"), or "custom" when customBannerUrl is set. Set to null to reset to the default banner.
+     * @nullable
+     */
+  bannerVariant?: string | null;
+  /**
+     * Object storage path for an admin-uploaded custom banner image. Set to null to remove it.
+     * @nullable
+     */
+  customBannerUrl?: string | null;
 }

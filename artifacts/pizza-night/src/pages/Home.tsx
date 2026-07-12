@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Clock, Lock, CalendarDays, ArrowRight, Check, Search, ChefHat } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { QRCodeSVG } from "qrcode.react";
+import { getBannerSrc } from "@/lib/banners";
 
 function formatEventDate(dateStr: string): string {
   try {
@@ -254,7 +255,7 @@ export function Home() {
         </div>
 
         <div className="w-full aspect-video md:aspect-[21/9] rounded-2xl overflow-hidden shadow-lg border relative">
-          <img src="/karahi-hero.png" alt="Sizzling karahi" className="w-full h-full object-cover" />
+          <img src={summary ? getBannerSrc(summary) : "/banners/banner-1.png"} alt="Event banner" className="w-full h-full object-cover" />
           {!isLoading && summary && (
             <>
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex flex-col justify-end p-6 text-left">

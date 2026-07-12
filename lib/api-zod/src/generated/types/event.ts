@@ -45,5 +45,15 @@ export interface Event {
      * @nullable
      */
   locationUrl?: string | null;
+  /**
+     * Selected preset banner id (e.g. "banner-1"), or "custom" when customBannerUrl is set. Null means the default banner.
+     * @nullable
+     */
+  bannerVariant?: string | null;
+  /**
+     * Object storage path for an admin-uploaded custom banner image (e.g. "/objects/uploads/uuid").
+     * @nullable
+     */
+  customBannerUrl?: string | null;
   createdAt: Date;
 }

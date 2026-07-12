@@ -116,6 +116,8 @@ export const ListEventsResponseItem = zod.object({
   "maxPerGuest": zod.number().min(1).nullish().describe('Maximum number of dishes a single guest may order. Null means no limit.'),
   "location": zod.string().nullish().describe('Pickup location name (e.g. \"Elm Street 12, 2nd floor\")'),
   "locationUrl": zod.string().nullish().describe('Google Maps or other map URL for the pickup location'),
+  "bannerVariant": zod.string().nullish().describe('Selected preset banner id (e.g. \"banner-1\"), or \"custom\" when customBannerUrl is set. Null means the default banner.'),
+  "customBannerUrl": zod.string().nullish().describe('Object storage path for an admin-uploaded custom banner image (e.g. \"\/objects\/uploads\/uuid\").'),
   "createdAt": zod.coerce.date()
 })
 export const ListEventsResponse = zod.array(ListEventsResponseItem)
@@ -142,6 +144,8 @@ export const CreateEventBody = zod.object({
   "orderDeadline": zod.coerce.date().optional().describe('Cutoff datetime after which no new orders or edits are accepted'),
   "location": zod.string().optional().describe('Pickup location name'),
   "locationUrl": zod.string().optional().describe('Google Maps or other map URL for the pickup location'),
+  "bannerVariant": zod.string().optional().describe('Selected preset banner id (e.g. \"banner-1\"), or \"custom\" when customBannerUrl is set.'),
+  "customBannerUrl": zod.string().optional().describe('Object storage path for an admin-uploaded custom banner image.'),
   "slots": zod.array(zod.string()).optional(),
   "pizzaTypes": zod.array(zod.object({
   "name": zod.string().describe('Dish name (e.g. Chicken Karahi)'),
@@ -183,7 +187,9 @@ export const UpdateEventBody = zod.object({
 })).optional(),
   "active": zod.boolean().optional(),
   "location": zod.string().nullish().describe('Pickup location name'),
-  "locationUrl": zod.string().nullish().describe('Google Maps or other map URL for the pickup location')
+  "locationUrl": zod.string().nullish().describe('Google Maps or other map URL for the pickup location'),
+  "bannerVariant": zod.string().nullish().describe('Selected preset banner id (e.g. \"banner-1\"), or \"custom\" when customBannerUrl is set. Set to null to reset to the default banner.'),
+  "customBannerUrl": zod.string().nullish().describe('Object storage path for an admin-uploaded custom banner image. Set to null to remove it.')
 })
 
 export const updateEventResponsePizzaTypesItemPriceMin = 0;
@@ -213,6 +219,8 @@ export const UpdateEventResponse = zod.object({
   "maxPerGuest": zod.number().min(1).nullish().describe('Maximum number of dishes a single guest may order. Null means no limit.'),
   "location": zod.string().nullish().describe('Pickup location name (e.g. \"Elm Street 12, 2nd floor\")'),
   "locationUrl": zod.string().nullish().describe('Google Maps or other map URL for the pickup location'),
+  "bannerVariant": zod.string().nullish().describe('Selected preset banner id (e.g. \"banner-1\"), or \"custom\" when customBannerUrl is set. Null means the default banner.'),
+  "customBannerUrl": zod.string().nullish().describe('Object storage path for an admin-uploaded custom banner image (e.g. \"\/objects\/uploads\/uuid\").'),
   "createdAt": zod.coerce.date()
 })
 
@@ -483,7 +491,9 @@ export const GetSummaryResponse = zod.object({
   "name": zod.string()
 })),
   "location": zod.string().nullish().describe('Pickup location name'),
-  "locationUrl": zod.string().nullish().describe('Google Maps or other map URL for the pickup location')
+  "locationUrl": zod.string().nullish().describe('Google Maps or other map URL for the pickup location'),
+  "bannerVariant": zod.string().nullish().describe('Selected preset banner id (e.g. \"banner-1\"), or \"custom\" when customBannerUrl is set.'),
+  "customBannerUrl": zod.string().nullish().describe('Object storage path for an admin-uploaded custom banner image.')
 })
 
 
@@ -617,6 +627,61 @@ export const UpdateOrderTermsBody = zod.object({
 
 export const UpdateOrderTermsResponse = zod.object({
   "value": zod.string()
+})
+
+
+/**
+ * Returns a presigned GCS URL for direct upload. The client sends JSON
+metadata here, then uploads the file directly to the returned URL.
+
+ * @summary Request a presigned URL for file upload
+ */
+
+
+
+
+
+export const RequestUploadUrlBody = zod.object({
+  "name": zod.string().min(1).describe('Original file name.'),
+  "size": zod.number().min(1).describe('File size in bytes.'),
+  "contentType": zod.string().min(1).describe('MIME type of the file (e.g. `image\/jpeg`).')
+})
+
+
+
+
+
+
+export const RequestUploadUrlResponse = zod.object({
+  "uploadURL": zod.string().url().describe('Presigned GCS URL for PUT upload.'),
+  "objectPath": zod.string().describe('Normalized object path (e.g. `\/objects\/uploads\/uuid`). Store this in your database.'),
+  "metadata": zod.object({
+  "name": zod.string().min(1).describe('Original file name.'),
+  "size": zod.number().min(1).describe('File size in bytes.'),
+  "contentType": zod.string().min(1).describe('MIME type of the file (e.g. `image\/jpeg`).')
+}).optional()
+})
+
+
+/**
+ * Unconditionally public — no authentication or ACL checks.
+Searches PUBLIC_OBJECT_SEARCH_PATHS for the given file path.
+
+ * @summary Serve a public asset from PUBLIC_OBJECT_SEARCH_PATHS
+ */
+export const GetPublicObjectParams = zod.object({
+  "filePath": zod.coerce.string().describe('Relative file path within the public search paths.')
+})
+
+
+/**
+ * Serves object entities uploaded via presigned URLs. Protected to admins
+only since these are event banner uploads.
+
+ * @summary Serve an object entity from PRIVATE_OBJECT_DIR
+ */
+export const GetStorageObjectParams = zod.object({
+  "objectPath": zod.coerce.string().describe('Object path within the private object dir (e.g. `uploads\/some-uuid`).')
 })
 
 

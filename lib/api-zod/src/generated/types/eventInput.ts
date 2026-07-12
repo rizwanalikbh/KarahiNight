@@ -25,6 +25,10 @@ export interface EventInput {
   location?: string;
   /** Google Maps or other map URL for the pickup location */
   locationUrl?: string;
+  /** Selected preset banner id (e.g. "banner-1"), or "custom" when customBannerUrl is set. */
+  bannerVariant?: string;
+  /** Object storage path for an admin-uploaded custom banner image. */
+  customBannerUrl?: string;
   slots?: string[];
   pizzaTypes?: PizzaType[];
 }

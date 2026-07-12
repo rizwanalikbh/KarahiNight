@@ -8,6 +8,7 @@
 
 export * from './adminUser';
 export * from './adminUserInput';
+export * from './errorEnvelope';
 export * from './event';
 export * from './eventGuest';
 export * from './eventInput';
@@ -38,6 +39,8 @@ export * from './sessionInfo';
 export * from './sessionInfoRole';
 export * from './settingValue';
 export * from './slotSummary';
+export * from './uploadUrlRequest';
+export * from './uploadUrlResponse';
 export * from './user';
 export * from './userImportInput';
 export * from './userImportInputGuestsItem';

@@ -22,6 +22,7 @@ import {
 import type { PizzaItem as APIPizzaItem } from "@workspace/api-client-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useQueryClient } from "@tanstack/react-query";
+import { getBannerSrc } from "@/lib/banners";
 
 interface PizzaType { name: string; price: number; discountedPrice?: number; category?: string; }
 interface PizzaItem { pizzaChoice: string; quantity: number; }
@@ -294,7 +295,7 @@ export function Order() {
             ) : null}
           </div>
           <div className="w-full aspect-video md:aspect-[21/9] rounded-2xl overflow-hidden shadow-lg border relative">
-            <img src="/karahi-hero.png" alt="Sizzling karahi" className="w-full h-full object-cover" />
+            <img src={summary ? getBannerSrc(summary) : "/banners/banner-1.png"} alt="Event banner" className="w-full h-full object-cover" />
             {summary && (
               <>
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex flex-col justify-end p-6 text-left">

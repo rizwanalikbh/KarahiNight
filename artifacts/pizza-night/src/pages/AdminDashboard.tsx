@@ -23,6 +23,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
+import { BannerPicker } from "../components/BannerPicker";
+import { DEFAULT_BANNER_ID } from "../lib/banners";
 import {
   Loader2, Trash2, Plus, CalendarDays,
   ChevronDown, ChevronUp, Pencil, X, Check, FileText, Mail, Phone, ShieldCheck, Copy, Link,
@@ -205,6 +207,8 @@ function EventEditPanel({ event, onClose }: { event: Event; onClose: () => void 
   const [description, setDescription] = useState(event.description ?? "");
   const [location, setLocation] = useState(event.location ?? "");
   const [locationUrl, setLocationUrl] = useState(event.locationUrl ?? "");
+  const [bannerVariant, setBannerVariant] = useState<string | null>(event.bannerVariant ?? DEFAULT_BANNER_ID);
+  const [customBannerUrl, setCustomBannerUrl] = useState<string | null>(event.customBannerUrl ?? null);
   const [orderDeadline, setOrderDeadline] = useState<string>(() => {
     if (!event.orderDeadline) return "";
     const d = new Date(event.orderDeadline);
@@ -235,6 +239,8 @@ function EventEditPanel({ event, onClose }: { event: Event; onClose: () => void 
           orderDeadline: orderDeadline || null,
           location: location || null,
           locationUrl: locationUrl || null,
+          bannerVariant,
+          customBannerUrl,
           slots,
           pizzaTypes: pizzaTypes as any,
         },
@@ -304,6 +310,10 @@ function EventEditPanel({ event, onClose }: { event: Event; onClose: () => void 
         <TagEditor label="Pickup Slots" tags={slots} onChange={setSlots} placeholder="e.g. 17:00-17:30" />
         <PizzaTypeEditor pizzaTypes={pizzaTypes} onChange={setPizzaTypes} />
       </div>
+      <BannerPicker
+        value={{ bannerVariant, customBannerUrl }}
+        onChange={(next) => { setBannerVariant(next.bannerVariant); setCustomBannerUrl(next.customBannerUrl); }}
+      />
       <div className="flex gap-2 pt-1">
         <Button type="submit" size="sm" disabled={updateEvent.isPending}>
           {updateEvent.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Check className="w-4 h-4 mr-1.5" />Save Changes</>}
@@ -670,6 +680,8 @@ export function AdminDashboard() {
   const [newEventPizzaTypes, setNewEventPizzaTypes] = useState<PizzaType[]>(DEFAULT_PIZZA_TYPES);
   const [newEventLocation, setNewEventLocation] = useState("");
   const [newEventLocationUrl, setNewEventLocationUrl] = useState("");
+  const [newEventBannerVariant, setNewEventBannerVariant] = useState<string | null>(DEFAULT_BANNER_ID);
+  const [newEventCustomBannerUrl, setNewEventCustomBannerUrl] = useState<string | null>(null);
 
   // Event editing state
   const [editingEventId, setEditingEventId] = useState<number | null>(null);
@@ -840,6 +852,8 @@ export function AdminDashboard() {
           orderDeadline: newEventDeadline || undefined,
           location: newEventLocation || undefined,
           locationUrl: newEventLocationUrl || undefined,
+          bannerVariant: newEventBannerVariant ?? undefined,
+          customBannerUrl: newEventCustomBannerUrl ?? undefined,
           slots: newEventSlots,
           pizzaTypes: newEventPizzaTypes as any,
         },
@@ -855,6 +869,8 @@ export function AdminDashboard() {
           setNewEventPizzaTypes(DEFAULT_PIZZA_TYPES);
           setNewEventLocation("");
           setNewEventLocationUrl("");
+          setNewEventBannerVariant(DEFAULT_BANNER_ID);
+          setNewEventCustomBannerUrl(null);
           queryClient.invalidateQueries({ queryKey: getListEventsQueryKey() });
         },
       }
@@ -1158,6 +1174,10 @@ export function AdminDashboard() {
                     <TagEditor label="Pickup Slots" tags={newEventSlots} onChange={setNewEventSlots} placeholder="e.g. 17:00-17:30" />
                     <PizzaTypeEditor pizzaTypes={newEventPizzaTypes} onChange={setNewEventPizzaTypes} />
                   </div>
+                  <BannerPicker
+                    value={{ bannerVariant: newEventBannerVariant, customBannerUrl: newEventCustomBannerUrl }}
+                    onChange={(next) => { setNewEventBannerVariant(next.bannerVariant); setNewEventCustomBannerUrl(next.customBannerUrl); }}
+                  />
                   <Button type="submit" disabled={createEvent.isPending || !newEventName.trim() || !newEventDate}>
                     <Plus className="w-4 h-4 mr-2" /> Create Event
                   </Button>

@@ -27,6 +27,8 @@ export const eventsTable = pgTable("events", {
   orderDeadline: timestamp("order_deadline", { withTimezone: true }),
   location: text("location"),
   locationUrl: text("location_url"),
+  bannerVariant: text("banner_variant"),
+  customBannerUrl: text("custom_banner_url"),
   active: boolean("active").notNull().default(true),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });

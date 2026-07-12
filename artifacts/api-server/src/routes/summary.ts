@@ -84,6 +84,8 @@ router.get("/summary", async (req, res): Promise<void> => {
     guests,
     location: event.location ?? null,
     locationUrl: event.locationUrl ?? null,
+    bannerVariant: event.bannerVariant ?? null,
+    customBannerUrl: event.customBannerUrl ?? null,
   });
 });
 

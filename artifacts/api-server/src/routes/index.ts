@@ -9,6 +9,7 @@ import summaryRouter from "./summary";
 import recipesRouter from "./recipes";
 import adminUsersRouter from "./admin-users";
 import settingsRouter from "./settings";
+import storageRouter from "./storage";
 
 const router: IRouter = Router();
 
@@ -22,5 +23,6 @@ router.use(summaryRouter);
 router.use(recipesRouter);
 router.use(adminUsersRouter);
 router.use(settingsRouter);
+router.use(storageRouter);
 
 export default router;

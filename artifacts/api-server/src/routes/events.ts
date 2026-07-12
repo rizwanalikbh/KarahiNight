@@ -71,6 +71,8 @@ router.post("/events", requireAdmin, async (req, res): Promise<void> => {
       orderDeadline: parsed.data.orderDeadline ?? null,
       location: parsed.data.location ?? null,
       locationUrl: parsed.data.locationUrl ?? null,
+      bannerVariant: parsed.data.bannerVariant ?? null,
+      customBannerUrl: parsed.data.customBannerUrl ?? null,
       slots: parsed.data.slots?.length ? parsed.data.slots : DEFAULT_SLOTS,
       pizzaTypes: parsed.data.pizzaTypes?.length ? (parsed.data.pizzaTypes as PizzaType[]) : DEFAULT_PIZZA_TYPES,
       active: true,
@@ -100,6 +102,8 @@ router.patch("/events/:id", requireAdmin, async (req, res): Promise<void> => {
   if (parsed.data.active !== undefined) updateData.active = parsed.data.active;
   if ("location" in parsed.data) updateData.location = parsed.data.location ?? null;
   if ("locationUrl" in parsed.data) updateData.locationUrl = parsed.data.locationUrl ?? null;
+  if ("bannerVariant" in parsed.data) updateData.bannerVariant = parsed.data.bannerVariant ?? null;
+  if ("customBannerUrl" in parsed.data) updateData.customBannerUrl = parsed.data.customBannerUrl ?? null;
 
   const [event] = await db
     .update(eventsTable)

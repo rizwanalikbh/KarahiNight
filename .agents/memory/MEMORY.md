@@ -1,1 +1,2 @@
 - [Karahi Night: extras vs capacity](karahi-night-extras-capacity.md) — only "Main" category dish quantity counts toward slot/event/per-guest limits; addon categories are exempt.
+- [Adding a new lib package for object-storage-web](new-workspace-lib-tsconfig.md) — new workspace lib tsconfig needs composite:true or downstream project refs fail; check catalog react version before adding pnpm overrides.
