@@ -50,36 +50,36 @@
 }
 
 :root {
-  /* Spice Route Theme */
-  --background: 30 40% 96%; /* Warm cream */
-  --foreground: 15 30% 18%; /* Deep espresso brown */
+  /* Karahi Ingredients Theme — tomato, coriander, browned meat, ginger */
+  --background: 36 42% 96%; /* Ginger cream */
+  --foreground: 18 38% 15%; /* Browned meat / dark cardamom brown */
   
-  --card: 30 35% 98%; 
-  --card-foreground: 15 30% 18%;
-  --card-border: 20 20% 85%;
+  --card: 36 38% 98%; 
+  --card-foreground: 18 38% 15%;
+  --card-border: 25 22% 84%;
   
-  --popover: 30 40% 96%;
-  --popover-foreground: 15 30% 18%;
-  --popover-border: 20 20% 85%;
+  --popover: 36 42% 96%;
+  --popover-foreground: 18 38% 15%;
+  --popover-border: 25 22% 84%;
 
-  --primary: 14 82% 48%; /* Paprika red-orange */
+  --primary: 5 68% 46%; /* Tomato red */
   --primary-foreground: 0 0% 100%;
   
-  --secondary: 30 20% 90%; 
-  --secondary-foreground: 15 30% 18%;
+  --secondary: 32 22% 90%; 
+  --secondary-foreground: 18 38% 15%;
   
-  --muted: 25 20% 92%;
-  --muted-foreground: 20 15% 45%;
+  --muted: 30 20% 92%;
+  --muted-foreground: 22 15% 44%;
   
-  --accent: 42 88% 52%; /* Turmeric gold */
-  --accent-foreground: 20 30% 15%;
+  --accent: 100 38% 34%; /* Coriander green */
+  --accent-foreground: 0 0% 100%;
   
   --destructive: 0 84% 60%;
   --destructive-foreground: 0 0% 100%;
 
-  --border: 20 20% 85%;
-  --input: 20 20% 85%;
-  --ring: 14 82% 48%;
+  --border: 25 22% 84%;
+  --input: 25 22% 84%;
+  --ring: 5 68% 46%;
 
   --radius: 0.75rem;
 
@@ -88,35 +88,35 @@
 }
 
 .dark {
-  --background: 15 30% 12%; 
-  --foreground: 30 40% 94%; 
+  --background: 18 32% 10%; 
+  --foreground: 36 40% 94%; 
   
-  --card: 15 25% 15%;
-  --card-foreground: 30 40% 94%;
-  --card-border: 20 20% 25%;
+  --card: 18 28% 14%;
+  --card-foreground: 36 40% 94%;
+  --card-border: 22 22% 24%;
   
-  --popover: 15 25% 15%;
-  --popover-foreground: 30 40% 94%;
-  --popover-border: 20 20% 25%;
+  --popover: 18 28% 14%;
+  --popover-foreground: 36 40% 94%;
+  --popover-border: 22 22% 24%;
 
-  --primary: 14 78% 55%;
+  --primary: 5 65% 54%;
   --primary-foreground: 0 0% 100%;
   
-  --secondary: 20 25% 20%;
-  --secondary-foreground: 30 40% 94%;
+  --secondary: 22 24% 19%;
+  --secondary-foreground: 36 40% 94%;
   
-  --muted: 20 25% 20%;
-  --muted-foreground: 20 20% 65%;
+  --muted: 22 24% 19%;
+  --muted-foreground: 22 18% 65%;
   
-  --accent: 42 80% 55%; 
-  --accent-foreground: 20 30% 15%;
+  --accent: 100 32% 45%; 
+  --accent-foreground: 0 0% 100%;
   
   --destructive: 0 62% 30%;
   --destructive-foreground: 0 0% 100%;
 
-  --border: 20 20% 25%;
-  --input: 20 20% 25%;
-  --ring: 14 78% 55%;
+  --border: 22 22% 24%;
+  --input: 22 22% 24%;
+  --ring: 5 65% 54%;
 }
 
 @layer base {

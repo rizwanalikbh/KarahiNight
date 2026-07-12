@@ -54,7 +54,7 @@ Note: the underlying package/folder is still named `pizza-night` (kept internal 
 - Friendly, homemade feel — not a commercial restaurant app
 - No payment integration, no public registration, no email verification
 - Prices vary per dish — see default menu above; admin can edit per event
-- Theme: "Spice Route" — paprika red-orange primary, turmeric gold accent, warm cream background, espresso brown foreground
+- Theme: "Karahi Ingredients" — tomato red primary, coriander green accent, ginger cream background, browned-meat brown foreground
 
 ## Gotchas
 
