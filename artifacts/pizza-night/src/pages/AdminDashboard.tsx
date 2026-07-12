@@ -116,6 +116,33 @@ function PizzaTypeEditor({
   const [newDiscounted, setNewDiscounted] = useState("");
   const [newCategory, setNewCategory] = useState<MenuCategory>("Main");
 
+  const [editingIndex, setEditingIndex] = useState<number | null>(null);
+  const [editName, setEditName] = useState("");
+  const [editPrice, setEditPrice] = useState("");
+  const [editDiscounted, setEditDiscounted] = useState("");
+  const [editCategory, setEditCategory] = useState<MenuCategory>("Main");
+
+  const startEdit = (index: number, pt: PizzaType) => {
+    setEditingIndex(index);
+    setEditName(pt.name);
+    setEditPrice(String(pt.price));
+    setEditDiscounted(pt.discountedPrice !== undefined ? String(pt.discountedPrice) : "");
+    setEditCategory((pt.category as MenuCategory) ?? "Main");
+  };
+
+  const cancelEdit = () => setEditingIndex(null);
+
+  const saveEdit = (index: number) => {
+    const name = editName.trim();
+    const price = parseInt(editPrice, 10);
+    if (!name || isNaN(price)) return;
+    const discountedPrice = editDiscounted !== "" ? parseInt(editDiscounted, 10) : undefined;
+    const next = [...pizzaTypes];
+    next[index] = { name, price, category: editCategory, ...(discountedPrice !== undefined && !isNaN(discountedPrice) ? { discountedPrice } : {}) };
+    onChange(next);
+    setEditingIndex(null);
+  };
+
   const add = () => {
     const name = newName.trim();
     const price = parseInt(newPrice, 10);
@@ -155,34 +182,79 @@ function PizzaTypeEditor({
           <div key={category} className="space-y-1.5">
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{category}</p>
             {items.map(({ pt, i }, position) => (
-              <div key={i} className="flex items-center gap-2 px-3 py-2 border rounded-lg bg-background text-sm">
-                <div className="flex flex-col -my-1">
-                  <button
-                    type="button"
-                    onClick={() => moveWithinGroup(items, position, -1)}
-                    disabled={position === 0}
-                    className="text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:hover:text-muted-foreground transition-colors"
-                    title="Move up"
-                  >
-                    <ChevronUp className="w-3.5 h-3.5" />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => moveWithinGroup(items, position, 1)}
-                    disabled={position === items.length - 1}
-                    className="text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:hover:text-muted-foreground transition-colors"
-                    title="Move down"
-                  >
-                    <ChevronDown className="w-3.5 h-3.5" />
-                  </button>
+              editingIndex === i ? (
+                <div key={i} className="flex gap-2 items-end flex-wrap px-3 py-2 border rounded-lg bg-secondary/20">
+                  <div className="flex-1 min-w-[120px] space-y-1">
+                    <label className="text-xs text-muted-foreground">Name</label>
+                    <Input className="h-8 text-sm" value={editName}
+                      onChange={(e) => setEditName(e.target.value)}
+                      onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); saveEdit(i); } if (e.key === "Escape") cancelEdit(); }} />
+                  </div>
+                  <div className="w-32 space-y-1">
+                    <label className="text-xs text-muted-foreground">Category</label>
+                    <Select value={editCategory} onValueChange={(v) => setEditCategory(v as MenuCategory)}>
+                      <SelectTrigger className="h-8 text-sm">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {MENU_CATEGORIES.map((cat) => (
+                          <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="w-24 space-y-1">
+                    <label className="text-xs text-muted-foreground">Price (DKK)</label>
+                    <Input type="number" min={0} className="h-8 text-sm" value={editPrice} onChange={(e) => setEditPrice(e.target.value)} />
+                  </div>
+                  <div className="w-28 space-y-1">
+                    <label className="text-xs text-muted-foreground">Discounted (opt.)</label>
+                    <Input type="number" min={0} className="h-8 text-sm" placeholder="—" value={editDiscounted} onChange={(e) => setEditDiscounted(e.target.value)} />
+                  </div>
+                  <div className="flex gap-1 shrink-0">
+                    <Button type="button" size="sm" className="h-8" onClick={() => saveEdit(i)} disabled={!editName.trim()}>
+                      <Check className="w-3.5 h-3.5" />
+                    </Button>
+                    <Button type="button" size="sm" variant="outline" className="h-8" onClick={cancelEdit}>
+                      <X className="w-3.5 h-3.5" />
+                    </Button>
+                  </div>
                 </div>
-                <span className="flex-1 font-medium">{pt.name}</span>
-                <span className="text-muted-foreground">{pt.price} DKK</span>
-                {pt.discountedPrice !== undefined && (
-                  <span className="text-xs text-accent">({pt.discountedPrice} DKK discounted)</span>
-                )}
-                <button type="button" onClick={() => remove(i)} className="text-muted-foreground hover:text-destructive transition-colors ml-1">×</button>
-              </div>
+              ) : (
+                <div key={i} className="flex items-center gap-2 px-3 py-2 border rounded-lg bg-background text-sm">
+                  <div className="flex flex-col -my-1">
+                    <button
+                      type="button"
+                      onClick={() => moveWithinGroup(items, position, -1)}
+                      disabled={position === 0}
+                      className="text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:hover:text-muted-foreground transition-colors"
+                      title="Move up"
+                    >
+                      <ChevronUp className="w-3.5 h-3.5" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => moveWithinGroup(items, position, 1)}
+                      disabled={position === items.length - 1}
+                      className="text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:hover:text-muted-foreground transition-colors"
+                      title="Move down"
+                    >
+                      <ChevronDown className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                  <button type="button" onClick={() => startEdit(i, pt)} className="flex-1 text-left font-medium hover:text-primary transition-colors">
+                    {pt.name}
+                  </button>
+                  <span className="text-muted-foreground">{pt.price} DKK</span>
+                  {pt.discountedPrice !== undefined && (
+                    <span className="text-xs text-accent">({pt.discountedPrice} DKK discounted)</span>
+                  )}
+                  <button type="button" onClick={() => startEdit(i, pt)} className="text-muted-foreground hover:text-primary transition-colors ml-1" title="Edit">
+                    <Pencil className="w-3.5 h-3.5" />
+                  </button>
+                  <button type="button" onClick={() => remove(i)} className="text-muted-foreground hover:text-destructive transition-colors ml-1" title="Remove">×</button>
+                </div>
+              )
             ))}
           </div>
         ))}
