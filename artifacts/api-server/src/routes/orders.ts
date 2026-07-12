@@ -128,6 +128,11 @@ router.post("/orders", requireAuth, async (req, res): Promise<void> => {
   const typedItems = items as PizzaItem[];
   const totalQuantity = mainQuantity(typedItems, eventPizzaTypes);
 
+  if (totalQuantity < 1) {
+    res.status(400).json({ error: "Please select at least one main dish for your order." });
+    return;
+  }
+
   const existingUserOrders = await db
     .select()
     .from(ordersTable)
@@ -246,8 +251,13 @@ router.patch("/orders/:id", requireAuth, async (req, res): Promise<void> => {
       const typedItems = parsed.data.items as PizzaItem[];
       const [ownerEvent] = await db.select().from(eventsTable).where(eq(eventsTable.id, existing.eventId));
       const ownerEventPizzaTypes = Array.isArray(ownerEvent?.pizzaTypes) ? ownerEvent.pizzaTypes : [];
+      const adminQuantity = mainQuantity(typedItems, ownerEventPizzaTypes);
+      if (adminQuantity < 1) {
+        res.status(400).json({ error: "Order must include at least one main dish." });
+        return;
+      }
       updateData.pizzaItems = typedItems;
-      updateData.quantity = mainQuantity(typedItems, ownerEventPizzaTypes);
+      updateData.quantity = adminQuantity;
     }
   } else {
     // Guest can only change dish types / add more dishes — never reduce count
@@ -280,6 +290,11 @@ router.patch("/orders/:id", requireAuth, async (req, res): Promise<void> => {
 
     const newTotal = mainQuantity(newItems, eventPizzaTypes);
     const existingTotal = existing.quantity;
+
+    if (newTotal < 1) {
+      res.status(400).json({ error: "Your order must include at least one main dish." });
+      return;
+    }
 
     if (event.maxPerGuest !== null && event.maxPerGuest !== undefined && newTotal > event.maxPerGuest) {
       res.status(400).json({ error: `You can order at most ${event.maxPerGuest} main dish(es) per guest for this event.` });
