@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useGetSummary, useListEvents, useGetMe, getGetSummaryQueryKey } from "@workspace/api-client-react";
 import type { Event } from "@workspace/api-client-react";
-import { useLocation } from "wouter";
+import { Link, useLocation } from "wouter";
 import { Layout } from "../components/Layout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -212,6 +212,9 @@ export function Home() {
             </a>
             <p className="text-sm text-muted-foreground">Tap to join · or scan the QR code</p>
           </div>
+          <Link href="/orders/history" className="text-sm text-muted-foreground hover:text-primary underline underline-offset-2 transition-colors pt-2">
+            View previous orders
+          </Link>
         </div>
       </Layout>
     );
@@ -337,6 +340,10 @@ export function Home() {
             )}
           </div>
         ) : null}
+
+        <Link href="/orders/history" className="text-sm text-muted-foreground hover:text-primary underline underline-offset-2 transition-colors pt-2">
+          View previous orders
+        </Link>
       </div>
     </Layout>
   );
