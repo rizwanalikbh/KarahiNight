@@ -51,7 +51,7 @@ export async function seedDefaultEventDescription(): Promise<void> {
 }
 
 export const DEFAULT_ORDER_DESCRIPTION =
-  "Please double-check your dish selection and pickup slot before submitting. Payment is due at pickup — cash or MobilePay accepted.";
+  "All portions are medium family size — enough for 2 adults and 2 children. Every karahi is cooked in homemade desi ghee; if you have a dairy/ghee allergy or any dietary concerns, please mention it in the order notes. Payment is due at pickup — cash or MobilePay accepted.";
 
 export async function seedDefaultOrderDescription(): Promise<void> {
   const [existing] = await db

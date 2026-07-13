@@ -1369,7 +1369,15 @@ export function AdminDashboard() {
                               </div>
                             </TableCell>
                             <TableCell className="text-sm">{order.pickupSlot}</TableCell>
-                            <TableCell className="max-w-[120px] truncate text-xs">{order.notes || "—"}</TableCell>
+                            <TableCell className="max-w-[220px] text-xs">
+                              {order.notes ? (
+                                <span className="inline-block px-2 py-1 rounded-md bg-amber-100 text-amber-900 font-bold leading-snug">
+                                  {order.notes}
+                                </span>
+                              ) : (
+                                <span className="text-muted-foreground">—</span>
+                              )}
+                            </TableCell>
                             <TableCell>
                               <Select
                                 value={order.status}
