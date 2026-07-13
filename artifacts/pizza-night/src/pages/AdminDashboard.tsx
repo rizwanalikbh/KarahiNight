@@ -239,7 +239,7 @@ function PizzaTypeEditor({
                     <Input type="number" min={0} className="h-8 text-sm" placeholder="—" value={editDiscounted} onChange={(e) => setEditDiscounted(e.target.value)} />
                   </div>
                   <div className="flex-1 min-w-[220px] space-y-1">
-                    <label className="text-xs text-muted-foreground">Portion size description (opt.)</label>
+                    <label className="text-xs text-muted-foreground">Description (opt.)</label>
                     <Input className="h-8 text-sm" placeholder="e.g. Medium Family Size - enough for two adults and two children"
                       value={editPortionDescription} onChange={(e) => setEditPortionDescription(e.target.value)}
                       onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); saveEdit(i); } if (e.key === "Escape") cancelEdit(); }} />
@@ -327,7 +327,7 @@ function PizzaTypeEditor({
           <Input type="number" min={0} className="h-8 text-sm" placeholder="—" value={newDiscounted} onChange={(e) => setNewDiscounted(e.target.value)} />
         </div>
         <div className="flex-1 min-w-[220px] space-y-1">
-          <label className="text-xs text-muted-foreground">Portion size description (opt.)</label>
+          <label className="text-xs text-muted-foreground">Description (opt.)</label>
           <Input className="h-8 text-sm" placeholder="e.g. Medium Family Size - enough for two adults and two children"
             value={newPortionDescription}
             onChange={(e) => { setNewPortionDescription(e.target.value); setNewPortionDescriptionTouched(true); }}
@@ -1062,10 +1062,10 @@ export function AdminDashboard() {
       if (typeof d.value === "string") {
         setDefaultPortionDescriptionOriginal(d.value);
         setDefaultPortionDescriptionDraft(d.value);
-        toast({ title: "Default portion description saved" });
+        toast({ title: "Default dish description saved" });
       }
     } catch {
-      toast({ title: "Failed to save default portion description", variant: "destructive" });
+      toast({ title: "Failed to save default dish description", variant: "destructive" });
     } finally {
       setDefaultPortionDescriptionSaving(false);
     }
@@ -1857,19 +1857,19 @@ export function AdminDashboard() {
             <Card>
               <CardHeader className="pb-3">
                 <CardTitle className="text-lg flex items-center gap-2">
-                  <FileText className="w-5 h-5" /> Default Portion Size Description
+                  <FileText className="w-5 h-5" /> Default Dish Description
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <p className="text-sm text-muted-foreground">
-                  Pre-fills the "Portion size description" field when adding a new menu item. It's fully editable per item and never affects existing items.
+                  Pre-fills the "Description" field when adding a new menu item. It's fully editable per item and never affects existing items.
                 </p>
                 <Textarea
                   value={defaultPortionDescriptionDraft}
                   onChange={(e) => setDefaultPortionDescriptionDraft(e.target.value)}
                   rows={2}
                   className="text-sm"
-                  placeholder="Enter default portion size description…"
+                  placeholder="Enter default dish description…"
                 />
                 <div className="flex items-center justify-between">
                   <p className="text-xs text-muted-foreground">
