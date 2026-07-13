@@ -23,6 +23,7 @@ export const eventsTable = pgTable("events", {
   totalCapacity: integer("total_capacity").notNull().default(10),
   slotCapacity: integer("slot_capacity").notNull().default(3),
   description: text("description"),
+  orderDescription: text("order_description"),
   slots: jsonb("slots").$type<string[]>().notNull().default(DEFAULT_SLOTS),
   pizzaTypes: jsonb("pizza_types").$type<PizzaType[]>().notNull().default(DEFAULT_PIZZA_TYPES),
   maxPerGuest: integer("max_per_guest"),

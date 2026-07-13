@@ -50,17 +50,17 @@ export async function seedDefaultEventDescription(): Promise<void> {
   }
 }
 
-export const DEFAULT_PORTION_DESCRIPTION =
-  "Medium Family Size - enough for two adults and two children";
+export const DEFAULT_ORDER_DESCRIPTION =
+  "Please double-check your dish selection and pickup slot before submitting. Payment is due at pickup — cash or MobilePay accepted.";
 
-export async function seedDefaultPortionDescription(): Promise<void> {
+export async function seedDefaultOrderDescription(): Promise<void> {
   const [existing] = await db
     .select()
     .from(appSettingsTable)
-    .where(eq(appSettingsTable.key, "default_portion_description"))
+    .where(eq(appSettingsTable.key, "default_order_description"))
     .limit(1);
   if (!existing) {
-    await db.insert(appSettingsTable).values({ key: "default_portion_description", value: DEFAULT_PORTION_DESCRIPTION });
+    await db.insert(appSettingsTable).values({ key: "default_order_description", value: DEFAULT_ORDER_DESCRIPTION });
   }
 }
 
@@ -153,16 +153,16 @@ router.patch("/settings/default-event-description", async (req, res): Promise<vo
   res.json({ value: value.trim() });
 });
 
-router.get("/settings/default-portion-description", async (req, res): Promise<void> => {
+router.get("/settings/default-order-description", async (req, res): Promise<void> => {
   const [setting] = await db
     .select()
     .from(appSettingsTable)
-    .where(eq(appSettingsTable.key, "default_portion_description"))
+    .where(eq(appSettingsTable.key, "default_order_description"))
     .limit(1);
-  res.json({ value: setting?.value ?? DEFAULT_PORTION_DESCRIPTION });
+  res.json({ value: setting?.value ?? DEFAULT_ORDER_DESCRIPTION });
 });
 
-router.patch("/settings/default-portion-description", async (req, res): Promise<void> => {
+router.patch("/settings/default-order-description", async (req, res): Promise<void> => {
   if (req.session?.role !== "admin") {
     res.status(403).json({ error: "Admin access required" });
     return;
@@ -174,7 +174,7 @@ router.patch("/settings/default-portion-description", async (req, res): Promise<
   }
   await db
     .insert(appSettingsTable)
-    .values({ key: "default_portion_description", value: value.trim() })
+    .values({ key: "default_order_description", value: value.trim() })
     .onConflictDoUpdate({
       target: appSettingsTable.key,
       set: { value: value.trim(), updatedAt: new Date() },

@@ -28,6 +28,11 @@ export interface EventUpdate {
   maxPerGuest?: number | null;
   description?: string;
   /**
+     * Text shown to customers on the Order page informing them about order details (e.g. pickup/payment reminders). Set to null to clear it.
+     * @nullable
+     */
+  orderDescription?: string | null;
+  /**
      * Cutoff datetime after which no new orders or edits are accepted
      * @nullable
      */

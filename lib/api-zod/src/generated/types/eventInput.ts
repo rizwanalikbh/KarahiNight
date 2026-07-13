@@ -24,6 +24,8 @@ export interface EventInput {
      */
   maxPerGuest?: number;
   description?: string;
+  /** Text shown to customers on the Order page informing them about order details (e.g. pickup/payment reminders). */
+  orderDescription?: string;
   /** Cutoff datetime after which no new orders or edits are accepted */
   orderDeadline?: Date;
   /** Pickup location name */

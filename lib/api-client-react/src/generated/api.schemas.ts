@@ -127,6 +127,11 @@ export interface Event {
      */
   description?: string | null;
   /**
+     * Text shown to customers on the Order page informing them about order details (e.g. pickup/payment reminders).
+     * @nullable
+     */
+  orderDescription?: string | null;
+  /**
      * Cutoff datetime after which no new orders or edits are accepted
      * @nullable
      */
@@ -197,6 +202,8 @@ export interface EventInput {
      */
   maxPerGuest?: number;
   description?: string;
+  /** Text shown to customers on the Order page informing them about order details (e.g. pickup/payment reminders). */
+  orderDescription?: string;
   /** Cutoff datetime after which no new orders or edits are accepted */
   orderDeadline?: string;
   /** Pickup location name */
@@ -241,6 +248,11 @@ export interface EventUpdate {
      */
   maxPerGuest?: number | null;
   description?: string;
+  /**
+     * Text shown to customers on the Order page informing them about order details (e.g. pickup/payment reminders). Set to null to clear it.
+     * @nullable
+     */
+  orderDescription?: string | null;
   /**
      * Cutoff datetime after which no new orders or edits are accepted
      * @nullable
@@ -495,6 +507,11 @@ export interface EventSummary {
   maxPerGuest: number | null;
   /** @nullable */
   description?: string | null;
+  /**
+     * Text shown to customers on the Order page informing them about order details (e.g. pickup/payment reminders).
+     * @nullable
+     */
+  orderDescription?: string | null;
   pizzaTypes: PizzaType[];
   slots: SlotSummary[];
   guests: EventGuest[];

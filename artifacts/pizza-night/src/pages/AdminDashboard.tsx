@@ -112,22 +112,12 @@ type MenuCategory = typeof MENU_CATEGORIES[number];
 function PizzaTypeEditor({
   pizzaTypes,
   onChange,
-  defaultPortionDescription = "",
-}: { pizzaTypes: PizzaType[]; onChange: (types: PizzaType[]) => void; defaultPortionDescription?: string }) {
+}: { pizzaTypes: PizzaType[]; onChange: (types: PizzaType[]) => void }) {
   const [newName, setNewName] = useState("");
   const [newPrice, setNewPrice] = useState("90");
   const [newDiscounted, setNewDiscounted] = useState("");
   const [newCategory, setNewCategory] = useState<MenuCategory>("Main");
   const [newPortionDescription, setNewPortionDescription] = useState("");
-  const [newPortionDescriptionTouched, setNewPortionDescriptionTouched] = useState(false);
-
-  // Pre-fill the "new item" portion description with the admin-configured
-  // default once it loads, unless the admin has already started typing one.
-  useEffect(() => {
-    if (!newPortionDescriptionTouched && defaultPortionDescription) {
-      setNewPortionDescription(defaultPortionDescription);
-    }
-  }, [defaultPortionDescription, newPortionDescriptionTouched]);
 
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [editName, setEditName] = useState("");
@@ -178,8 +168,7 @@ function PizzaTypeEditor({
     setNewPrice("90");
     setNewDiscounted("");
     setNewCategory("Main");
-    setNewPortionDescription(defaultPortionDescription);
-    setNewPortionDescriptionTouched(false);
+    setNewPortionDescription("");
   };
 
   const remove = (index: number) => onChange(pizzaTypes.filter((_, i) => i !== index));
@@ -330,7 +319,7 @@ function PizzaTypeEditor({
           <label className="text-xs text-muted-foreground">Description (opt.)</label>
           <Input className="h-8 text-sm" placeholder="e.g. Medium Family Size - enough for two adults and two children"
             value={newPortionDescription}
-            onChange={(e) => { setNewPortionDescription(e.target.value); setNewPortionDescriptionTouched(true); }}
+            onChange={(e) => setNewPortionDescription(e.target.value)}
             onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); add(); } }} />
         </div>
         <Button type="button" size="sm" className="h-8 shrink-0" onClick={add} disabled={!newName.trim()}>
@@ -342,7 +331,7 @@ function PizzaTypeEditor({
 }
 
 // ── Inline event editor ──────────────────────────────────────────────────────
-function EventEditPanel({ event, allEvents, defaultPortionDescription, onClose }: { event: Event; allEvents: Event[]; defaultPortionDescription: string; onClose: () => void }) {
+function EventEditPanel({ event, allEvents, onClose }: { event: Event; allEvents: Event[]; onClose: () => void }) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const updateEvent = useUpdateEvent();
@@ -370,6 +359,7 @@ function EventEditPanel({ event, allEvents, defaultPortionDescription, onClose }
   const [slotCap, setSlotCap] = useState(String(event.slotCapacity));
   const [maxPerGuest, setMaxPerGuest] = useState(event.maxPerGuest != null ? String(event.maxPerGuest) : "");
   const [description, setDescription] = useState(event.description ?? "");
+  const [orderDescription, setOrderDescription] = useState(event.orderDescription ?? "");
   const [location, setLocation] = useState(event.location ?? "");
   const [locationUrl, setLocationUrl] = useState(event.locationUrl ?? "");
   const [bannerVariant, setBannerVariant] = useState<string | null>(event.bannerVariant ?? DEFAULT_BANNER_ID);
@@ -403,6 +393,7 @@ function EventEditPanel({ event, allEvents, defaultPortionDescription, onClose }
           slotCapacity: parseInt(slotCap, 10) || 3,
           maxPerGuest: maxPerGuest === "" ? null : (parseInt(maxPerGuest, 10) || null),
           description: description || undefined,
+          orderDescription: orderDescription || null,
           orderDeadline: orderDeadline || null,
           location: location || null,
           locationUrl: locationUrl || null,
@@ -503,6 +494,16 @@ function EventEditPanel({ event, allEvents, defaultPortionDescription, onClose }
           placeholder="Shown on home & order pages..."
         />
       </div>
+      <div className="space-y-1.5">
+        <Label className="text-sm">Order Description <span className="text-muted-foreground font-normal">(optional)</span></Label>
+        <Textarea
+          value={orderDescription}
+          onChange={(e) => setOrderDescription(e.target.value)}
+          className="resize-none"
+          rows={2}
+          placeholder="Shown to customers on the order page..."
+        />
+      </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="space-y-1.5">
           <Label className="text-sm">Pickup Location <span className="text-muted-foreground font-normal">(optional)</span></Label>
@@ -515,7 +516,7 @@ function EventEditPanel({ event, allEvents, defaultPortionDescription, onClose }
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <TagEditor label="Pickup Slots" tags={slots} onChange={setSlots} placeholder="e.g. 17:00-17:30" />
-        <PizzaTypeEditor pizzaTypes={pizzaTypes} onChange={setPizzaTypes} defaultPortionDescription={defaultPortionDescription} />
+        <PizzaTypeEditor pizzaTypes={pizzaTypes} onChange={setPizzaTypes} />
       </div>
       <BannerPicker
         value={{ bannerVariant, customBannerUrl }}
@@ -885,6 +886,7 @@ export function AdminDashboard() {
   const [newEventSlot, setNewEventSlot] = useState("3");
   const [newEventMaxPerGuest, setNewEventMaxPerGuest] = useState("");
   const [newEventDescription, setNewEventDescription] = useState("");
+  const [newEventOrderDescription, setNewEventOrderDescription] = useState("");
   const [newEventDeadline, setNewEventDeadline] = useState("");
   const [newEventSlots, setNewEventSlots] = useState<string[]>(DEFAULT_SLOTS);
   const [newEventPizzaTypes, setNewEventPizzaTypes] = useState<PizzaType[]>(DEFAULT_PIZZA_TYPES);
@@ -924,9 +926,9 @@ export function AdminDashboard() {
   const [defaultEventDescriptionDraft, setDefaultEventDescriptionDraft] = useState("");
   const [defaultEventDescriptionOriginal, setDefaultEventDescriptionOriginal] = useState("");
   const [defaultEventDescriptionSaving, setDefaultEventDescriptionSaving] = useState(false);
-  const [defaultPortionDescriptionDraft, setDefaultPortionDescriptionDraft] = useState("");
-  const [defaultPortionDescriptionOriginal, setDefaultPortionDescriptionOriginal] = useState("");
-  const [defaultPortionDescriptionSaving, setDefaultPortionDescriptionSaving] = useState(false);
+  const [defaultOrderDescriptionDraft, setDefaultOrderDescriptionDraft] = useState("");
+  const [defaultOrderDescriptionOriginal, setDefaultOrderDescriptionOriginal] = useState("");
+  const [defaultOrderDescriptionSaving, setDefaultOrderDescriptionSaving] = useState(false);
 
   useEffect(() => {
     if (!sessionLoading && (!session?.authenticated || session.role !== "admin")) {
@@ -985,12 +987,13 @@ export function AdminDashboard() {
   }, []);
 
   useEffect(() => {
-    fetch("/api/settings/default-portion-description")
+    fetch("/api/settings/default-order-description")
       .then((r) => r.json())
       .then((d: { value?: string }) => {
         if (typeof d.value === "string") {
-          setDefaultPortionDescriptionDraft(d.value);
-          setDefaultPortionDescriptionOriginal(d.value);
+          setDefaultOrderDescriptionDraft(d.value);
+          setDefaultOrderDescriptionOriginal(d.value);
+          setNewEventOrderDescription(d.value);
         }
       })
       .catch(() => {});
@@ -1048,26 +1051,26 @@ export function AdminDashboard() {
     }
   };
 
-  const handleSaveDefaultPortionDescription = async () => {
-    if (defaultPortionDescriptionDraft === defaultPortionDescriptionOriginal) return;
-    setDefaultPortionDescriptionSaving(true);
+  const handleSaveDefaultOrderDescription = async () => {
+    if (defaultOrderDescriptionDraft === defaultOrderDescriptionOriginal) return;
+    setDefaultOrderDescriptionSaving(true);
     try {
-      const r = await fetch("/api/settings/default-portion-description", {
+      const r = await fetch("/api/settings/default-order-description", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ value: defaultPortionDescriptionDraft }),
+        body: JSON.stringify({ value: defaultOrderDescriptionDraft }),
       });
       if (!r.ok) throw new Error("Failed");
       const d: { value?: string } = await r.json();
       if (typeof d.value === "string") {
-        setDefaultPortionDescriptionOriginal(d.value);
-        setDefaultPortionDescriptionDraft(d.value);
-        toast({ title: "Default dish description saved" });
+        setDefaultOrderDescriptionOriginal(d.value);
+        setDefaultOrderDescriptionDraft(d.value);
+        toast({ title: "Default order description saved" });
       }
     } catch {
-      toast({ title: "Failed to save default dish description", variant: "destructive" });
+      toast({ title: "Failed to save default order description", variant: "destructive" });
     } finally {
-      setDefaultPortionDescriptionSaving(false);
+      setDefaultOrderDescriptionSaving(false);
     }
   };
 
@@ -1154,6 +1157,7 @@ export function AdminDashboard() {
           slotCapacity: parseInt(newEventSlot, 10) || 3,
           maxPerGuest: newEventMaxPerGuest === "" ? undefined : (parseInt(newEventMaxPerGuest, 10) || undefined),
           description: newEventDescription || undefined,
+          orderDescription: newEventOrderDescription || undefined,
           orderDeadline: newEventDeadline || undefined,
           location: newEventLocation || undefined,
           locationUrl: newEventLocationUrl || undefined,
@@ -1170,6 +1174,7 @@ export function AdminDashboard() {
           setNewEventName("");
           setNewEventVolumeTouched(false);
           setNewEventDescription(defaultEventDescriptionOriginal);
+          setNewEventOrderDescription(defaultOrderDescriptionOriginal);
           setNewEventDeadline("");
           setNewEventDate(getDefaultEventDate());
           setNewEventSlots(DEFAULT_SLOTS);
@@ -1508,6 +1513,16 @@ export function AdminDashboard() {
                         rows={2}
                       />
                     </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-sm">Order Description <span className="text-muted-foreground font-normal">(optional)</span></Label>
+                      <Textarea
+                        placeholder="Shown to customers on the order page..."
+                        value={newEventOrderDescription}
+                        onChange={(e) => setNewEventOrderDescription(e.target.value)}
+                        className="resize-none"
+                        rows={2}
+                      />
+                    </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div className="space-y-1.5">
                         <Label className="text-sm">Pickup Location <span className="text-muted-foreground font-normal">(optional)</span></Label>
@@ -1520,7 +1535,7 @@ export function AdminDashboard() {
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <TagEditor label="Pickup Slots" tags={newEventSlots} onChange={setNewEventSlots} placeholder="e.g. 17:00-17:30" />
-                      <PizzaTypeEditor pizzaTypes={newEventPizzaTypes} onChange={setNewEventPizzaTypes} defaultPortionDescription={defaultPortionDescriptionOriginal} />
+                      <PizzaTypeEditor pizzaTypes={newEventPizzaTypes} onChange={setNewEventPizzaTypes} />
                     </div>
                     <BannerPicker
                       value={{ bannerVariant: newEventBannerVariant, customBannerUrl: newEventCustomBannerUrl }}
@@ -1626,7 +1641,7 @@ export function AdminDashboard() {
                       </div>
 
                       {editingEventId === event.id && (
-                        <EventEditPanel event={event} allEvents={events ?? []} defaultPortionDescription={defaultPortionDescriptionOriginal} onClose={() => setEditingEventId(null)} />
+                        <EventEditPanel event={event} allEvents={events ?? []} onClose={() => setEditingEventId(null)} />
                       )}
                     </CardContent>
                   </Card>
@@ -1857,36 +1872,36 @@ export function AdminDashboard() {
             <Card>
               <CardHeader className="pb-3">
                 <CardTitle className="text-lg flex items-center gap-2">
-                  <FileText className="w-5 h-5" /> Default Dish Description
+                  <FileText className="w-5 h-5" /> Default Order Description
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <p className="text-sm text-muted-foreground">
-                  Pre-fills the "Description" field when adding a new menu item. It's fully editable per item and never affects existing items.
+                  Pre-fills the "Order Description" field (shown to customers on the order page) when creating a new event. It's fully editable per event and never affects existing events.
                 </p>
                 <Textarea
-                  value={defaultPortionDescriptionDraft}
-                  onChange={(e) => setDefaultPortionDescriptionDraft(e.target.value)}
+                  value={defaultOrderDescriptionDraft}
+                  onChange={(e) => setDefaultOrderDescriptionDraft(e.target.value)}
                   rows={2}
                   className="text-sm"
-                  placeholder="Enter default dish description…"
+                  placeholder="Enter default order description…"
                 />
                 <div className="flex items-center justify-between">
                   <p className="text-xs text-muted-foreground">
-                    {defaultPortionDescriptionDraft !== defaultPortionDescriptionOriginal ? "Unsaved changes" : "Saved"}
+                    {defaultOrderDescriptionDraft !== defaultOrderDescriptionOriginal ? "Unsaved changes" : "Saved"}
                   </p>
                   <div className="flex gap-2">
-                    {defaultPortionDescriptionDraft !== defaultPortionDescriptionOriginal && (
-                      <Button variant="outline" size="sm" onClick={() => setDefaultPortionDescriptionDraft(defaultPortionDescriptionOriginal)}>
+                    {defaultOrderDescriptionDraft !== defaultOrderDescriptionOriginal && (
+                      <Button variant="outline" size="sm" onClick={() => setDefaultOrderDescriptionDraft(defaultOrderDescriptionOriginal)}>
                         Reset
                       </Button>
                     )}
                     <Button
                       size="sm"
-                      onClick={handleSaveDefaultPortionDescription}
-                      disabled={defaultPortionDescriptionSaving || defaultPortionDescriptionDraft === defaultPortionDescriptionOriginal}
+                      onClick={handleSaveDefaultOrderDescription}
+                      disabled={defaultOrderDescriptionSaving || defaultOrderDescriptionDraft === defaultOrderDescriptionOriginal}
                     >
-                      {defaultPortionDescriptionSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Check className="w-4 h-4 mr-1.5" /> Save</>}
+                      {defaultOrderDescriptionSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Check className="w-4 h-4 mr-1.5" /> Save</>}
                     </Button>
                   </div>
                 </div>

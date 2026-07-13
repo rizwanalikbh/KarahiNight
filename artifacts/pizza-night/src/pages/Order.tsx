@@ -819,6 +819,13 @@ export function Order() {
               {priceLabel(pizzaTypes)}{summary?.description ? ` — ${summary.description}` : ""}
             </CardDescription>
           </CardHeader>
+          {summary?.orderDescription && (
+            <div className="px-6 pb-2">
+              <div className="bg-secondary/40 border border-border/60 rounded-xl p-3 text-sm text-foreground whitespace-pre-line">
+                {summary.orderDescription}
+              </div>
+            </div>
+          )}
           <CardContent>
             <form onSubmit={handleFormContinue} className="space-y-8">
 

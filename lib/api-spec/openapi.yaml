@@ -800,6 +800,9 @@ components:
         description:
           type: ["string", "null"]
           description: Event description or fundraising note
+        orderDescription:
+          type: ["string", "null"]
+          description: Text shown to customers on the Order page informing them about order details (e.g. pickup/payment reminders).
         orderDeadline:
           type: ["string", "null"]
           format: date-time
@@ -870,6 +873,9 @@ components:
           description: Maximum number of dishes a single guest may order. Omit for no limit.
         description:
           type: string
+        orderDescription:
+          type: string
+          description: Text shown to customers on the Order page informing them about order details (e.g. pickup/payment reminders).
         orderDeadline:
           type: string
           format: date-time
@@ -919,6 +925,9 @@ components:
           description: Maximum dishes per guest. Set to null to remove the limit.
         description:
           type: string
+        orderDescription:
+          type: ["string", "null"]
+          description: Text shown to customers on the Order page informing them about order details (e.g. pickup/payment reminders). Set to null to clear it.
         orderDeadline:
           type: ["string", "null"]
           format: date-time
@@ -1266,6 +1275,9 @@ components:
           description: Maximum dishes per guest for this event. Null means no per-guest limit.
         description:
           type: ["string", "null"]
+        orderDescription:
+          type: ["string", "null"]
+          description: Text shown to customers on the Order page informing them about order details (e.g. pickup/payment reminders).
         pizzaTypes:
           type: array
           items:

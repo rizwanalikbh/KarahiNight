@@ -104,6 +104,7 @@ export const ListEventsResponseItem = zod.object({
   "totalCapacity": zod.number(),
   "slotCapacity": zod.number(),
   "description": zod.string().nullish().describe('Event description or fundraising note'),
+  "orderDescription": zod.string().nullish().describe('Text shown to customers on the Order page informing them about order details (e.g. pickup\/payment reminders).'),
   "orderDeadline": zod.coerce.date().nullish().describe('Cutoff datetime after which no new orders or edits are accepted'),
   "slots": zod.array(zod.string()),
   "pizzaTypes": zod.array(zod.object({
@@ -147,6 +148,7 @@ export const CreateEventBody = zod.object({
   "slotCapacity": zod.number().default(createEventBodySlotCapacityDefault),
   "maxPerGuest": zod.number().min(1).optional().describe('Maximum number of dishes a single guest may order. Omit for no limit.'),
   "description": zod.string().optional(),
+  "orderDescription": zod.string().optional().describe('Text shown to customers on the Order page informing them about order details (e.g. pickup\/payment reminders).'),
   "orderDeadline": zod.coerce.date().optional().describe('Cutoff datetime after which no new orders or edits are accepted'),
   "location": zod.string().optional().describe('Pickup location name'),
   "locationUrl": zod.string().optional().describe('Google Maps or other map URL for the pickup location'),
@@ -186,6 +188,7 @@ export const UpdateEventBody = zod.object({
   "slotCapacity": zod.number().optional(),
   "maxPerGuest": zod.number().min(1).nullish().describe('Maximum dishes per guest. Set to null to remove the limit.'),
   "description": zod.string().optional(),
+  "orderDescription": zod.string().nullish().describe('Text shown to customers on the Order page informing them about order details (e.g. pickup\/payment reminders). Set to null to clear it.'),
   "orderDeadline": zod.coerce.date().nullish().describe('Cutoff datetime after which no new orders or edits are accepted'),
   "slots": zod.array(zod.string()).optional(),
   "pizzaTypes": zod.array(zod.object({
@@ -217,6 +220,7 @@ export const UpdateEventResponse = zod.object({
   "totalCapacity": zod.number(),
   "slotCapacity": zod.number(),
   "description": zod.string().nullish().describe('Event description or fundraising note'),
+  "orderDescription": zod.string().nullish().describe('Text shown to customers on the Order page informing them about order details (e.g. pickup\/payment reminders).'),
   "orderDeadline": zod.coerce.date().nullish().describe('Cutoff datetime after which no new orders or edits are accepted'),
   "slots": zod.array(zod.string()),
   "pizzaTypes": zod.array(zod.object({
@@ -487,6 +491,7 @@ export const GetSummaryResponse = zod.object({
   "orderDeadline": zod.coerce.date().nullish().describe('Cutoff datetime after which no new orders or edits are accepted'),
   "maxPerGuest": zod.number().nullable().describe('Maximum dishes per guest for this event. Null means no per-guest limit.'),
   "description": zod.string().nullish(),
+  "orderDescription": zod.string().nullish().describe('Text shown to customers on the Order page informing them about order details (e.g. pickup\/payment reminders).'),
   "pizzaTypes": zod.array(zod.object({
   "name": zod.string().describe('Dish name (e.g. Chicken Karahi)'),
   "price": zod.number().min(getSummaryResponsePizzaTypesItemPriceMin).describe('Price in DKK'),

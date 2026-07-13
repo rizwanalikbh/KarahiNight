@@ -29,6 +29,11 @@ export interface EventSummary {
   maxPerGuest: number | null;
   /** @nullable */
   description?: string | null;
+  /**
+     * Text shown to customers on the Order page informing them about order details (e.g. pickup/payment reminders).
+     * @nullable
+     */
+  orderDescription?: string | null;
   pizzaTypes: PizzaType[];
   slots: SlotSummary[];
   guests: EventGuest[];
