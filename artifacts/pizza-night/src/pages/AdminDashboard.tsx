@@ -34,14 +34,13 @@ import {
 import { useQueryClient } from "@tanstack/react-query";
 import { OrderUpdateStatus } from "@workspace/api-client-react";
 
-type PizzaType = { name: string; price: number; discountedPrice?: number; category?: string; portionDescription?: string; description?: string };
+type PizzaType = { name: string; price: number; discountedPrice?: number; category?: string; description?: string };
 
 const DEFAULT_SLOTS = ["16:00-16:30","16:30-17:00","17:00-17:30","17:30-18:00","18:00-18:30","18:30-19:00"];
-const DEFAULT_PORTION_DESCRIPTION = "Medium Family Size - enough for two adults and two children";
 const DEFAULT_PIZZA_TYPES: PizzaType[] = [
-  { name: "Lamb Karahi", price: 429, category: "Main", portionDescription: DEFAULT_PORTION_DESCRIPTION, description: "Premium Danish lamb leg, bone-in for deep flavour — slow-simmered, then finished on high flame." },
-  { name: "Chicken Karahi", price: 279, category: "Main", portionDescription: DEFAULT_PORTION_DESCRIPTION, description: "Whole welfare-certified Danish chicken, cut karahi-style — juicy, tender, cooked fresh on high flame." },
-  { name: "Beef Karahi", price: 339, category: "Main", portionDescription: DEFAULT_PORTION_DESCRIPTION, description: "Lean, boneless beef — high-protein cut, flame-cooked in fresh masala." },
+  { name: "Lamb Karahi", price: 429, category: "Main", description: "Premium Danish lamb leg, bone-in for deep flavour — slow-simmered, then finished on high flame." },
+  { name: "Chicken Karahi", price: 279, category: "Main", description: "Whole welfare-certified Danish chicken, cut karahi-style — juicy, tender, cooked fresh on high flame." },
+  { name: "Beef Karahi", price: 339, category: "Main", description: "Lean, boneless beef — high-protein cut, flame-cooked in fresh masala." },
   { name: "Plain Naan", price: 15, category: "Staples", description: "Freshly baked naan from Royal Naan — the perfect companion to your karahi." },
 ];
 
@@ -117,7 +116,6 @@ function PizzaTypeEditor({
   const [newPrice, setNewPrice] = useState("90");
   const [newDiscounted, setNewDiscounted] = useState("");
   const [newCategory, setNewCategory] = useState<MenuCategory>("Main");
-  const [newPortionDescription, setNewPortionDescription] = useState("");
   const [newDescription, setNewDescription] = useState("");
 
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
@@ -125,7 +123,6 @@ function PizzaTypeEditor({
   const [editPrice, setEditPrice] = useState("");
   const [editDiscounted, setEditDiscounted] = useState("");
   const [editCategory, setEditCategory] = useState<MenuCategory>("Main");
-  const [editPortionDescription, setEditPortionDescription] = useState("");
   const [editDescription, setEditDescription] = useState("");
 
   const startEdit = (index: number, pt: PizzaType) => {
@@ -134,7 +131,6 @@ function PizzaTypeEditor({
     setEditPrice(String(pt.price));
     setEditDiscounted(pt.discountedPrice !== undefined ? String(pt.discountedPrice) : "");
     setEditCategory((pt.category as MenuCategory) ?? "Main");
-    setEditPortionDescription(pt.portionDescription ?? "");
     setEditDescription(pt.description ?? "");
   };
 
@@ -145,13 +141,11 @@ function PizzaTypeEditor({
     const price = parseInt(editPrice, 10);
     if (!name || isNaN(price)) return;
     const discountedPrice = editDiscounted !== "" ? parseInt(editDiscounted, 10) : undefined;
-    const portionDescription = editPortionDescription.trim();
     const description = editDescription.trim();
     const next = [...pizzaTypes];
     next[index] = {
       name, price, category: editCategory,
       ...(discountedPrice !== undefined && !isNaN(discountedPrice) ? { discountedPrice } : {}),
-      ...(portionDescription ? { portionDescription } : {}),
       ...(description ? { description } : {}),
     };
     onChange(next);
@@ -163,19 +157,16 @@ function PizzaTypeEditor({
     const price = parseInt(newPrice, 10);
     if (!name || isNaN(price)) return;
     const discountedPrice = newDiscounted !== "" ? parseInt(newDiscounted, 10) : undefined;
-    const portionDescription = newPortionDescription.trim();
     const description = newDescription.trim();
     onChange([...pizzaTypes, {
       name, price, category: newCategory,
       ...(discountedPrice !== undefined && !isNaN(discountedPrice) ? { discountedPrice } : {}),
-      ...(portionDescription ? { portionDescription } : {}),
       ...(description ? { description } : {}),
     }]);
     setNewName("");
     setNewPrice("90");
     setNewDiscounted("");
     setNewCategory("Main");
-    setNewPortionDescription("");
     setNewDescription("");
   };
 
@@ -236,12 +227,6 @@ function PizzaTypeEditor({
                     <Input type="number" min={0} className="h-8 text-sm" placeholder="—" value={editDiscounted} onChange={(e) => setEditDiscounted(e.target.value)} />
                   </div>
                   <div className="flex-1 min-w-[220px] space-y-1">
-                    <label className="text-xs text-muted-foreground">Serving Size (opt.)</label>
-                    <Input className="h-8 text-sm" placeholder="e.g. Medium Family Size - enough for two adults and two children"
-                      value={editPortionDescription} onChange={(e) => setEditPortionDescription(e.target.value)}
-                      onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); saveEdit(i); } if (e.key === "Escape") cancelEdit(); }} />
-                  </div>
-                  <div className="flex-1 min-w-[220px] space-y-1">
                     <label className="text-xs text-muted-foreground">Description (opt.)</label>
                     <Input className="h-8 text-sm" placeholder="e.g. Lean, boneless beef — high-protein cut, flame-cooked in fresh masala."
                       value={editDescription} onChange={(e) => setEditDescription(e.target.value)}
@@ -280,9 +265,6 @@ function PizzaTypeEditor({
                   </div>
                   <button type="button" onClick={() => startEdit(i, pt)} className="flex-1 text-left min-w-0">
                     <span className="block font-medium hover:text-primary transition-colors truncate">{pt.name}</span>
-                    {pt.portionDescription && (
-                      <span className="block text-xs text-muted-foreground truncate">{pt.portionDescription}</span>
-                    )}
                     {pt.description && (
                       <span className="block text-xs text-muted-foreground truncate italic">{pt.description}</span>
                     )}
@@ -331,13 +313,6 @@ function PizzaTypeEditor({
         <div className="w-28 space-y-1">
           <label className="text-xs text-muted-foreground">Discounted (opt.)</label>
           <Input type="number" min={0} className="h-8 text-sm" placeholder="—" value={newDiscounted} onChange={(e) => setNewDiscounted(e.target.value)} />
-        </div>
-        <div className="flex-1 min-w-[220px] space-y-1">
-          <label className="text-xs text-muted-foreground">Serving Size (opt.)</label>
-          <Input className="h-8 text-sm" placeholder="e.g. Medium Family Size - enough for two adults and two children"
-            value={newPortionDescription}
-            onChange={(e) => setNewPortionDescription(e.target.value)}
-            onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); add(); } }} />
         </div>
         <div className="flex-1 min-w-[220px] space-y-1">
           <label className="text-xs text-muted-foreground">Description (opt.)</label>

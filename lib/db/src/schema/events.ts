@@ -3,15 +3,14 @@ import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 
 export type PizzaCategory = "Main" | "Staples" | "Sides" | "Drinks" | "Dessert";
-export type PizzaType = { name: string; price: number; discountedPrice?: number; category?: PizzaCategory; portionDescription?: string; description?: string };
+export type PizzaType = { name: string; price: number; discountedPrice?: number; category?: PizzaCategory; description?: string };
 export type EventType = "regular" | "special";
 
 const DEFAULT_SLOTS = ["16:00-16:30","16:30-17:00","17:00-17:30","17:30-18:00","18:00-18:30","18:30-19:00"];
-const DEFAULT_PORTION_DESCRIPTION = "Medium Family Size - enough for two adults and two children";
 const DEFAULT_PIZZA_TYPES: PizzaType[] = [
-  { name: "Lamb Karahi", price: 429, category: "Main", portionDescription: DEFAULT_PORTION_DESCRIPTION, description: "Premium Danish lamb leg, bone-in for deep flavour — slow-simmered, then finished on high flame." },
-  { name: "Chicken Karahi", price: 279, category: "Main", portionDescription: DEFAULT_PORTION_DESCRIPTION, description: "Whole welfare-certified Danish chicken, cut karahi-style — juicy, tender, cooked fresh on high flame." },
-  { name: "Beef Karahi", price: 339, category: "Main", portionDescription: DEFAULT_PORTION_DESCRIPTION, description: "Lean, boneless beef — high-protein cut, flame-cooked in fresh masala." },
+  { name: "Lamb Karahi", price: 429, category: "Main", description: "Premium Danish lamb leg, bone-in for deep flavour — slow-simmered, then finished on high flame." },
+  { name: "Chicken Karahi", price: 279, category: "Main", description: "Whole welfare-certified Danish chicken, cut karahi-style — juicy, tender, cooked fresh on high flame." },
+  { name: "Beef Karahi", price: 339, category: "Main", description: "Lean, boneless beef — high-protein cut, flame-cooked in fresh masala." },
   { name: "Plain Naan", price: 15, category: "Staples", description: "Freshly baked naan from Royal Naan — the perfect companion to your karahi." },
 ];
 

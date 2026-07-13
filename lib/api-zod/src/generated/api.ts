@@ -112,8 +112,7 @@ export const ListEventsResponseItem = zod.object({
   "price": zod.number().min(listEventsResponsePizzaTypesItemPriceMin).describe('Price in DKK'),
   "discountedPrice": zod.number().min(listEventsResponsePizzaTypesItemDiscountedPriceMin).optional().describe('Optional discounted price in DKK'),
   "category": zod.enum(['Main', 'Staples', 'Sides', 'Drinks', 'Dessert']).optional().describe('Menu category this dish belongs to. Defaults to Main when omitted.'),
-  "portionDescription": zod.string().optional().describe('Portion size description shown to guests while ordering (e.g. \"Medium Family Size - enough for two adults and two children\").'),
-  "description": zod.string().optional().describe('Short flavor\/dish description shown to guests on the order page (e.g. \"Lean, boneless beef — high-protein cut, flame-cooked in fresh masala.\"). Distinct from portionDescription, which describes serving size.')
+  "description": zod.string().optional().describe('Short flavor\/dish description shown to guests on the order page (e.g. \"Lean, boneless beef — high-protein cut, flame-cooked in fresh masala.\").')
 })),
   "active": zod.boolean(),
   "maxPerGuest": zod.number().min(1).nullish().describe('Maximum number of dishes a single guest may order. Null means no limit.'),
@@ -161,8 +160,7 @@ export const CreateEventBody = zod.object({
   "price": zod.number().min(createEventBodyPizzaTypesItemPriceMin).describe('Price in DKK'),
   "discountedPrice": zod.number().min(createEventBodyPizzaTypesItemDiscountedPriceMin).optional().describe('Optional discounted price in DKK'),
   "category": zod.enum(['Main', 'Staples', 'Sides', 'Drinks', 'Dessert']).optional().describe('Menu category this dish belongs to. Defaults to Main when omitted.'),
-  "portionDescription": zod.string().optional().describe('Portion size description shown to guests while ordering (e.g. \"Medium Family Size - enough for two adults and two children\").'),
-  "description": zod.string().optional().describe('Short flavor\/dish description shown to guests on the order page (e.g. \"Lean, boneless beef — high-protein cut, flame-cooked in fresh masala.\"). Distinct from portionDescription, which describes serving size.')
+  "description": zod.string().optional().describe('Short flavor\/dish description shown to guests on the order page (e.g. \"Lean, boneless beef — high-protein cut, flame-cooked in fresh masala.\").')
 })).optional()
 })
 
@@ -198,8 +196,7 @@ export const UpdateEventBody = zod.object({
   "price": zod.number().min(updateEventBodyPizzaTypesItemPriceMin).describe('Price in DKK'),
   "discountedPrice": zod.number().min(updateEventBodyPizzaTypesItemDiscountedPriceMin).optional().describe('Optional discounted price in DKK'),
   "category": zod.enum(['Main', 'Staples', 'Sides', 'Drinks', 'Dessert']).optional().describe('Menu category this dish belongs to. Defaults to Main when omitted.'),
-  "portionDescription": zod.string().optional().describe('Portion size description shown to guests while ordering (e.g. \"Medium Family Size - enough for two adults and two children\").'),
-  "description": zod.string().optional().describe('Short flavor\/dish description shown to guests on the order page (e.g. \"Lean, boneless beef — high-protein cut, flame-cooked in fresh masala.\"). Distinct from portionDescription, which describes serving size.')
+  "description": zod.string().optional().describe('Short flavor\/dish description shown to guests on the order page (e.g. \"Lean, boneless beef — high-protein cut, flame-cooked in fresh masala.\").')
 })).optional(),
   "active": zod.boolean().optional(),
   "location": zod.string().nullish().describe('Pickup location name'),
@@ -231,8 +228,7 @@ export const UpdateEventResponse = zod.object({
   "price": zod.number().min(updateEventResponsePizzaTypesItemPriceMin).describe('Price in DKK'),
   "discountedPrice": zod.number().min(updateEventResponsePizzaTypesItemDiscountedPriceMin).optional().describe('Optional discounted price in DKK'),
   "category": zod.enum(['Main', 'Staples', 'Sides', 'Drinks', 'Dessert']).optional().describe('Menu category this dish belongs to. Defaults to Main when omitted.'),
-  "portionDescription": zod.string().optional().describe('Portion size description shown to guests while ordering (e.g. \"Medium Family Size - enough for two adults and two children\").'),
-  "description": zod.string().optional().describe('Short flavor\/dish description shown to guests on the order page (e.g. \"Lean, boneless beef — high-protein cut, flame-cooked in fresh masala.\"). Distinct from portionDescription, which describes serving size.')
+  "description": zod.string().optional().describe('Short flavor\/dish description shown to guests on the order page (e.g. \"Lean, boneless beef — high-protein cut, flame-cooked in fresh masala.\").')
 })),
   "active": zod.boolean(),
   "maxPerGuest": zod.number().min(1).nullish().describe('Maximum number of dishes a single guest may order. Null means no limit.'),
@@ -501,8 +497,7 @@ export const GetSummaryResponse = zod.object({
   "price": zod.number().min(getSummaryResponsePizzaTypesItemPriceMin).describe('Price in DKK'),
   "discountedPrice": zod.number().min(getSummaryResponsePizzaTypesItemDiscountedPriceMin).optional().describe('Optional discounted price in DKK'),
   "category": zod.enum(['Main', 'Staples', 'Sides', 'Drinks', 'Dessert']).optional().describe('Menu category this dish belongs to. Defaults to Main when omitted.'),
-  "portionDescription": zod.string().optional().describe('Portion size description shown to guests while ordering (e.g. \"Medium Family Size - enough for two adults and two children\").'),
-  "description": zod.string().optional().describe('Short flavor\/dish description shown to guests on the order page (e.g. \"Lean, boneless beef — high-protein cut, flame-cooked in fresh masala.\"). Distinct from portionDescription, which describes serving size.')
+  "description": zod.string().optional().describe('Short flavor\/dish description shown to guests on the order page (e.g. \"Lean, boneless beef — high-protein cut, flame-cooked in fresh masala.\").')
 })),
   "slots": zod.array(zod.object({
   "slot": zod.string(),
