@@ -1261,12 +1261,12 @@ export function AdminDashboard() {
                   <form onSubmit={handleCreateEvent} className="space-y-4">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div className="space-y-1.5">
-                        <Label className="text-sm">Event Name</Label>
-                        <Input placeholder="e.g. Friday Karahi Night" value={newEventName} onChange={(e) => setNewEventName(e.target.value)} />
-                      </div>
-                      <div className="space-y-1.5">
                         <Label className="text-sm">Date</Label>
                         <Input type="date" value={newEventDate} onChange={(e) => setNewEventDate(e.target.value)} />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label className="text-sm">Event Name</Label>
+                        <Input placeholder="e.g. Friday Karahi Night" value={newEventName} onChange={(e) => setNewEventName(e.target.value)} />
                       </div>
                       <div className="space-y-1.5">
                         <Label className="text-sm">Total Capacity</Label>
