@@ -340,10 +340,6 @@ export function Home() {
             )}
           </div>
         ) : null}
-
-        <Link href="/orders/history" className="text-sm text-muted-foreground hover:text-primary underline underline-offset-2 transition-colors pt-2">
-          View previous orders
-        </Link>
       </div>
     </Layout>
   );
