@@ -909,6 +909,9 @@ export function AdminDashboard() {
   const [orderTermsOriginal, setOrderTermsOriginal] = useState("");
   const [orderTermsSaving, setOrderTermsSaving] = useState(false);
   const [termsOrderId, setTermsOrderId] = useState<number | null>(null);
+  const [defaultEventDescriptionDraft, setDefaultEventDescriptionDraft] = useState("");
+  const [defaultEventDescriptionOriginal, setDefaultEventDescriptionOriginal] = useState("");
+  const [defaultEventDescriptionSaving, setDefaultEventDescriptionSaving] = useState(false);
 
   useEffect(() => {
     if (!sessionLoading && (!session?.authenticated || session.role !== "admin")) {
@@ -953,6 +956,19 @@ export function AdminDashboard() {
       .catch(() => {});
   }, []);
 
+  useEffect(() => {
+    fetch("/api/settings/default-event-description")
+      .then((r) => r.json())
+      .then((d: { value?: string }) => {
+        if (typeof d.value === "string") {
+          setDefaultEventDescriptionDraft(d.value);
+          setDefaultEventDescriptionOriginal(d.value);
+          setNewEventDescription(d.value);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
   if (sessionLoading) return <Layout><div className="flex justify-center p-12"><Loader2 className="animate-spin text-primary" /></div></Layout>;
   if (!session?.authenticated || session.role !== "admin") return null;
 
@@ -976,6 +992,32 @@ export function AdminDashboard() {
       toast({ title: "Failed to save consent text", variant: "destructive" });
     } finally {
       setConsentTextSaving(false);
+    }
+  };
+
+  const handleSaveDefaultEventDescription = async () => {
+    if (defaultEventDescriptionDraft === defaultEventDescriptionOriginal) return;
+    setDefaultEventDescriptionSaving(true);
+    try {
+      const r = await fetch("/api/settings/default-event-description", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ value: defaultEventDescriptionDraft }),
+      });
+      if (!r.ok) throw new Error("Failed");
+      const d: { value?: string } = await r.json();
+      if (typeof d.value === "string") {
+        setDefaultEventDescriptionOriginal(d.value);
+        setDefaultEventDescriptionDraft(d.value);
+        // If the Create Event form's description still matches the old default
+        // (i.e. the admin hasn't started customizing it for this event), keep it in sync.
+        setNewEventDescription((current) => (current === defaultEventDescriptionOriginal ? d.value! : current));
+        toast({ title: "Default event description saved" });
+      }
+    } catch {
+      toast({ title: "Failed to save default event description", variant: "destructive" });
+    } finally {
+      setDefaultEventDescriptionSaving(false);
     }
   };
 
@@ -1077,7 +1119,7 @@ export function AdminDashboard() {
           setNewEventType("regular");
           setNewEventName("");
           setNewEventVolumeTouched(false);
-          setNewEventDescription("");
+          setNewEventDescription(defaultEventDescriptionOriginal);
           setNewEventDeadline("");
           setNewEventDate(getDefaultEventDate());
           setNewEventSlots(DEFAULT_SLOTS);
@@ -1717,6 +1759,45 @@ export function AdminDashboard() {
                       disabled={orderTermsSaving || !orderTermsDraft.trim() || orderTermsDraft === orderTermsOriginal}
                     >
                       {orderTermsSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Check className="w-4 h-4 mr-1.5" /> Save</>}
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <CalendarDays className="w-5 h-5" /> Default Event Description
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <p className="text-sm text-muted-foreground">
+                  Pre-fills the Description field when creating a new event. It's fully editable per event and never affects existing events.
+                </p>
+                <Textarea
+                  value={defaultEventDescriptionDraft}
+                  onChange={(e) => setDefaultEventDescriptionDraft(e.target.value)}
+                  rows={4}
+                  className="text-sm"
+                  placeholder="Enter default event description…"
+                />
+                <div className="flex items-center justify-between">
+                  <p className="text-xs text-muted-foreground">
+                    {defaultEventDescriptionDraft !== defaultEventDescriptionOriginal ? "Unsaved changes" : "Saved"}
+                  </p>
+                  <div className="flex gap-2">
+                    {defaultEventDescriptionDraft !== defaultEventDescriptionOriginal && (
+                      <Button variant="outline" size="sm" onClick={() => setDefaultEventDescriptionDraft(defaultEventDescriptionOriginal)}>
+                        Reset
+                      </Button>
+                    )}
+                    <Button
+                      size="sm"
+                      onClick={handleSaveDefaultEventDescription}
+                      disabled={defaultEventDescriptionSaving || defaultEventDescriptionDraft === defaultEventDescriptionOriginal}
+                    >
+                      {defaultEventDescriptionSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Check className="w-4 h-4 mr-1.5" /> Save</>}
                     </Button>
                   </div>
                 </div>

@@ -2,7 +2,7 @@ import app from "./app";
 import { logger } from "./lib/logger";
 import { db, adminUsersTable } from "@workspace/db";
 import { sql } from "drizzle-orm";
-import { seedConsentText, seedOrderTerms } from "./routes/settings";
+import { seedConsentText, seedOrderTerms, seedDefaultEventDescription } from "./routes/settings";
 
 async function seedAdmins() {
   const superusers = [
@@ -44,4 +44,5 @@ app.listen(port, (err) => {
   seedAdmins().catch((err) => logger.error({ err }, "Failed to seed admins"));
   seedConsentText().catch((err) => logger.error({ err }, "Failed to seed consent text"));
   seedOrderTerms().catch((err) => logger.error({ err }, "Failed to seed order terms"));
+  seedDefaultEventDescription().catch((err) => logger.error({ err }, "Failed to seed default event description"));
 });
