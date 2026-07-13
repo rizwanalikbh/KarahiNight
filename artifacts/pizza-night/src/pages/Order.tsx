@@ -24,7 +24,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useQueryClient } from "@tanstack/react-query";
 import { getBannerSrc } from "@/lib/banners";
 
-interface PizzaType { name: string; price: number; discountedPrice?: number; category?: string; portionDescription?: string; }
+interface PizzaType { name: string; price: number; discountedPrice?: number; category?: string; portionDescription?: string; description?: string; }
 interface PizzaItem { pizzaChoice: string; quantity: number; }
 
 const MENU_CATEGORY_ORDER = ["Main", "Staples", "Sides", "Drinks", "Dessert"];
@@ -913,6 +913,11 @@ export function Order() {
                               <span className={`block text-xs mt-0.5 ${item.pizzaChoice === pt.name ? "text-primary/60" : "text-muted-foreground"}`}>
                                 {pt.discountedPrice !== undefined ? <><s>{pt.price}</s> {pt.discountedPrice}</> : pt.price} DKK
                               </span>
+                              {pt.description && (
+                                <span className={`block text-[11px] mt-1 leading-snug line-clamp-1 ${item.pizzaChoice === pt.name ? "text-primary/60" : "text-muted-foreground"}`}>
+                                  {pt.description}
+                                </span>
+                              )}
                               {pt.portionDescription && (
                                 <span className={`block text-[11px] mt-1 leading-snug ${item.pizzaChoice === pt.name ? "text-primary/60" : "text-muted-foreground"}`}>
                                   {pt.portionDescription}
@@ -943,6 +948,9 @@ export function Order() {
                                 <span className="block text-xs text-muted-foreground">
                                   {pt.discountedPrice !== undefined ? <><s>{pt.price}</s> {pt.discountedPrice}</> : pt.price} DKK
                                 </span>
+                                {pt.description && (
+                                  <span className="block text-[11px] text-muted-foreground mt-0.5 leading-snug line-clamp-1">{pt.description}</span>
+                                )}
                               </div>
                               <Input
                                 type="number"

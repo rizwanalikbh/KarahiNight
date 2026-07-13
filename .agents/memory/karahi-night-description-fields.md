@@ -11,3 +11,5 @@ The app has three separate, unrelated description fields — always confirm whic
 
 **Why:** A prior request to add a "description" field was implemented as a menu-item prefill default, then had to be reworked into a per-event field because the requester meant order-level info, not per-dish info.
 **How to apply:** When asked to add/rename/repurpose a "description" setting, ask (or infer from context) which of the three scopes — event, order, or dish — is meant before touching schema/settings.
+
+4. **Menu-item flavor description** (`PizzaType.description`) — short flavor/marketing line per dish (e.g. "Lean, boneless beef — high-protein cut..."), separate from `portionDescription` (serving size, e.g. "Medium Family Size..."). Both shown together on Order page dish cards; admin editor labels them "Description (opt.)" and "Serving Size (opt.)" respectively.

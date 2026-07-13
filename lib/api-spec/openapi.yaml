@@ -778,6 +778,9 @@ components:
         portionDescription:
           type: string
           description: Portion size description shown to guests while ordering (e.g. "Medium Family Size - enough for two adults and two children").
+        description:
+          type: string
+          description: Short flavor/dish description shown to guests on the order page (e.g. "Lean, boneless beef — high-protein cut, flame-cooked in fresh masala."). Distinct from portionDescription, which describes serving size.
 
     Event:
       type: object

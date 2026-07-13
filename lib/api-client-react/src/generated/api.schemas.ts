@@ -99,6 +99,8 @@ export interface PizzaType {
   category?: PizzaTypeCategory;
   /** Portion size description shown to guests while ordering (e.g. "Medium Family Size - enough for two adults and two children"). */
   portionDescription?: string;
+  /** Short flavor/dish description shown to guests on the order page (e.g. "Lean, boneless beef — high-protein cut, flame-cooked in fresh masala."). Distinct from portionDescription, which describes serving size. */
+  description?: string;
 }
 
 /**
