@@ -112,12 +112,22 @@ type MenuCategory = typeof MENU_CATEGORIES[number];
 function PizzaTypeEditor({
   pizzaTypes,
   onChange,
-}: { pizzaTypes: PizzaType[]; onChange: (types: PizzaType[]) => void }) {
+  defaultPortionDescription = "",
+}: { pizzaTypes: PizzaType[]; onChange: (types: PizzaType[]) => void; defaultPortionDescription?: string }) {
   const [newName, setNewName] = useState("");
   const [newPrice, setNewPrice] = useState("90");
   const [newDiscounted, setNewDiscounted] = useState("");
   const [newCategory, setNewCategory] = useState<MenuCategory>("Main");
   const [newPortionDescription, setNewPortionDescription] = useState("");
+  const [newPortionDescriptionTouched, setNewPortionDescriptionTouched] = useState(false);
+
+  // Pre-fill the "new item" portion description with the admin-configured
+  // default once it loads, unless the admin has already started typing one.
+  useEffect(() => {
+    if (!newPortionDescriptionTouched && defaultPortionDescription) {
+      setNewPortionDescription(defaultPortionDescription);
+    }
+  }, [defaultPortionDescription, newPortionDescriptionTouched]);
 
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [editName, setEditName] = useState("");
@@ -168,7 +178,8 @@ function PizzaTypeEditor({
     setNewPrice("90");
     setNewDiscounted("");
     setNewCategory("Main");
-    setNewPortionDescription("");
+    setNewPortionDescription(defaultPortionDescription);
+    setNewPortionDescriptionTouched(false);
   };
 
   const remove = (index: number) => onChange(pizzaTypes.filter((_, i) => i !== index));
@@ -318,7 +329,8 @@ function PizzaTypeEditor({
         <div className="flex-1 min-w-[220px] space-y-1">
           <label className="text-xs text-muted-foreground">Portion size description (opt.)</label>
           <Input className="h-8 text-sm" placeholder="e.g. Medium Family Size - enough for two adults and two children"
-            value={newPortionDescription} onChange={(e) => setNewPortionDescription(e.target.value)}
+            value={newPortionDescription}
+            onChange={(e) => { setNewPortionDescription(e.target.value); setNewPortionDescriptionTouched(true); }}
             onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); add(); } }} />
         </div>
         <Button type="button" size="sm" className="h-8 shrink-0" onClick={add} disabled={!newName.trim()}>
@@ -330,7 +342,7 @@ function PizzaTypeEditor({
 }
 
 // ── Inline event editor ──────────────────────────────────────────────────────
-function EventEditPanel({ event, allEvents, onClose }: { event: Event; allEvents: Event[]; onClose: () => void }) {
+function EventEditPanel({ event, allEvents, defaultPortionDescription, onClose }: { event: Event; allEvents: Event[]; defaultPortionDescription: string; onClose: () => void }) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const updateEvent = useUpdateEvent();
@@ -503,7 +515,7 @@ function EventEditPanel({ event, allEvents, onClose }: { event: Event; allEvents
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <TagEditor label="Pickup Slots" tags={slots} onChange={setSlots} placeholder="e.g. 17:00-17:30" />
-        <PizzaTypeEditor pizzaTypes={pizzaTypes} onChange={setPizzaTypes} />
+        <PizzaTypeEditor pizzaTypes={pizzaTypes} onChange={setPizzaTypes} defaultPortionDescription={defaultPortionDescription} />
       </div>
       <BannerPicker
         value={{ bannerVariant, customBannerUrl }}
@@ -912,6 +924,9 @@ export function AdminDashboard() {
   const [defaultEventDescriptionDraft, setDefaultEventDescriptionDraft] = useState("");
   const [defaultEventDescriptionOriginal, setDefaultEventDescriptionOriginal] = useState("");
   const [defaultEventDescriptionSaving, setDefaultEventDescriptionSaving] = useState(false);
+  const [defaultPortionDescriptionDraft, setDefaultPortionDescriptionDraft] = useState("");
+  const [defaultPortionDescriptionOriginal, setDefaultPortionDescriptionOriginal] = useState("");
+  const [defaultPortionDescriptionSaving, setDefaultPortionDescriptionSaving] = useState(false);
 
   useEffect(() => {
     if (!sessionLoading && (!session?.authenticated || session.role !== "admin")) {
@@ -969,6 +984,18 @@ export function AdminDashboard() {
       .catch(() => {});
   }, []);
 
+  useEffect(() => {
+    fetch("/api/settings/default-portion-description")
+      .then((r) => r.json())
+      .then((d: { value?: string }) => {
+        if (typeof d.value === "string") {
+          setDefaultPortionDescriptionDraft(d.value);
+          setDefaultPortionDescriptionOriginal(d.value);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
   if (sessionLoading) return <Layout><div className="flex justify-center p-12"><Loader2 className="animate-spin text-primary" /></div></Layout>;
   if (!session?.authenticated || session.role !== "admin") return null;
 
@@ -1018,6 +1045,29 @@ export function AdminDashboard() {
       toast({ title: "Failed to save default event description", variant: "destructive" });
     } finally {
       setDefaultEventDescriptionSaving(false);
+    }
+  };
+
+  const handleSaveDefaultPortionDescription = async () => {
+    if (defaultPortionDescriptionDraft === defaultPortionDescriptionOriginal) return;
+    setDefaultPortionDescriptionSaving(true);
+    try {
+      const r = await fetch("/api/settings/default-portion-description", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ value: defaultPortionDescriptionDraft }),
+      });
+      if (!r.ok) throw new Error("Failed");
+      const d: { value?: string } = await r.json();
+      if (typeof d.value === "string") {
+        setDefaultPortionDescriptionOriginal(d.value);
+        setDefaultPortionDescriptionDraft(d.value);
+        toast({ title: "Default portion description saved" });
+      }
+    } catch {
+      toast({ title: "Failed to save default portion description", variant: "destructive" });
+    } finally {
+      setDefaultPortionDescriptionSaving(false);
     }
   };
 
@@ -1470,7 +1520,7 @@ export function AdminDashboard() {
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <TagEditor label="Pickup Slots" tags={newEventSlots} onChange={setNewEventSlots} placeholder="e.g. 17:00-17:30" />
-                      <PizzaTypeEditor pizzaTypes={newEventPizzaTypes} onChange={setNewEventPizzaTypes} />
+                      <PizzaTypeEditor pizzaTypes={newEventPizzaTypes} onChange={setNewEventPizzaTypes} defaultPortionDescription={defaultPortionDescriptionOriginal} />
                     </div>
                     <BannerPicker
                       value={{ bannerVariant: newEventBannerVariant, customBannerUrl: newEventCustomBannerUrl }}
@@ -1576,7 +1626,7 @@ export function AdminDashboard() {
                       </div>
 
                       {editingEventId === event.id && (
-                        <EventEditPanel event={event} allEvents={events ?? []} onClose={() => setEditingEventId(null)} />
+                        <EventEditPanel event={event} allEvents={events ?? []} defaultPortionDescription={defaultPortionDescriptionOriginal} onClose={() => setEditingEventId(null)} />
                       )}
                     </CardContent>
                   </Card>
@@ -1798,6 +1848,45 @@ export function AdminDashboard() {
                       disabled={defaultEventDescriptionSaving || defaultEventDescriptionDraft === defaultEventDescriptionOriginal}
                     >
                       {defaultEventDescriptionSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Check className="w-4 h-4 mr-1.5" /> Save</>}
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <FileText className="w-5 h-5" /> Default Portion Size Description
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <p className="text-sm text-muted-foreground">
+                  Pre-fills the "Portion size description" field when adding a new menu item. It's fully editable per item and never affects existing items.
+                </p>
+                <Textarea
+                  value={defaultPortionDescriptionDraft}
+                  onChange={(e) => setDefaultPortionDescriptionDraft(e.target.value)}
+                  rows={2}
+                  className="text-sm"
+                  placeholder="Enter default portion size description…"
+                />
+                <div className="flex items-center justify-between">
+                  <p className="text-xs text-muted-foreground">
+                    {defaultPortionDescriptionDraft !== defaultPortionDescriptionOriginal ? "Unsaved changes" : "Saved"}
+                  </p>
+                  <div className="flex gap-2">
+                    {defaultPortionDescriptionDraft !== defaultPortionDescriptionOriginal && (
+                      <Button variant="outline" size="sm" onClick={() => setDefaultPortionDescriptionDraft(defaultPortionDescriptionOriginal)}>
+                        Reset
+                      </Button>
+                    )}
+                    <Button
+                      size="sm"
+                      onClick={handleSaveDefaultPortionDescription}
+                      disabled={defaultPortionDescriptionSaving || defaultPortionDescriptionDraft === defaultPortionDescriptionOriginal}
+                    >
+                      {defaultPortionDescriptionSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Check className="w-4 h-4 mr-1.5" /> Save</>}
                     </Button>
                   </div>
                 </div>

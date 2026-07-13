@@ -50,6 +50,20 @@ export async function seedDefaultEventDescription(): Promise<void> {
   }
 }
 
+export const DEFAULT_PORTION_DESCRIPTION =
+  "Medium Family Size - enough for two adults and two children";
+
+export async function seedDefaultPortionDescription(): Promise<void> {
+  const [existing] = await db
+    .select()
+    .from(appSettingsTable)
+    .where(eq(appSettingsTable.key, "default_portion_description"))
+    .limit(1);
+  if (!existing) {
+    await db.insert(appSettingsTable).values({ key: "default_portion_description", value: DEFAULT_PORTION_DESCRIPTION });
+  }
+}
+
 const router: IRouter = Router();
 
 router.get("/settings/consent-text", async (req, res): Promise<void> => {
@@ -132,6 +146,35 @@ router.patch("/settings/default-event-description", async (req, res): Promise<vo
   await db
     .insert(appSettingsTable)
     .values({ key: "default_event_description", value: value.trim() })
+    .onConflictDoUpdate({
+      target: appSettingsTable.key,
+      set: { value: value.trim(), updatedAt: new Date() },
+    });
+  res.json({ value: value.trim() });
+});
+
+router.get("/settings/default-portion-description", async (req, res): Promise<void> => {
+  const [setting] = await db
+    .select()
+    .from(appSettingsTable)
+    .where(eq(appSettingsTable.key, "default_portion_description"))
+    .limit(1);
+  res.json({ value: setting?.value ?? DEFAULT_PORTION_DESCRIPTION });
+});
+
+router.patch("/settings/default-portion-description", async (req, res): Promise<void> => {
+  if (req.session?.role !== "admin") {
+    res.status(403).json({ error: "Admin access required" });
+    return;
+  }
+  const { value } = req.body as { value?: unknown };
+  if (typeof value !== "string") {
+    res.status(400).json({ error: "value is required" });
+    return;
+  }
+  await db
+    .insert(appSettingsTable)
+    .values({ key: "default_portion_description", value: value.trim() })
     .onConflictDoUpdate({
       target: appSettingsTable.key,
       set: { value: value.trim(), updatedAt: new Date() },
