@@ -65,6 +65,8 @@ router.post("/events", requireAdmin, async (req, res): Promise<void> => {
       slug: await uniqueSlug(),
       name: parsed.data.name,
       date: parsed.data.date,
+      eventType: parsed.data.eventType ?? "special",
+      volumeNumber: parsed.data.eventType === "regular" ? parsed.data.volumeNumber ?? null : null,
       totalCapacity: parsed.data.totalCapacity ?? 10,
       slotCapacity: parsed.data.slotCapacity ?? 3,
       maxPerGuest: parsed.data.maxPerGuest ?? null,
@@ -93,6 +95,8 @@ router.patch("/events/:id", requireAdmin, async (req, res): Promise<void> => {
   const updateData: Record<string, unknown> = {};
   if (parsed.data.name !== undefined) updateData.name = parsed.data.name;
   if (parsed.data.date !== undefined) updateData.date = parsed.data.date;
+  if (parsed.data.eventType !== undefined) updateData.eventType = parsed.data.eventType;
+  if ("volumeNumber" in parsed.data) updateData.volumeNumber = parsed.data.volumeNumber ?? null;
   if (parsed.data.totalCapacity !== undefined) updateData.totalCapacity = parsed.data.totalCapacity;
   if (parsed.data.slotCapacity !== undefined) updateData.slotCapacity = parsed.data.slotCapacity;
   if ("maxPerGuest" in parsed.data) updateData.maxPerGuest = parsed.data.maxPerGuest ?? null;

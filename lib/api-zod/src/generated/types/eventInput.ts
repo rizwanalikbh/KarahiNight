@@ -5,12 +5,17 @@
  * Private Karahi Night preorder API
  * OpenAPI spec version: 0.1.0
  */
+import type { EventInputEventType } from './eventInputEventType';
 import type { PizzaType } from './pizzaType';
 
 export interface EventInput {
   name: string;
   /** ISO date string (YYYY-MM-DD) */
   date: string;
+  /** Regular events get an auto-generated name and volume number; special events have a free-text name. */
+  eventType?: EventInputEventType;
+  /** Volume number for regular events. Required and computed client-side when eventType is regular. */
+  volumeNumber?: number;
   totalCapacity?: number;
   slotCapacity?: number;
   /**

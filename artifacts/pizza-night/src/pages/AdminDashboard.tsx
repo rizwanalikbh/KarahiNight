@@ -26,6 +26,7 @@ import { useToast } from "@/hooks/use-toast";
 import { BannerPicker } from "../components/BannerPicker";
 import { EventPreviewCard } from "../components/EventPreviewCard";
 import { DEFAULT_BANNER_ID } from "../lib/banners";
+import { computeVolumeNumber, generateRegularEventName, getWeekdayName, type EventTypeLite } from "../lib/eventNaming";
 import {
   Loader2, Trash2, Plus, CalendarDays,
   ChevronDown, ChevronUp, Pencil, X, Check, FileText, Mail, Phone, ShieldCheck, Copy, Link,
@@ -329,13 +330,30 @@ function PizzaTypeEditor({
 }
 
 // ── Inline event editor ──────────────────────────────────────────────────────
-function EventEditPanel({ event, onClose }: { event: Event; onClose: () => void }) {
+function EventEditPanel({ event, allEvents, onClose }: { event: Event; allEvents: Event[]; onClose: () => void }) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const updateEvent = useUpdateEvent();
 
+  const [eventType, setEventType] = useState<EventTypeLite>((event.eventType as EventTypeLite) ?? "special");
   const [name, setName] = useState(event.name);
   const [date, setDate] = useState(event.date);
+  const [volumeNumber, setVolumeNumber] = useState<number>(event.volumeNumber ?? 1);
+  const [volumeTouched, setVolumeTouched] = useState(false);
+
+  // Other regular events, excluding this one, used to compute the volume number.
+  const otherRegularEvents = allEvents.filter((e) => e.id !== event.id);
+
+  useEffect(() => {
+    if (eventType !== "regular" || volumeTouched) return;
+    setVolumeNumber(computeVolumeNumber(date, otherRegularEvents));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [eventType, date, volumeTouched]);
+
+  useEffect(() => {
+    if (eventType !== "regular") return;
+    setName(generateRegularEventName(volumeNumber, date));
+  }, [eventType, volumeNumber, date]);
   const [totalCap, setTotalCap] = useState(String(event.totalCapacity));
   const [slotCap, setSlotCap] = useState(String(event.slotCapacity));
   const [maxPerGuest, setMaxPerGuest] = useState(event.maxPerGuest != null ? String(event.maxPerGuest) : "");
@@ -367,6 +385,8 @@ function EventEditPanel({ event, onClose }: { event: Event; onClose: () => void 
         id: event.id,
         data: {
           name, date,
+          eventType,
+          volumeNumber: eventType === "regular" ? volumeNumber : null,
           totalCapacity: parseInt(totalCap, 10) || 10,
           slotCapacity: parseInt(slotCap, 10) || 3,
           maxPerGuest: maxPerGuest === "" ? null : (parseInt(maxPerGuest, 10) || null),
@@ -396,12 +416,52 @@ function EventEditPanel({ event, onClose }: { event: Event; onClose: () => void 
     <form onSubmit={handleSave} className="border rounded-xl p-5 bg-secondary/10 space-y-4 mt-2">
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="space-y-1.5">
-          <Label className="text-sm">Event Name</Label>
-          <Input value={name} onChange={(e) => setName(e.target.value)} />
-        </div>
-        <div className="space-y-1.5">
           <Label className="text-sm">Date</Label>
           <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+        </div>
+        <div className="space-y-1.5">
+          <Label className="text-sm">Event Type</Label>
+          <div className="flex items-center gap-3">
+            <div className="inline-flex rounded-lg border p-0.5 bg-secondary/20">
+              <button
+                type="button"
+                onClick={() => setEventType("regular")}
+                className={`px-3 py-1 text-sm rounded-md transition-colors ${eventType === "regular" ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`}
+              >
+                Regular
+              </button>
+              <button
+                type="button"
+                onClick={() => setEventType("special")}
+                className={`px-3 py-1 text-sm rounded-md transition-colors ${eventType === "special" ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`}
+              >
+                Special
+              </button>
+            </div>
+            {eventType === "regular" && (
+              <div className="flex items-center gap-1.5">
+                <Label className="text-xs text-muted-foreground whitespace-nowrap">Vol.</Label>
+                <Input
+                  type="number"
+                  min={1}
+                  className="w-16 h-8 text-sm"
+                  value={volumeNumber}
+                  onChange={(e) => {
+                    setVolumeTouched(true);
+                    setVolumeNumber(parseInt(e.target.value, 10) || 1);
+                  }}
+                />
+              </div>
+            )}
+          </div>
+        </div>
+        <div className="space-y-1.5 sm:col-span-2">
+          <Label className="text-sm">Event Name</Label>
+          {eventType === "regular" ? (
+            <Input value={name} readOnly disabled className="bg-secondary/30" />
+          ) : (
+            <Input value={name} onChange={(e) => setName(e.target.value)} />
+          )}
         </div>
         <div className="space-y-1.5">
           <Label className="text-sm">Total Capacity</Label>
@@ -804,8 +864,11 @@ export function AdminDashboard() {
   const updateEvent = useUpdateEvent();
 
   // Event creation form state
+  const [newEventType, setNewEventType] = useState<EventTypeLite>("regular");
   const [newEventName, setNewEventName] = useState("");
   const [newEventDate, setNewEventDate] = useState(getDefaultEventDate);
+  const [newEventVolume, setNewEventVolume] = useState<number>(1);
+  const [newEventVolumeTouched, setNewEventVolumeTouched] = useState(false);
   const [newEventCapacity, setNewEventCapacity] = useState("10");
   const [newEventSlot, setNewEventSlot] = useState("3");
   const [newEventMaxPerGuest, setNewEventMaxPerGuest] = useState("");
@@ -852,6 +915,19 @@ export function AdminDashboard() {
       setLocation("/admin");
     }
   }, [sessionLoading, session, setLocation]);
+
+  // Auto-compute the volume number for the "Create Event" form whenever the
+  // date changes or events load, unless the admin has manually overridden it.
+  useEffect(() => {
+    if (newEventType !== "regular" || newEventVolumeTouched) return;
+    setNewEventVolume(computeVolumeNumber(newEventDate, events ?? []));
+  }, [newEventType, newEventDate, events, newEventVolumeTouched]);
+
+  // Auto-generate the display name for "Regular" events in the Create form.
+  useEffect(() => {
+    if (newEventType !== "regular") return;
+    setNewEventName(generateRegularEventName(newEventVolume, newEventDate));
+  }, [newEventType, newEventVolume, newEventDate]);
 
   useEffect(() => {
     fetch("/api/settings/consent-text")
@@ -980,6 +1056,8 @@ export function AdminDashboard() {
         data: {
           name: newEventName,
           date: newEventDate,
+          eventType: newEventType,
+          volumeNumber: newEventType === "regular" ? newEventVolume : undefined,
           totalCapacity: parseInt(newEventCapacity, 10) || 10,
           slotCapacity: parseInt(newEventSlot, 10) || 3,
           maxPerGuest: newEventMaxPerGuest === "" ? undefined : (parseInt(newEventMaxPerGuest, 10) || undefined),
@@ -996,7 +1074,9 @@ export function AdminDashboard() {
       {
         onSuccess: () => {
           toast({ title: "Event created" });
+          setNewEventType("regular");
           setNewEventName("");
+          setNewEventVolumeTouched(false);
           setNewEventDescription("");
           setNewEventDeadline("");
           setNewEventDate(getDefaultEventDate());
@@ -1265,8 +1345,48 @@ export function AdminDashboard() {
                         <Input type="date" value={newEventDate} onChange={(e) => setNewEventDate(e.target.value)} />
                       </div>
                       <div className="space-y-1.5">
+                        <Label className="text-sm">Event Type</Label>
+                        <div className="flex items-center gap-3">
+                          <div className="inline-flex rounded-lg border p-0.5 bg-secondary/20">
+                            <button
+                              type="button"
+                              onClick={() => setNewEventType("regular")}
+                              className={`px-3 py-1 text-sm rounded-md transition-colors ${newEventType === "regular" ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`}
+                            >
+                              Regular
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => { setNewEventType("special"); setNewEventName(""); }}
+                              className={`px-3 py-1 text-sm rounded-md transition-colors ${newEventType === "special" ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`}
+                            >
+                              Special
+                            </button>
+                          </div>
+                          {newEventType === "regular" && (
+                            <div className="flex items-center gap-1.5">
+                              <Label className="text-xs text-muted-foreground whitespace-nowrap">Vol.</Label>
+                              <Input
+                                type="number"
+                                min={1}
+                                className="w-16 h-8 text-sm"
+                                value={newEventVolume}
+                                onChange={(e) => {
+                                  setNewEventVolumeTouched(true);
+                                  setNewEventVolume(parseInt(e.target.value, 10) || 1);
+                                }}
+                              />
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      <div className="space-y-1.5 sm:col-span-2">
                         <Label className="text-sm">Event Name</Label>
-                        <Input placeholder="e.g. Friday Karahi Night" value={newEventName} onChange={(e) => setNewEventName(e.target.value)} />
+                        {newEventType === "regular" ? (
+                          <Input value={newEventName} readOnly disabled className="bg-secondary/30" />
+                        ) : (
+                          <Input placeholder="e.g. Friday Karahi Night" value={newEventName} onChange={(e) => setNewEventName(e.target.value)} />
+                        )}
                       </div>
                       <div className="space-y-1.5">
                         <Label className="text-sm">Total Capacity</Label>
@@ -1414,7 +1534,7 @@ export function AdminDashboard() {
                       </div>
 
                       {editingEventId === event.id && (
-                        <EventEditPanel event={event} onClose={() => setEditingEventId(null)} />
+                        <EventEditPanel event={event} allEvents={events ?? []} onClose={() => setEditingEventId(null)} />
                       )}
                     </CardContent>
                   </Card>

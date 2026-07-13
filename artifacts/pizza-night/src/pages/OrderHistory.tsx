@@ -1,4 +1,4 @@
-import { useGetMe, useListOrders } from "@workspace/api-client-react";
+import { useGetMe, useListOrders, getListOrdersQueryKey } from "@workspace/api-client-react";
 import { Link } from "wouter";
 import { Layout } from "../components/Layout";
 import { Card, CardContent } from "@/components/ui/card";
@@ -17,7 +17,7 @@ export function OrderHistory() {
 
   const { data: orders, isLoading: ordersLoading } = useListOrders(
     {},
-    { query: { enabled: isAuthenticated } }
+    { query: { enabled: isAuthenticated, queryKey: getListOrdersQueryKey({}) } }
   );
 
   if (sessionLoading || (isAuthenticated && ordersLoading)) {

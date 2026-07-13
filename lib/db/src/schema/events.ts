@@ -4,6 +4,7 @@ import { z } from "zod/v4";
 
 export type PizzaCategory = "Main" | "Staples" | "Sides" | "Drinks" | "Dessert";
 export type PizzaType = { name: string; price: number; discountedPrice?: number; category?: PizzaCategory; portionDescription?: string };
+export type EventType = "regular" | "special";
 
 const DEFAULT_SLOTS = ["16:00-16:30","16:30-17:00","17:00-17:30","17:30-18:00","18:00-18:30","18:30-19:00"];
 const DEFAULT_PORTION_DESCRIPTION = "Medium Family Size - enough for two adults and two children";
@@ -30,6 +31,8 @@ export const eventsTable = pgTable("events", {
   locationUrl: text("location_url"),
   bannerVariant: text("banner_variant"),
   customBannerUrl: text("custom_banner_url"),
+  eventType: text("event_type").$type<EventType>().notNull().default("special"),
+  volumeNumber: integer("volume_number"),
   active: boolean("active").notNull().default(true),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });

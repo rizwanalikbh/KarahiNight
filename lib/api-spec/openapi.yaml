@@ -830,6 +830,13 @@ components:
         customBannerUrl:
           type: ["string", "null"]
           description: Object storage path for an admin-uploaded custom banner image (e.g. "/objects/uploads/uuid").
+        eventType:
+          type: string
+          enum: [regular, special]
+          description: Regular events get an auto-generated name and volume number; special events have a free-text name.
+        volumeNumber:
+          type: ["integer", "null"]
+          description: Volume number for regular events. Saturday and Sunday of the same weekend share a volume number. Null for special events.
         createdAt:
           type: string
           format: date-time
@@ -843,6 +850,14 @@ components:
         date:
           type: string
           description: ISO date string (YYYY-MM-DD)
+        eventType:
+          type: string
+          enum: [regular, special]
+          default: special
+          description: Regular events get an auto-generated name and volume number; special events have a free-text name.
+        volumeNumber:
+          type: integer
+          description: Volume number for regular events. Required and computed client-side when eventType is regular.
         totalCapacity:
           type: integer
           default: 10
@@ -887,6 +902,13 @@ components:
           type: string
         date:
           type: string
+        eventType:
+          type: string
+          enum: [regular, special]
+          description: Regular events get an auto-generated name and volume number; special events have a free-text name.
+        volumeNumber:
+          type: ["integer", "null"]
+          description: Volume number for regular events. Set to null for special events.
         totalCapacity:
           type: integer
         slotCapacity:

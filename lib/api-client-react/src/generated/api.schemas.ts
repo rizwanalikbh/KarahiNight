@@ -101,6 +101,17 @@ export interface PizzaType {
   portionDescription?: string;
 }
 
+/**
+ * Regular events get an auto-generated name and volume number; special events have a free-text name.
+ */
+export type EventEventType = typeof EventEventType[keyof typeof EventEventType];
+
+
+export const EventEventType = {
+  regular: 'regular',
+  special: 'special',
+} as const;
+
 export interface Event {
   id: number;
   /** 6-character alphanumeric event code used in shareable URLs */
@@ -149,13 +160,35 @@ export interface Event {
      * @nullable
      */
   customBannerUrl?: string | null;
+  /** Regular events get an auto-generated name and volume number; special events have a free-text name. */
+  eventType?: EventEventType;
+  /**
+     * Volume number for regular events. Saturday and Sunday of the same weekend share a volume number. Null for special events.
+     * @nullable
+     */
+  volumeNumber?: number | null;
   createdAt: string;
 }
+
+/**
+ * Regular events get an auto-generated name and volume number; special events have a free-text name.
+ */
+export type EventInputEventType = typeof EventInputEventType[keyof typeof EventInputEventType];
+
+
+export const EventInputEventType = {
+  regular: 'regular',
+  special: 'special',
+} as const;
 
 export interface EventInput {
   name: string;
   /** ISO date string (YYYY-MM-DD) */
   date: string;
+  /** Regular events get an auto-generated name and volume number; special events have a free-text name. */
+  eventType?: EventInputEventType;
+  /** Volume number for regular events. Required and computed client-side when eventType is regular. */
+  volumeNumber?: number;
   totalCapacity?: number;
   slotCapacity?: number;
   /**
@@ -178,9 +211,27 @@ export interface EventInput {
   pizzaTypes?: PizzaType[];
 }
 
+/**
+ * Regular events get an auto-generated name and volume number; special events have a free-text name.
+ */
+export type EventUpdateEventType = typeof EventUpdateEventType[keyof typeof EventUpdateEventType];
+
+
+export const EventUpdateEventType = {
+  regular: 'regular',
+  special: 'special',
+} as const;
+
 export interface EventUpdate {
   name?: string;
   date?: string;
+  /** Regular events get an auto-generated name and volume number; special events have a free-text name. */
+  eventType?: EventUpdateEventType;
+  /**
+     * Volume number for regular events. Set to null for special events.
+     * @nullable
+     */
+  volumeNumber?: number | null;
   totalCapacity?: number;
   slotCapacity?: number;
   /**

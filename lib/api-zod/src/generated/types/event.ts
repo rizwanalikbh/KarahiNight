@@ -5,6 +5,7 @@
  * Private Karahi Night preorder API
  * OpenAPI spec version: 0.1.0
  */
+import type { EventEventType } from './eventEventType';
 import type { PizzaType } from './pizzaType';
 
 export interface Event {
@@ -55,5 +56,12 @@ export interface Event {
      * @nullable
      */
   customBannerUrl?: string | null;
+  /** Regular events get an auto-generated name and volume number; special events have a free-text name. */
+  eventType?: EventEventType;
+  /**
+     * Volume number for regular events. Saturday and Sunday of the same weekend share a volume number. Null for special events.
+     * @nullable
+     */
+  volumeNumber?: number | null;
   createdAt: Date;
 }

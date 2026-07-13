@@ -119,6 +119,8 @@ export const ListEventsResponseItem = zod.object({
   "locationUrl": zod.string().nullish().describe('Google Maps or other map URL for the pickup location'),
   "bannerVariant": zod.string().nullish().describe('Selected preset banner id (e.g. \"banner-1\"), or \"custom\" when customBannerUrl is set. Null means the default banner.'),
   "customBannerUrl": zod.string().nullish().describe('Object storage path for an admin-uploaded custom banner image (e.g. \"\/objects\/uploads\/uuid\").'),
+  "eventType": zod.enum(['regular', 'special']).optional().describe('Regular events get an auto-generated name and volume number; special events have a free-text name.'),
+  "volumeNumber": zod.number().nullish().describe('Volume number for regular events. Saturday and Sunday of the same weekend share a volume number. Null for special events.'),
   "createdAt": zod.coerce.date()
 })
 export const ListEventsResponse = zod.array(ListEventsResponseItem)
@@ -127,6 +129,7 @@ export const ListEventsResponse = zod.array(ListEventsResponseItem)
 /**
  * @summary Create a new event (admin only)
  */
+export const createEventBodyEventTypeDefault = `special`;
 export const createEventBodyTotalCapacityDefault = 10;
 export const createEventBodySlotCapacityDefault = 3;
 export const createEventBodyPizzaTypesItemPriceMin = 0;
@@ -138,6 +141,8 @@ export const createEventBodyPizzaTypesItemDiscountedPriceMin = 0;
 export const CreateEventBody = zod.object({
   "name": zod.string(),
   "date": zod.string().describe('ISO date string (YYYY-MM-DD)'),
+  "eventType": zod.enum(['regular', 'special']).default(createEventBodyEventTypeDefault).describe('Regular events get an auto-generated name and volume number; special events have a free-text name.'),
+  "volumeNumber": zod.number().optional().describe('Volume number for regular events. Required and computed client-side when eventType is regular.'),
   "totalCapacity": zod.number().default(createEventBodyTotalCapacityDefault),
   "slotCapacity": zod.number().default(createEventBodySlotCapacityDefault),
   "maxPerGuest": zod.number().min(1).optional().describe('Maximum number of dishes a single guest may order. Omit for no limit.'),
@@ -175,6 +180,8 @@ export const updateEventBodyPizzaTypesItemDiscountedPriceMin = 0;
 export const UpdateEventBody = zod.object({
   "name": zod.string().optional(),
   "date": zod.string().optional(),
+  "eventType": zod.enum(['regular', 'special']).optional().describe('Regular events get an auto-generated name and volume number; special events have a free-text name.'),
+  "volumeNumber": zod.number().nullish().describe('Volume number for regular events. Set to null for special events.'),
   "totalCapacity": zod.number().optional(),
   "slotCapacity": zod.number().optional(),
   "maxPerGuest": zod.number().min(1).nullish().describe('Maximum dishes per guest. Set to null to remove the limit.'),
@@ -225,6 +232,8 @@ export const UpdateEventResponse = zod.object({
   "locationUrl": zod.string().nullish().describe('Google Maps or other map URL for the pickup location'),
   "bannerVariant": zod.string().nullish().describe('Selected preset banner id (e.g. \"banner-1\"), or \"custom\" when customBannerUrl is set. Null means the default banner.'),
   "customBannerUrl": zod.string().nullish().describe('Object storage path for an admin-uploaded custom banner image (e.g. \"\/objects\/uploads\/uuid\").'),
+  "eventType": zod.enum(['regular', 'special']).optional().describe('Regular events get an auto-generated name and volume number; special events have a free-text name.'),
+  "volumeNumber": zod.number().nullish().describe('Volume number for regular events. Saturday and Sunday of the same weekend share a volume number. Null for special events.'),
   "createdAt": zod.coerce.date()
 })
 
